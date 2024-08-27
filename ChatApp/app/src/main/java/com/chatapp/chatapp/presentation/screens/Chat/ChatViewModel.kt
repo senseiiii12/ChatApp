@@ -37,6 +37,9 @@ class ChatViewModel @Inject constructor(
     private val _messages = MutableStateFlow<List<Message>>(emptyList())
     val messages = _messages.asStateFlow()
 
+
+
+
     private val _latestMessages = MutableStateFlow<Map<String, Message>>(emptyMap())
     val latestMessages = _latestMessages.asStateFlow()
 
