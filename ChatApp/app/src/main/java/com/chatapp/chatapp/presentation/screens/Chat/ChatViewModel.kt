@@ -66,26 +66,27 @@ class ChatViewModel @Inject constructor(
 
 
     fun startListeningToChats() {
-        _chatIds.flatMapLatest { chatIds ->
-            messageRepository.listenForMessagesInChats(chatIds)
-        }.onEach { chatMessagesMap ->
-            val updatedMessages = chatMessagesMap.mapValues { (_, messages) ->
-                messages.maxByOrNull { it.timestamp } ?: Message(
-                    userId = "",
-                    text = "",
-                    timestamp = Date(0),
-                    messageId = "",
-                    status = MessageStatus.SENT
-                )
-            }
-            _latestMessages.value = updatedMessages
-            val updatedCounts = chatMessagesMap.mapValues { (_, messages) ->
-                messages.count { it.status == MessageStatus.DELIVERED }
-            }
-            _messageCounts.value = updatedCounts
-        }
+        _chatIds.flatMapLatest { chatIds -> messageRepository.listenForMessagesInChats(chatIds) }
+            .onEach { chatMessagesMap -> processChatMessages(chatMessagesMap) }
             .launchIn(viewModelScope)
     }
+
+    private fun processChatMessages(chatMessagesMap: Map<String, List<Message>>) {
+        _latestMessages.value = chatMessagesMap.mapValues { (_, messages) ->
+            messages.maxByOrNull { it.timestamp } ?: defaultMessage()
+        }
+        _messageCounts.value = chatMessagesMap.mapValues { (_, messages) ->
+            messages.count { it.status == MessageStatus.DELIVERED }
+        }
+    }
+
+    private fun defaultMessage() = Message(
+        userId = "",
+        text = "",
+        timestamp = Date(0),
+        messageId = "",
+        status = MessageStatus.SENT
+    )
 
     fun updateChatIds(chatIds: List<String>) {
         _chatIds.value = chatIds
