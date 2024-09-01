@@ -16,6 +16,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
@@ -42,7 +43,7 @@ fun ChatScreen(
     chatViewModel: ChatViewModel
 ) {
 
-    Log.d("OtherUser", otherUser.toString())
+
     val systemUiController = rememberSystemUiController()
     systemUiController.setSystemBarsColor(Surface_Card)
 

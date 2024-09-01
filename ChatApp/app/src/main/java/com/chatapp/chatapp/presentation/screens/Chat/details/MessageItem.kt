@@ -73,7 +73,7 @@ fun MessageItem(
         modifier = modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp),
-        horizontalArrangement = if (isCurrentUser) Arrangement.End else Arrangement.Start
+        horizontalArrangement = if (!isCurrentUser) Arrangement.End else Arrangement.Start
     ) {
         RichTooltipBox(
             colors = TooltipDefaults.richTooltipColors(

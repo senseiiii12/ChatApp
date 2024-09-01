@@ -188,7 +188,8 @@ fun LoginScreen(
             if (state.value?.isSuccess?.isNotEmpty() == true) {
                 val success = state.value?.isSuccess
                 Toasty.success(context, "$success", Toast.LENGTH_SHORT, true).show()
-                navController.navigate(route = Route.HomePage.route)
+//                navController.navigate(route = Route.HomePage.route)
+                navigateToMainApp(navController)
             }
         }
     }
@@ -199,6 +200,14 @@ fun LoginScreen(
                 Toasty.error(context, "$error", Toast.LENGTH_SHORT, true).show()
             }
         }
+    }
+}
+fun navigateToMainApp(navController: NavController) {
+    navController.navigate(Route.HomePage.route) {
+        popUpTo(navController.graph.startDestinationId) {
+            inclusive = true
+        }
+        launchSingleTop = true
     }
 }
 

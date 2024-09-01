@@ -37,9 +37,6 @@ class ChatViewModel @Inject constructor(
     private val _messages = MutableStateFlow<List<Message>>(emptyList())
     val messages = _messages.asStateFlow()
 
-
-
-
     private val _latestMessages = MutableStateFlow<Map<String, Message>>(emptyMap())
     val latestMessages = _latestMessages.asStateFlow()
 
@@ -63,8 +60,8 @@ class ChatViewModel @Inject constructor(
         val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
         val userType = object : TypeToken<User>() {}.type
         val otherUser: User = Gson().fromJson(userJson, userType)
-        val userId = if (currentUserId < otherUser.userId) "$currentUserId-${otherUser.userId}" else "${otherUser.userId}-$currentUserId"
-        return Pair(userId,otherUser)
+        val chatId = if (currentUserId < otherUser.userId) "$currentUserId-${otherUser.userId}" else "${otherUser.userId}-$currentUserId"
+        return Pair(chatId,otherUser)
     }
 
 
@@ -132,11 +129,6 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    fun getMessages(chatId: String) {
-        viewModelScope.launch {
-            _messages.value = messageRepository.getMessages(chatId)
-        }
-    }
 
     fun listenForMessages(chatId: String) {
         messageRepository.listenForMessages(chatId) { messagesList ->
