@@ -31,3 +31,4 @@ val Success = Color(0xFF00FF66)
 val Error = Color(0xFFFF2C6F)
 
 val Online = Color(0xFF00FF85)
+val Read_message = Color(0xFF01F6A8)

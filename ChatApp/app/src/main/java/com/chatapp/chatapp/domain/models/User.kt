@@ -1,6 +1,8 @@
 package com.chatapp.chatapp.domain.models
 
+import kotlinx.serialization.Serializable
 import java.util.Date
+
 
 data class User(
     val userId: String,

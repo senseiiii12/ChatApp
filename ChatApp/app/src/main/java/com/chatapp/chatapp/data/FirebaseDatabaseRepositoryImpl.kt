@@ -7,6 +7,7 @@ import com.chatapp.chatapp.util.Resource
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Source
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.tasks.await
@@ -34,7 +35,7 @@ class FirebaseDatabaseRepositoryImpl @Inject constructor(
         return flow {
             emit(Resource.Loading())
             try {
-                val result = firebaseFirestore.collection("users").get().await()
+                val result = firebaseFirestore.collection("users").get(Source.DEFAULT).await()
                 val usersList = result.map { document ->
                     User(
                         userId = document.getString("userId") ?: "",

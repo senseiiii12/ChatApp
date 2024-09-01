@@ -25,25 +25,24 @@ class UsersViewModel @Inject constructor(
     private val _userStatuses = MutableStateFlow<Map<String, Boolean>>(emptyMap())
     val userStatuses = _userStatuses.asStateFlow()
 
-//    init {
-//        getUsers()
-//    }
 
     fun getUsers() {
-        viewModelScope.launch {
-            firebaseDatabaseRepository.getUsersList().collect { result ->
-                when (result) {
-                    is Resource.Loading -> {
-                        _users.value = UserListState(isLoading = true, isSuccess = emptyList(), isError = null)
-                    }
-                    is Resource.Success -> {
-                        _users.value = UserListState(isLoading = false, isSuccess = result.data ?: emptyList(), isError = null)
-                        result.data?.forEach { user ->
-                            listenForUserStatus(user.userId)
+        if (_users.value.isSuccess.isEmpty()) {
+            viewModelScope.launch {
+                firebaseDatabaseRepository.getUsersList().collect { result ->
+                    when (result) {
+                        is Resource.Loading -> {
+                            _users.value = UserListState(isLoading = true, isSuccess = emptyList(), isError = null)
                         }
-                    }
-                    is Resource.Error -> {
-                        _users.value = UserListState(isLoading = false, isSuccess = emptyList(), isError = result.message)
+                        is Resource.Success -> {
+                            _users.value = UserListState(isLoading = false, isSuccess = result.data ?: emptyList(), isError = null)
+                            result.data?.forEach { user ->
+                                listenForUserStatus(user.userId)
+                            }
+                        }
+                        is Resource.Error -> {
+                            _users.value = UserListState(isLoading = false, isSuccess = emptyList(), isError = result.message)
+                        }
                     }
                 }
             }

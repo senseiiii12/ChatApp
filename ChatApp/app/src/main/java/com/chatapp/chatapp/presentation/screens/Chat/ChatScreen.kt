@@ -47,7 +47,7 @@ fun ChatScreen(
     val systemUiController = rememberSystemUiController()
     systemUiController.setSystemBarsColor(Surface_Card)
 
-    val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+    val currentUserId = remember { FirebaseAuth.getInstance().currentUser?.uid ?: "" }
     val messages by chatViewModel.messages.collectAsState()
     val isEditing by remember { derivedStateOf { chatViewModel.isEditing } }
     val inputMessage by remember { derivedStateOf { chatViewModel.inputMessage } }

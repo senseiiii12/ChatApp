@@ -10,9 +10,12 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -42,7 +45,9 @@ import com.chatapp.chatapp.domain.models.MessageStatus
 import com.chatapp.chatapp.ui.theme.ChatAppTheme
 import com.chatapp.chatapp.ui.theme.ChatText
 import com.chatapp.chatapp.ui.theme.DarkGray_2
+import com.chatapp.chatapp.ui.theme.PrimaryBackground
 import com.chatapp.chatapp.ui.theme.PrimaryPurple
+import com.chatapp.chatapp.ui.theme.Read_message
 import com.chatapp.chatapp.ui.theme.Surface_Card
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -61,19 +66,18 @@ fun MessageItem(
 ) {
 
     val currentUserColor = remember {
-        Brush.linearGradient(listOf(Surface_Card.copy(alpha = 0.8f), Surface_Card))
+        Brush.linearGradient(listOf(PrimaryPurple.copy(alpha = 0.8f), PrimaryPurple.copy(alpha = 0.5f)))
     }
     val otherUserColor = remember {
-        Brush.linearGradient(listOf(PrimaryPurple.copy(alpha = 0.6f), PrimaryPurple))
+        Brush.linearGradient(listOf(Surface_Card.copy(alpha = 0.8f), Surface_Card))
     }
     val backgroundColor = if (isCurrentUser) currentUserColor else otherUserColor
-    val timeAlignment = if (isCurrentUser) Alignment.End else Alignment.Start
 
     Row(
         modifier = modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp),
-        horizontalArrangement = if (!isCurrentUser) Arrangement.End else Arrangement.Start
+        horizontalArrangement = if (isCurrentUser) Arrangement.End else Arrangement.Start
     ) {
         RichTooltipBox(
             colors = TooltipDefaults.richTooltipColors(
@@ -136,8 +140,9 @@ fun MessageItem(
                         text = formatTimestampToDate(message.timestamp),
                         fontSize = 8.sp,
                         fontFamily = FontFamily(Font(R.font.gilroy_medium)),
-                        color = ChatText.copy(alpha = 0.82f),
+                        color = ChatText.copy(alpha = 0.6f),
                     )
+                    if (isCurrentUser) Spacer(modifier = Modifier.width(4.dp))
                     AnimatedVisibility(visible = isCurrentUser) {
                         when (status) {
                             MessageStatus.DELIVERED -> {
@@ -145,7 +150,7 @@ fun MessageItem(
                                     modifier = Modifier.size(12.dp),
                                     imageVector = Icons.Default.Check,
                                     contentDescription = null,
-                                    tint = PrimaryPurple
+                                    tint = Read_message
                                 )
                             }
                             MessageStatus.READ -> {

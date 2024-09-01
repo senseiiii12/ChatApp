@@ -30,6 +30,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -65,7 +66,7 @@ fun HomePage(navController: NavController) {
     val systemUiController = rememberSystemUiController()
     systemUiController.setSystemBarsColor(PrimaryBackground)
 
-    val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+    val currentUserId = remember { FirebaseAuth.getInstance().currentUser?.uid ?: "" }
     val usersViewModel: UsersViewModel = hiltViewModel()
     val chatViewModel: ChatViewModel = hiltViewModel()
     val usersState = usersViewModel.users.collectAsState()
@@ -93,7 +94,7 @@ fun HomePage(navController: NavController) {
 
         if (usersState.value.isLoading){
             Spacer(modifier = Modifier.height(16.dp))
-            repeat(2){
+            repeat(6){
                 UserListItemShimmerEffect(
                     state = usersState.value
                 )

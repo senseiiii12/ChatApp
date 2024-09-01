@@ -22,6 +22,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
 import com.chatapp.chatapp.domain.models.User
 import com.chatapp.chatapp.presentation.navigation.Route
 import com.chatapp.chatapp.presentation.screens.Chat.ChatScreen
