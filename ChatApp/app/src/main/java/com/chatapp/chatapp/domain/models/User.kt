@@ -6,6 +6,7 @@ import java.util.Date
 
 data class User(
     val userId: String,
+    val avatar: String? = null,
     val name: String,
     val email: String,
     val password: String,

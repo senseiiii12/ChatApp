@@ -1,4 +1,4 @@
-package com.chatapp.chatapp.presentation.screens.RegisterScreen
+package com.chatapp.chatapp.presentation.screens.MainEntrance.RegisterScreen
 
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
@@ -49,8 +49,8 @@ import com.buildpc.firstcompose.EnterScreen.components.ButtonEnter
 import com.buildpc.firstcompose.EnterScreen.components.EditField
 import com.chatapp.chatapp.R
 import com.chatapp.chatapp.presentation.ValidateViewModel
-import com.chatapp.chatapp.presentation.screens.RegisterScreen.ImageAvatar.ImageAvatar
-import com.chatapp.chatapp.presentation.screens.RegisterScreen.ImageAvatar.ImageAvatarViewModel
+import com.chatapp.chatapp.presentation.screens.MainEntrance.RegisterScreen.ImageAvatar.ImageAvatar
+import com.chatapp.chatapp.presentation.screens.MainEntrance.RegisterScreen.ImageAvatar.ImageAvatarViewModel
 import com.chatapp.chatapp.ui.theme.Success
 import com.chatapp.chatapp.util.ErrorMessage
 import es.dmoral.toasty.Toasty
@@ -69,7 +69,7 @@ fun BottomSheetRegister(
 
     val viewModelImageAvatar: ImageAvatarViewModel = viewModel()
     val imageUri by viewModelImageAvatar.imageUri.collectAsState()
-    val base64String by viewModelImageAvatar.base64String.collectAsState()
+
     var name by rememberSaveable { mutableStateOf("") }
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
@@ -157,12 +157,14 @@ fun BottomSheetRegister(
         ButtonEnter(
             text = "SignUp",
             OnClick = {
-                viewModel.registerUser(name,email, password)
+                imageUri?.let {
+                    viewModelImageAvatar.uploadImageToFirebase(it){downloadUrl ->
+                        viewModel.registerUser(downloadUrl,name,email,password)
+                    }
+                }
             },
         )
         Spacer(modifier = Modifier.height(50.dp))
-
-
     }
 
 

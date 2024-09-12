@@ -10,7 +10,7 @@
 
     <color name="PrimaryBackground">#121111</color>
     <color name="PrimaryPurple">#FF7C01F6</color>
-    <color name="Read_message">#01F6A8</color>
+    <color name="Mark_message">#00FF85</color>
     <color name="Icon_tint">#C8C8C8</color>
 
 </resources>

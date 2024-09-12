@@ -10,11 +10,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.chatapp.chatapp.presentation.screens.LoginScreen.LoginScreen
-import com.chatapp.chatapp.presentation.screens.LoginScreen.SignInViewModel
-import com.chatapp.chatapp.presentation.screens.RegisterScreen.BottomSheetRegister
-import com.chatapp.chatapp.presentation.screens.RegisterScreen.ImageAvatar.ImageAvatarViewModel
-import com.chatapp.chatapp.presentation.screens.RegisterScreen.SignUpViewModel
+import com.chatapp.chatapp.presentation.screens.MainEntrance.LoginScreen.LoginScreen
+import com.chatapp.chatapp.presentation.screens.MainEntrance.LoginScreen.SignInViewModel
+import com.chatapp.chatapp.presentation.screens.MainEntrance.RegisterScreen.BottomSheetRegister
+import com.chatapp.chatapp.presentation.screens.MainEntrance.RegisterScreen.ImageAvatar.ImageAvatarViewModel
+import com.chatapp.chatapp.presentation.screens.MainEntrance.RegisterScreen.SignUpViewModel
 import com.chatapp.chatapp.ui.theme.PrimaryBackground
 
 @OptIn(ExperimentalMaterial3Api::class)

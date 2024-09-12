@@ -27,8 +27,8 @@ val DarkGray_2 = Color(0xFF272626)
 
 val ChatText = Color(0xFFC8C8C8)
 
-val Success = Color(0xFF00FF66)
-val Error = Color(0xFFFF2C6F)
+val Success = Color(0xFF93CCAA)
+val Error = Color(0xFFC74770)
 
 val Online = Color(0xFF00FF85)
-val Read_message = Color(0xFF01F6A8)
+val Mark_Message = Color(0xFF00FF85)

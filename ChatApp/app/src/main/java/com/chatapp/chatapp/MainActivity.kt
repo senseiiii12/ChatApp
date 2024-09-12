@@ -29,10 +29,10 @@ import com.chatapp.chatapp.presentation.screens.Chat.ChatScreen
 import com.chatapp.chatapp.presentation.screens.Chat.ChatViewModel
 import com.chatapp.chatapp.presentation.screens.HomePage.HomePage
 import com.chatapp.chatapp.presentation.screens.HomePage.UsersViewModel
-import com.chatapp.chatapp.presentation.screens.LoginScreen.LoginScreen
+import com.chatapp.chatapp.presentation.screens.MainEntrance.LoginScreen.LoginScreen
 import com.chatapp.chatapp.presentation.screens.MainEntrance.MainEntrance
-import com.chatapp.chatapp.presentation.screens.RegisterScreen.BottomSheetRegister
-import com.chatapp.chatapp.presentation.screens.RegisterScreen.SignUpViewModel
+import com.chatapp.chatapp.presentation.screens.MainEntrance.RegisterScreen.BottomSheetRegister
+import com.chatapp.chatapp.presentation.screens.MainEntrance.RegisterScreen.SignUpViewModel
 import com.chatapp.chatapp.ui.theme.ChatAppTheme
 import com.chatapp.chatapp.ui.theme.PrimaryBackground
 import com.google.firebase.auth.FirebaseAuth
@@ -75,12 +75,14 @@ class MainActivity : ComponentActivity() {
                         composable(route = Route.HomePage.route) {
                             HomePage(navController = navController)
                         }
-                        composable(route = "chat/{otherUserJson}") { backStackEntry ->
-                            val userJson = backStackEntry.arguments?.getString("otherUserJson") ?: ""
+                        composable(route = "chat/{otherUserJson}/{currentUserJson}") { backStackEntry ->
+                            val otherUserJson = backStackEntry.arguments?.getString("otherUserJson") ?: ""
+                            val currentUserJson = backStackEntry.arguments?.getString("currentUserJson") ?: ""
                             val chatViewModel: ChatViewModel = hiltViewModel()
-                            val (chatId,otherUser) = chatViewModel.generateChatId(userJson)
+                            val (chatId,otherUser,currentUser) = chatViewModel.generateChatId(otherUserJson,currentUserJson)
                             ChatScreen(
                                 chatId = chatId ,
+                                currentUser = currentUser,
                                 otherUser = otherUser,
                                 navController = navController,
                                 chatViewModel = chatViewModel

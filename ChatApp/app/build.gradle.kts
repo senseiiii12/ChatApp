@@ -78,6 +78,7 @@ dependencies {
     implementation("com.google.firebase:firebase-auth")
 
     implementation ("com.google.firebase:firebase-firestore:25.0.0")
+    implementation ("com.google.firebase:firebase-storage:21.0.0")
 
     implementation ("com.google.accompanist:accompanist-systemuicontroller:0.27.0")
 
@@ -87,7 +88,7 @@ dependencies {
     implementation ("androidx.hilt:hilt-navigation-compose:1.0.0")
     implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.3.9")
 
-    implementation ("io.coil-kt:coil-compose:2.0.0")
+    implementation ("io.coil-kt:coil-compose:2.4.0")
 
     implementation ("com.github.GrenderG:Toasty:1.5.2")
 

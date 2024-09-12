@@ -6,7 +6,10 @@ import com.chatapp.chatapp.domain.models.Message
 import com.chatapp.chatapp.domain.models.MessageStatus
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenSource
+import com.google.firebase.firestore.MetadataChanges
 import com.google.firebase.firestore.Query
+import com.google.firebase.firestore.SnapshotListenOptions
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -20,6 +23,11 @@ class MessageRepositoryImpl @Inject constructor(
 ) : MessageRepository {
 
     val chatCollection = firestore.collection("chats")
+
+
+    val options = SnapshotListenOptions.Builder()
+        .setSource(ListenSource.DEFAULT)
+        .build()
 
     override suspend fun sendMessage(chatId: String, userId: String, messageText: String) {
         val messageId = UUID.randomUUID().toString()
@@ -82,7 +90,7 @@ class MessageRepositoryImpl @Inject constructor(
         chatCollection.document(chatId)
             .collection("messages")
             .orderBy("timestamp", Query.Direction.DESCENDING)
-            .addSnapshotListener { snapshot, e ->
+            .addSnapshotListener(options) { snapshot, e ->
                 if (e != null || snapshot == null) {
                     return@addSnapshotListener
                 }
@@ -107,12 +115,13 @@ class MessageRepositoryImpl @Inject constructor(
                 chatCollection.document(chatId)
                     .collection("messages")
                     .orderBy("timestamp", Query.Direction.DESCENDING)
-                    .addSnapshotListener { snapshot, e ->
+                    .limit(20)
+                    .addSnapshotListener(options) { snapshot, e ->
                         if (e != null || snapshot == null) {
                             // Обработка ошибки
                             return@addSnapshotListener
                         }
-
+                        Log.d("ListnerMessages", "1111111111111")
                         val messagesList = snapshot.documents.map { document ->
                             Message(
                                 userId = document.getString("userId") ?: "",

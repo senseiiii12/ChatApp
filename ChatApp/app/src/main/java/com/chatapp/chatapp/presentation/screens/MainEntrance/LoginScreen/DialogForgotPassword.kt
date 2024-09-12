@@ -1,4 +1,4 @@
-package com.chatapp.chatapp.presentation.screens.LoginScreen
+package com.chatapp.chatapp.presentation.screens.MainEntrance.LoginScreen
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.background

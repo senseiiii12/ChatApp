@@ -1,4 +1,4 @@
-package com.chatapp.chatapp.presentation.screens.LoginScreen
+package com.chatapp.chatapp.presentation.screens.MainEntrance.LoginScreen
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

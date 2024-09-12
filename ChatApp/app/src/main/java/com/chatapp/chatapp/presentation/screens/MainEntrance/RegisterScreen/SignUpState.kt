@@ -1,4 +1,4 @@
-package com.chatapp.chatapp.presentation.screens.RegisterScreen
+package com.chatapp.chatapp.presentation.screens.MainEntrance.RegisterScreen
 
 
 data class SignUpState(

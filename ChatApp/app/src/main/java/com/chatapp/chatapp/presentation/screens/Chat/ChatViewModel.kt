@@ -56,12 +56,13 @@ class ChatViewModel @Inject constructor(
         private set
 
 
-    fun generateChatId(userJson: String): Pair<String,User> {
+    fun generateChatId(userJson: String,currentUser: String): Triple<String,User,User> {
         val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
         val userType = object : TypeToken<User>() {}.type
         val otherUser: User = Gson().fromJson(userJson, userType)
+        val currentUser: User = Gson().fromJson(currentUser, userType)
         val chatId = if (currentUserId < otherUser.userId) "$currentUserId-${otherUser.userId}" else "${otherUser.userId}-$currentUserId"
-        return Pair(chatId,otherUser)
+        return Triple(chatId,otherUser,currentUser)
     }
 
 

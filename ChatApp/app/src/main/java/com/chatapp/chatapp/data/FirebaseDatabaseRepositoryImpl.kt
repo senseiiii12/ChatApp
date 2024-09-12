@@ -39,6 +39,7 @@ class FirebaseDatabaseRepositoryImpl @Inject constructor(
                 val usersList = result.map { document ->
                     User(
                         userId = document.getString("userId") ?: "",
+                        avatar = document.getString("avatar"),
                         name = document.getString("name") ?: "",
                         email = document.getString("email") ?: "",
                         password = document.getString("password") ?: "",
@@ -70,7 +71,7 @@ class FirebaseDatabaseRepositoryImpl @Inject constructor(
             }
     }
 
-    override fun listenForUserStatusChanges(userId: String, onStatusChanged: (Boolean) -> Unit) {
+    override fun listenForUserStatusChanges(userId: String, onStatusChanged: (Pair<Boolean,Date>) -> Unit) {
         val userRef = firebaseFirestore.collection("users").document(userId)
 
         userRef.addSnapshotListener { snapshot, e ->
@@ -79,7 +80,8 @@ class FirebaseDatabaseRepositoryImpl @Inject constructor(
             }
 
             val status = snapshot.getBoolean("online") ?: false
-            onStatusChanged(status)
+            val lastSeen = snapshot.getTimestamp("lastSeen")?.toDate() ?: Date(0)
+            onStatusChanged(Pair(status,lastSeen))
         }
     }
 }

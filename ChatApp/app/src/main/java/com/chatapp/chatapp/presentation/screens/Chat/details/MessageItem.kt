@@ -9,10 +9,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -33,21 +33,25 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
+import coil.request.CachePolicy
+import coil.request.ImageRequest
 import com.chatapp.chatapp.R
 import com.chatapp.chatapp.domain.models.Message
 import com.chatapp.chatapp.domain.models.MessageStatus
-import com.chatapp.chatapp.ui.theme.ChatAppTheme
+import com.chatapp.chatapp.domain.models.User
 import com.chatapp.chatapp.ui.theme.ChatText
+import com.chatapp.chatapp.ui.theme.DarkGray_1
 import com.chatapp.chatapp.ui.theme.DarkGray_2
-import com.chatapp.chatapp.ui.theme.PrimaryBackground
+import com.chatapp.chatapp.ui.theme.Mark_Message
 import com.chatapp.chatapp.ui.theme.PrimaryPurple
-import com.chatapp.chatapp.ui.theme.Read_message
 import com.chatapp.chatapp.ui.theme.Surface_Card
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -59,9 +63,11 @@ fun MessageItem(
     modifier: Modifier = Modifier,
     message: Message,
     isCurrentUser: Boolean,
+    currentUser: User,
+    otherUser: User,
     isEditing: Boolean,
     status: MessageStatus,
-    onDelete: (String) -> Unit,
+    onDelete: (Message) -> Unit,
     onEditMessage: (Message) -> Unit,
 ) {
 
@@ -79,40 +85,29 @@ fun MessageItem(
             .padding(vertical = 8.dp),
         horizontalArrangement = if (isCurrentUser) Arrangement.End else Arrangement.Start
     ) {
+        if (!isCurrentUser){
+            UserAvatar(otherUser.avatar)
+        }
         RichTooltipBox(
             colors = TooltipDefaults.richTooltipColors(
                 containerColor = DarkGray_2
             ),
             shape = RoundedCornerShape(16.dp),
             text = {
-                Row(horizontalArrangement = Arrangement.SpaceAround) {
-                    Image(
-                        modifier = Modifier
-                            .clip(CircleShape)
-                            .clickable { onEditMessage(message) }
-                            .size(24.dp),
-                        painter = painterResource(id = R.drawable.ic_edit),
-                        contentDescription = null,
-                    )
-                    Image(
-                        modifier = Modifier
-                            .clip(CircleShape)
-                            .clickable { onDelete(message.messageId) }
-                            .size(24.dp),
-                        painter = painterResource(id = R.drawable.ic_delete),
-                        contentDescription = null,
-                    )
-                }
+                ToolTipMenu(
+                    onDelete = { onDelete(message) },
+                    onEditMessage = { onEditMessage(message) }
+                )
             }
         ) {
-            val anchor_toolTip: Modifier =
-                if (isCurrentUser && !isEditing) Modifier.tooltipAnchor() else Modifier
+            val anchor_toolTip: Modifier = if (isCurrentUser && !isEditing) Modifier.tooltipAnchor() else Modifier
             Column(
                 modifier = anchor_toolTip
+                    .padding(horizontal = 4.dp)
                     .clip(RoundedCornerShape(15.dp))
                     .widthIn(min = 20.dp, max = 200.dp)
                     .background(backgroundColor)
-                    .padding(start = 12.dp, top = 12.dp, end = 12.dp, bottom = 6.dp)
+                    .padding(start = 10.dp, top = 10.dp, end = 10.dp, bottom = 6.dp)
                     .animateContentSize(animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy))
             ) {
                 AnimatedVisibility(visible = isEditing) {
@@ -127,7 +122,7 @@ fun MessageItem(
                 }
                 Text(
                     text = message.text,
-                    fontSize = 16.sp,
+                    fontSize = 14.sp,
                     fontFamily = FontFamily(Font(R.font.gilroy_semibold)),
                     color = ChatText,
                 )
@@ -138,7 +133,7 @@ fun MessageItem(
                 ) {
                     Text(
                         text = formatTimestampToDate(message.timestamp),
-                        fontSize = 8.sp,
+                        fontSize = 6.sp,
                         fontFamily = FontFamily(Font(R.font.gilroy_medium)),
                         color = ChatText.copy(alpha = 0.6f),
                     )
@@ -150,13 +145,13 @@ fun MessageItem(
                                     modifier = Modifier.size(12.dp),
                                     imageVector = Icons.Default.Check,
                                     contentDescription = null,
-                                    tint = Read_message
+                                    tint = Mark_Message
                                 )
                             }
                             MessageStatus.READ -> {
                                 Image(
                                     modifier = Modifier.size(12.dp),
-                                    painter = painterResource(id = R.drawable.ic_double_check),
+                                    painter = painterResource(id = R.drawable.double_check_icon),
                                     contentDescription = null,
                                 )
                             }
@@ -166,30 +161,123 @@ fun MessageItem(
                 }
             }
         }
+        if (isCurrentUser){
+            UserAvatar(currentUser.avatar)
+        }
     }
 }
 
-@Preview(showBackground = true)
+
 @Composable
-private fun MessageItemPreview() {
-    ChatAppTheme {
-        MessageItem(
-            message = Message(
-                userId = "BIsXDQm57KgWPqgYIhzUwXnfBkZ2",
-                text = "Hello",
-                timestamp = Date(0),
-                messageId = "b8224c6e-9786-4cf8-8692-5189e47c1b7d"
-            ),
-            isCurrentUser = true,
-            isEditing = true,
-            status = MessageStatus.READ,
-            onDelete = {},
-            onEditMessage = {},
-        )
+fun UserAvatar(avatar: String?) {
+    when(avatar){
+        null ->{
+            Image(
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .background(DarkGray_1)
+                    .size(30.dp),
+                painter = painterResource(id = R.drawable.defaulf_user_avatar),
+                contentScale = ContentScale.Crop,
+                contentDescription = null,
+            )
+        }
+        else -> {
+            AsyncImage(
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .size(30.dp),
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(avatar)
+                    .crossfade(true)
+                    .memoryCachePolicy(CachePolicy.ENABLED)
+                    .build(),
+                contentScale = ContentScale.Crop,
+                contentDescription = null
+            )
+        }
     }
 }
+
+
+@Composable
+fun ToolTipMenu(
+    onDelete: () -> Unit,
+    onEditMessage: () -> Unit
+) {
+    Column(
+        modifier = Modifier.width(IntrinsicSize.Max)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(15.dp))
+                .clickable { onEditMessage() }
+                .padding(vertical = 2.dp, horizontal = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Image(
+                modifier = Modifier.size(20.dp),
+                painter = painterResource(id = R.drawable.ic_edit),
+                contentDescription = null,
+            )
+            Text(
+                modifier = Modifier.padding(start = 4.dp),
+                text = "Edit",
+                fontSize = 12.sp,
+                fontFamily = FontFamily(Font(R.font.gilroy_medium)),
+                color = ChatText
+            )
+        }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(15.dp))
+                .clickable { onDelete() }
+                .padding(vertical = 2.dp, horizontal = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Image(
+                modifier = Modifier.size(20.dp),
+                painter = painterResource(id = R.drawable.ic_delete),
+                contentDescription = null,
+            )
+            Text(
+                modifier = Modifier.padding(start = 4.dp),
+                text = "Delete",
+                fontSize = 12.sp,
+                fontFamily = FontFamily(Font(R.font.gilroy_medium)),
+                color = ChatText
+            )
+        }
+    }
+}
+
+//@Preview(showBackground = true)
+//@Composable
+//private fun MessageItemPreview() {
+//    ChatAppTheme {
+//        MessageItem(
+//            message = Message(
+//                userId = "BIsXDQm57KgWPqgYIhzUwXnfBkZ2",
+//                text = "Hello",
+//                timestamp = Date(0),
+//                messageId = "b8224c6e-9786-4cf8-8692-5189e47c1b7d"
+//            ),
+//            isCurrentUser = false,
+//            otherUser = User(),
+//            isEditing = false,
+//            status = MessageStatus.READ,
+//            onDelete = {},
+//            onEditMessage = {},
+//        )
+//    }
+//}
+
+
 
 fun formatTimestampToDate(date: Date): String {
     val sdf = SimpleDateFormat("HH:mm", Locale.getDefault())
     return sdf.format(date)
 }
+

@@ -1,10 +1,14 @@
 package com.chatapp.chatapp.util
 
 import com.chatapp.chatapp.domain.models.Message
+import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 import java.util.concurrent.TimeUnit
 
-class TimeLastMessage {
+class TimeManager {
      fun getTimeSinceLastMessage(lastMessage: Message?): String {
         if (lastMessage == null) {
             return "non message"
@@ -33,7 +37,10 @@ class TimeLastMessage {
              days > 0 -> "$days ${pluralize(days, "d", "d", "d")} ago"
              hours > 0 -> "$hours ${pluralize(hours, "h", "h", "h")} ago"
              minutes > 0 -> "$minutes ${pluralize(minutes, "min", "min", "min")} ago"
-             else -> "$seconds ${pluralize(seconds, "sec", "sec", "sec")} ago"
+             else -> if(seconds < 0){
+                 "just now"
+             } else "$seconds ${pluralize(seconds, "sec", "sec", "sec")} ago"
+
          }
     }
 
@@ -55,5 +62,30 @@ class TimeLastMessage {
             "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
         )
         return months[month]
+    }
+
+
+    fun formatLastSeenDate(lastSeen: Date): String {
+        // Форматирование для времени
+        val timeFormat = SimpleDateFormat("HH:mm", Locale.ENGLISH)
+        timeFormat.timeZone = TimeZone.getDefault()
+
+        // Форматирование для даты и времени
+        val dateTimeFormat = SimpleDateFormat("d MMMM yyyy 'в' HH:mm", Locale.ENGLISH)
+        dateTimeFormat.timeZone = TimeZone.getDefault()
+
+        // Форматирование для даты
+        val dateFormat = SimpleDateFormat("yyyyMMdd", Locale.ENGLISH)
+        dateFormat.timeZone = TimeZone.getDefault()
+
+        val currentDate = Date()
+        val lastSeenDateString = dateFormat.format(lastSeen)
+        val currentDateString = dateFormat.format(currentDate)
+
+        return if (lastSeenDateString == currentDateString) {
+            "Last seen today ${timeFormat.format(lastSeen)}"
+        } else {
+            "Last seen ${dateTimeFormat.format(lastSeen)}"
+        }
     }
 }

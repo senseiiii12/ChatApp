@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.util.Date
 import javax.inject.Inject
 
 @HiltViewModel
@@ -22,7 +23,7 @@ class UsersViewModel @Inject constructor(
     private val _users = MutableStateFlow(UserListState(isLoading = false, isSuccess = emptyList(), isError = null))
     val users = _users.asStateFlow()
 
-    private val _userStatuses = MutableStateFlow<Map<String, Boolean>>(emptyMap())
+    private val _userStatuses = MutableStateFlow<Map<String, Pair<Boolean,Date>>>(emptyMap())
     val userStatuses = _userStatuses.asStateFlow()
 
 
@@ -37,7 +38,7 @@ class UsersViewModel @Inject constructor(
                         is Resource.Success -> {
                             _users.value = UserListState(isLoading = false, isSuccess = result.data ?: emptyList(), isError = null)
                             result.data?.forEach { user ->
-                                listenForUserStatus(user.userId)
+                                listenForOtherUserStatus(user.userId)
                             }
                         }
                         is Resource.Error -> {
@@ -49,34 +50,34 @@ class UsersViewModel @Inject constructor(
         }
     }
 
-//    private fun listenForUserStatus(userId: String) {
-//        firebaseDatabaseRepository.listenForUserStatusChanges(userId) { isOnline ->
-//            _userStatuses.update { currentStatuses ->
-//                currentStatuses.toMutableMap().apply {
-//                    put(userId, isOnline)
-//                }
-//            }
-//        }
-//    }
-    private fun listenForUserStatus(userId: String) {
-        firebaseDatabaseRepository.listenForUserStatusChanges(userId) { isOnline ->
+    fun listenForOtherUserStatus(userId: String) {
+        firebaseDatabaseRepository.listenForUserStatusChanges(userId) { (isOnline,lastSeen) ->
             _userStatuses.update { currentStatuses ->
-                val updatedStatuses = currentStatuses.toMutableMap().apply {
-                    put(userId, isOnline)
+                currentStatuses.toMutableMap().apply {
+                    put(userId, Pair(isOnline,lastSeen))
                 }
-                // Обновляем список пользователей с новым статусом
-                val updatedUsers = _users.value.isSuccess.map { user ->
-                    if (user.userId == userId) {
-                        user.copy(online = isOnline)
-                    } else {
-                        user
-                    }
-                }
-                _users.value = _users.value.copy(isSuccess = updatedUsers)
-                updatedStatuses
             }
         }
     }
+//    private fun listenForUserStatus(userId: String) {
+//        firebaseDatabaseRepository.listenForUserStatusChanges(userId) { isOnline ->
+//            _userStatuses.update { currentStatuses ->
+//                val updatedStatuses = currentStatuses.toMutableMap().apply {
+//                    put(userId, isOnline)
+//                }
+//                // Обновляем список пользователей с новым статусом
+//                val updatedUsers = _users.value.isSuccess.map { user ->
+//                    if (user.userId == userId) {
+//                        user.copy(online = isOnline)
+//                    } else {
+//                        user
+//                    }
+//                }
+//                _users.value = _users.value.copy(isSuccess = updatedUsers)
+//                updatedStatuses
+//            }
+//        }
+//    }
 
     fun updateUserStatus(userId: String, isOnline: Boolean){
         firebaseDatabaseRepository.updateUserStatus(userId, isOnline)

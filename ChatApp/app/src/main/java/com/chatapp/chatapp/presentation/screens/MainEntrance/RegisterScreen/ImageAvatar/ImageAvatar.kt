@@ -1,4 +1,4 @@
-package com.chatapp.chatapp.presentation.screens.RegisterScreen.ImageAvatar
+package com.chatapp.chatapp.presentation.screens.MainEntrance.RegisterScreen.ImageAvatar
 
 import android.app.Activity
 import android.content.Intent
@@ -61,6 +61,7 @@ fun ImageAvatar(
     viewModel: ImageAvatarViewModel,
     imageUri: Uri?
 ) {
+    val context = LocalContext.current
 
     val launcher = rememberLauncherForActivityResult(
         contract = StartActivityForResult()
@@ -120,8 +121,7 @@ fun ImageAvatar(
             .border(2.dp, Surface_2, CircleShape)
             .clip(CircleShape)
             .clickable {
-                val intent =
-                    Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+                val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
                 launcher.launch(intent)
             },
         contentAlignment = Alignment.Center

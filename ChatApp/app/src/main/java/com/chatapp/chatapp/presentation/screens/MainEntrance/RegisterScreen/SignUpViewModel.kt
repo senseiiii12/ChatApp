@@ -1,4 +1,4 @@
-package com.chatapp.chatapp.presentation.screens.RegisterScreen
+package com.chatapp.chatapp.presentation.screens.MainEntrance.RegisterScreen
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -34,7 +34,7 @@ class SignUpViewModel @Inject constructor(
         _showBottomSheet.value = false
     }
 
-    fun registerUser(name: String,email: String, password: String) = viewModelScope.launch {
+    fun registerUser(avatar: String, name: String,email: String, password: String) = viewModelScope.launch {
         authRepository.registerUser(email, password).collect { result ->
             when (result) {
                 is Resource.Success -> {
@@ -46,6 +46,7 @@ class SignUpViewModel @Inject constructor(
                     )
                     val user = mapOf(
                         "userId" to authRepository.getCurrentUserUID(),
+                        "avatar" to avatar,
                         "name" to name,
                         "email" to email,
                         "password" to password,
