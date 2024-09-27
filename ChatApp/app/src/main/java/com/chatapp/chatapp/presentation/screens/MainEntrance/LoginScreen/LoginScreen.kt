@@ -1,6 +1,5 @@
 package com.chatapp.chatapp.presentation.screens.MainEntrance.LoginScreen
 
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -45,19 +44,20 @@ import com.buildpc.firstcompose.EnterScreen.components.SpacerOr
 import com.chatapp.chatapp.R
 import com.chatapp.chatapp.presentation.ValidateViewModel
 import com.chatapp.chatapp.presentation.navigation.Route
+import com.chatapp.chatapp.presentation.screens.HomePage.UsersViewModel
 import com.chatapp.chatapp.ui.theme.PrimaryBackground
 import com.chatapp.chatapp.ui.theme.PrimaryPurple
 import com.chatapp.chatapp.ui.theme.Surface_1
 import com.chatapp.chatapp.util.ErrorMessage
-import es.dmoral.toasty.Toasty
 import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(
+    navController: NavController,
     OnClickShowRegister: () -> Unit,
     viewModel: SignInViewModel = hiltViewModel(),
     validateViewModel: ValidateViewModel = viewModel(),
-    navController: NavController
+    usersViewModel: UsersViewModel = hiltViewModel()
 ) {
 
     val scope = rememberCoroutineScope()
@@ -149,7 +149,11 @@ fun LoginScreen(
                 OnClick = {
                     if (validateViewModel.errorEmail.value.isEmpty()){
                         scope.launch {
-                            viewModel.loginUser(email, password)
+                            viewModel.loginUser(email, password){
+                                viewModel.getCurrentUserUID()?.let {
+                                    usersViewModel.updateUserStatus(it,true) {}
+                                }
+                            }
                         }
                     }
                 }
@@ -187,9 +191,7 @@ fun LoginScreen(
         scope.launch {
             if (state.value?.isSuccess?.isNotEmpty() == true) {
                 val success = state.value?.isSuccess
-                Toasty.success(context, "$success", Toast.LENGTH_SHORT, true).show()
-//                navController.navigate(route = Route.HomePage.route)
-                navigateToMainApp(navController)
+                navigateToHomeScreen(navController)
             }
         }
     }
@@ -197,12 +199,12 @@ fun LoginScreen(
         scope.launch {
             if (state.value?.isError?.isNotEmpty() == true) {
                 val error = state.value?.isError
-                Toasty.error(context, "$error", Toast.LENGTH_SHORT, true).show()
+
             }
         }
     }
 }
-fun navigateToMainApp(navController: NavController) {
+fun navigateToHomeScreen(navController: NavController) {
     navController.navigate(Route.HomePage.route) {
         popUpTo(navController.graph.startDestinationId) {
             inclusive = true

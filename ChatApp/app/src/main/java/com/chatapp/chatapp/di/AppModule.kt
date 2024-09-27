@@ -2,10 +2,12 @@ package com.chatapp.chatapp.di
 
 import com.chatapp.chatapp.domain.AuthRepository
 import com.chatapp.chatapp.data.AuthRepositoryImpl
-import com.chatapp.chatapp.data.FirebaseDatabaseRepositoryImpl
+import com.chatapp.chatapp.data.FriendRequestRepositoryImpl
+import com.chatapp.chatapp.data.UsersRepositoryImpl
 import com.chatapp.chatapp.domain.MessageRepository
 import com.chatapp.chatapp.data.MessageRepositoryImpl
-import com.chatapp.chatapp.domain.FirebaseDatabaseRepository
+import com.chatapp.chatapp.domain.FriendRequestRepository
+import com.chatapp.chatapp.domain.UsersRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import dagger.Module
@@ -28,7 +30,7 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun providesRepositoryImpl(firebaseAuth: FirebaseAuth) : AuthRepository {
+    fun providesAuthRepositoryImpl(firebaseAuth: FirebaseAuth) : AuthRepository {
         return AuthRepositoryImpl(firebaseAuth)
     }
 
@@ -37,14 +39,19 @@ object AppModule {
     fun providesRepositoryMessageImpl(firebaseFirestore: FirebaseFirestore) : MessageRepository {
         return MessageRepositoryImpl(firebaseFirestore)
     }
+    @Provides
+    @Singleton
+    fun providesFriendRequestRepositoryImpl() : FriendRequestRepository {
+        return FriendRequestRepositoryImpl()
+    }
 
     @Provides
     @Singleton
-    fun providesRepositoryFirebaseDatabaseImpl(
+    fun providesUsersRepositoryImpl(
         firebaseFirestore: FirebaseFirestore,
         firebaseAuth: FirebaseAuth
-    ) : FirebaseDatabaseRepository {
-        return FirebaseDatabaseRepositoryImpl(firebaseFirestore,firebaseAuth)
+    ) : UsersRepository {
+        return UsersRepositoryImpl(firebaseFirestore,firebaseAuth)
     }
 
 }

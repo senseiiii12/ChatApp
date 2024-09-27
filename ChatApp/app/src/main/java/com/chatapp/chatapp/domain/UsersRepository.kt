@@ -5,10 +5,12 @@ import com.chatapp.chatapp.util.Resource
 import kotlinx.coroutines.flow.Flow
 import java.util.Date
 
-interface FirebaseDatabaseRepository {
+interface UsersRepository {
 
     fun saveUserToDatabase(user: Map<String, Any?>)
     suspend fun getUsersList(): Flow<Resource<List<User>>>
-    fun updateUserStatus(userId: String, isOnline: Boolean)
+    suspend fun searchUsers(query: String): Flow<List<User>>
+    fun updateUserStatus(userId: String, isOnline: Boolean,onSuccesUpdateStatus:() -> Unit)
     fun listenForUserStatusChanges(userId: String, onStatusChanged: (Pair<Boolean,Date>) -> Unit)
+
 }

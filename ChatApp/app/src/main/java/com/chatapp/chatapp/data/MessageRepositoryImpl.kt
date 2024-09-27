@@ -4,6 +4,7 @@ import android.util.Log
 import com.chatapp.chatapp.domain.MessageRepository
 import com.chatapp.chatapp.domain.models.Message
 import com.chatapp.chatapp.domain.models.MessageStatus
+import com.google.firebase.firestore.DocumentChange
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenSource
@@ -24,18 +25,17 @@ class MessageRepositoryImpl @Inject constructor(
 
     val chatCollection = firestore.collection("chats")
 
-
     val options = SnapshotListenOptions.Builder()
         .setSource(ListenSource.DEFAULT)
         .build()
 
     override suspend fun sendMessage(chatId: String, userId: String, messageText: String) {
         val messageId = UUID.randomUUID().toString()
-        val messageMap = mutableMapOf<String, Any>(
+        val messageMap = mutableMapOf(
             "userId" to userId,
             "text" to messageText,
             "messageId" to messageId,
-            "status" to MessageStatus.SENT.name,
+            "status" to MessageStatus.DELIVERED.name,
             "timestamp" to FieldValue.serverTimestamp()
         )
         try {
@@ -45,11 +45,12 @@ class MessageRepositoryImpl @Inject constructor(
                 .set(messageMap)
                 .await()
 
-            chatCollection.document(chatId)
-                .collection("messages")
-                .document(messageId)
-                .update("status", MessageStatus.DELIVERED.name)
-                .await()
+//            chatCollection.document(chatId)
+//                .collection("messages")
+//                .document(messageId)
+//                .update("status", MessageStatus.DELIVERED.name)
+//                .await()
+
         }catch (e:Exception){
             Log.e("ChatViewModel", "Send message: $messageId", e)
         }
@@ -67,26 +68,8 @@ class MessageRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getMessages(chatId: String): List<Message> {
-        return try {
-            val result = chatCollection.document(chatId)
-                .collection("messages")
-                .orderBy("timestamp",Query.Direction.DESCENDING)
-                .get().await()
-            result.map { document ->
-                Message(
-                    userId = document.getString("userId") ?: "",
-                    text = document.getString("text") ?: "",
-                    timestamp = document.getTimestamp("timestamp")?.toDate() ?: Date(0),
-                    messageId = document.getString("messageId") ?: ""
-                )
-            }
-        } catch (e: Exception) {
-            emptyList()
-        }
-    }
 
-    override fun listenForMessages(chatId: String, onMessagesChanged: (List<Message>) -> Unit) {
+    override fun listenForMessages(chatId: String, onMessagesChanged: (List<Message>, List<Message>, List<String>) -> Unit) {
         chatCollection.document(chatId)
             .collection("messages")
             .orderBy("timestamp", Query.Direction.DESCENDING)
@@ -94,16 +77,27 @@ class MessageRepositoryImpl @Inject constructor(
                 if (e != null || snapshot == null) {
                     return@addSnapshotListener
                 }
-                val messagesList = snapshot.documents.map { document ->
-                    Message(
+                val newMessages = mutableListOf<Message>()
+                val updatedMessages = mutableListOf<Message>()
+                val removedMessagesIds = mutableListOf<String>()
+
+                for (docChange in snapshot.documentChanges) {
+                    val document = docChange.document
+                    val message = Message(
                         userId = document.getString("userId") ?: "",
                         text = document.getString("text") ?: "",
                         timestamp = document.getTimestamp("timestamp")?.toDate() ?: Date(0),
                         messageId = document.getString("messageId") ?: "",
                         status = MessageStatus.valueOf(document.getString("status") ?: MessageStatus.SENT.name)
                     )
+
+                    when (docChange.type) {
+                        DocumentChange.Type.ADDED -> newMessages.add(message)
+                        DocumentChange.Type.MODIFIED -> updatedMessages.add(message)
+                        DocumentChange.Type.REMOVED -> removedMessagesIds.add(message.messageId)
+                    }
                 }
-                onMessagesChanged(messagesList)
+                onMessagesChanged(newMessages, updatedMessages, removedMessagesIds)
             }
     }
 
@@ -118,10 +112,8 @@ class MessageRepositoryImpl @Inject constructor(
                     .limit(20)
                     .addSnapshotListener(options) { snapshot, e ->
                         if (e != null || snapshot == null) {
-                            // Обработка ошибки
                             return@addSnapshotListener
                         }
-                        Log.d("ListnerMessages", "1111111111111")
                         val messagesList = snapshot.documents.map { document ->
                             Message(
                                 userId = document.getString("userId") ?: "",

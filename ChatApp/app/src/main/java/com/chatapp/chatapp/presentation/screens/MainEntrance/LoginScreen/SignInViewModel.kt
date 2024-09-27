@@ -18,11 +18,12 @@ class SignInViewModel @Inject constructor(
     val _signInState = Channel<SignInState>()
     val singInState = _signInState.receiveAsFlow()
 
-    fun loginUser(email: String, password: String) = viewModelScope.launch {
+    fun loginUser(email: String, password: String,onSuccesLogin:() -> Unit) = viewModelScope.launch {
         repository.loginUser(email, password).collect{ result ->
             when(result){
                 is Resource.Success -> {
                     _signInState.send(SignInState(isSuccess = "Sign in Success" ))
+                    onSuccesLogin()
                 }
                 is Resource.Loading -> {
                     _signInState.send(SignInState(isLoading = true))
@@ -32,6 +33,10 @@ class SignInViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    fun getCurrentUserUID(): String? {
+        return repository.getCurrentUserUID()
     }
 
     fun forgotPassword(email: String) = viewModelScope.launch{

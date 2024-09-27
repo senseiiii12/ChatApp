@@ -1,6 +1,7 @@
 package com.chatapp.chatapp.presentation.screens.HomePage.details
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -30,8 +31,10 @@ import com.chatapp.chatapp.ui.theme.Outline_1
 
 @Composable
 fun SearchTextField(
+    enabled: Boolean,
     value: String,
-    onValueChange: (String) -> Unit
+    onValueChange: (String) -> Unit,
+    onSeachFieldClick: () -> Unit
 ) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
@@ -39,10 +42,12 @@ fun SearchTextField(
         TextField(
             modifier = Modifier
                 .clip(RoundedCornerShape(50.dp))
+                .clickable { onSeachFieldClick() }
                 .background(DarkGray_2)
                 .weight(1f),
+            enabled = enabled,
             value = value,
-            onValueChange = { onValueChange(it) },
+            onValueChange = onValueChange,
             trailingIcon = {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_search),
@@ -55,7 +60,9 @@ fun SearchTextField(
                 unfocusedIndicatorColor = Color.Transparent,
                 focusedIndicatorColor = Color.Transparent,
                 focusedContainerColor = Color.Transparent,
-                unfocusedContainerColor = Color.Transparent
+                unfocusedContainerColor = Color.Transparent,
+                disabledContainerColor = Color.Transparent,
+                disabledIndicatorColor = Color.Transparent
             ),
             textStyle = TextStyle(
                 color = ChatText,

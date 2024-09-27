@@ -43,6 +43,7 @@ import com.chatapp.chatapp.R
 import com.chatapp.chatapp.domain.models.Message
 import com.chatapp.chatapp.domain.models.MessageStatus
 import com.chatapp.chatapp.domain.models.User
+import com.chatapp.chatapp.ui.theme.Bg_Default_Avatar
 import com.chatapp.chatapp.ui.theme.ChatAppTheme
 import com.chatapp.chatapp.ui.theme.ChatText
 import com.chatapp.chatapp.ui.theme.DarkGray_1
@@ -97,7 +98,7 @@ fun UserListItem(
             } ?: Image(
                 modifier = Modifier
                     .clip(CircleShape)
-                    .background(DarkGray_1)
+                    .background(Bg_Default_Avatar)
                     .size(70.dp),
                 painter = painterResource(id = R.drawable.defaulf_user_avatar),
                 contentScale = ContentScale.Crop,

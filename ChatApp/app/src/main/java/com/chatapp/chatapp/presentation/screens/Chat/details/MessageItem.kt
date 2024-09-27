@@ -32,8 +32,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.Font
@@ -47,8 +49,8 @@ import com.chatapp.chatapp.R
 import com.chatapp.chatapp.domain.models.Message
 import com.chatapp.chatapp.domain.models.MessageStatus
 import com.chatapp.chatapp.domain.models.User
+import com.chatapp.chatapp.ui.theme.Bg_Default_Avatar
 import com.chatapp.chatapp.ui.theme.ChatText
-import com.chatapp.chatapp.ui.theme.DarkGray_1
 import com.chatapp.chatapp.ui.theme.DarkGray_2
 import com.chatapp.chatapp.ui.theme.Mark_Message
 import com.chatapp.chatapp.ui.theme.PrimaryPurple
@@ -77,18 +79,21 @@ fun MessageItem(
     val otherUserColor = remember {
         Brush.linearGradient(listOf(Surface_Card.copy(alpha = 0.8f), Surface_Card))
     }
-    val backgroundColor = if (isCurrentUser) currentUserColor else otherUserColor
+    val backgroundColor = remember { if (isCurrentUser) currentUserColor else otherUserColor }
+    val horizontalArrangement = remember { if (isCurrentUser) Arrangement.End else Arrangement.Start }
+    val screenWidth =  LocalConfiguration.current.screenWidthDp
 
     Row(
         modifier = modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp),
-        horizontalArrangement = if (isCurrentUser) Arrangement.End else Arrangement.Start
+        horizontalArrangement = horizontalArrangement
     ) {
         if (!isCurrentUser){
             UserAvatar(otherUser.avatar)
         }
         RichTooltipBox(
+            modifier = Modifier.shadow(5.dp, RoundedCornerShape(16.dp)),
             colors = TooltipDefaults.richTooltipColors(
                 containerColor = DarkGray_2
             ),
@@ -100,15 +105,15 @@ fun MessageItem(
                 )
             }
         ) {
-            val anchor_toolTip: Modifier = if (isCurrentUser && !isEditing) Modifier.tooltipAnchor() else Modifier
+            val anchor_toolTip: Modifier = remember { if (isCurrentUser && !isEditing) Modifier.tooltipAnchor() else Modifier }
             Column(
                 modifier = anchor_toolTip
                     .padding(horizontal = 4.dp)
-                    .clip(RoundedCornerShape(15.dp))
-                    .widthIn(min = 20.dp, max = 200.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .widthIn(min = 20.dp, max = (screenWidth * 0.45).dp)
                     .background(backgroundColor)
                     .padding(start = 10.dp, top = 10.dp, end = 10.dp, bottom = 6.dp)
-                    .animateContentSize(animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy))
+                    .animateContentSize(animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy)),
             ) {
                 AnimatedVisibility(visible = isEditing) {
                     Icon(
@@ -175,7 +180,7 @@ fun UserAvatar(avatar: String?) {
             Image(
                 modifier = Modifier
                     .clip(CircleShape)
-                    .background(DarkGray_1)
+                    .background(Bg_Default_Avatar)
                     .size(30.dp),
                 painter = painterResource(id = R.drawable.defaulf_user_avatar),
                 contentScale = ContentScale.Crop,
@@ -191,6 +196,7 @@ fun UserAvatar(avatar: String?) {
                     .data(avatar)
                     .crossfade(true)
                     .memoryCachePolicy(CachePolicy.ENABLED)
+                    .diskCachePolicy(CachePolicy.ENABLED)
                     .build(),
                 contentScale = ContentScale.Crop,
                 contentDescription = null
@@ -211,7 +217,7 @@ fun ToolTipMenu(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(15.dp))
+                .clip(RoundedCornerShape(16.dp))
                 .clickable { onEditMessage() }
                 .padding(vertical = 2.dp, horizontal = 4.dp),
             verticalAlignment = Alignment.CenterVertically

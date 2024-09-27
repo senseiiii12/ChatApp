@@ -88,4 +88,24 @@ class TimeManager {
             "Last seen ${dateTimeFormat.format(lastSeen)}"
         }
     }
+
+
+    fun showDateSeparator(previousMessage: Message?, currentMessage: Message): Boolean {
+        if (previousMessage == null) return true
+
+        val previousDate = previousMessage.timestamp.toStartOfDay()
+        val currentDate = currentMessage.timestamp.toStartOfDay()
+
+        return previousDate != currentDate
+    }
+
+    fun Date.toStartOfDay(): Date {
+        val calendar = Calendar.getInstance()
+        calendar.time = this
+        calendar.set(Calendar.HOUR_OF_DAY, 0)
+        calendar.set(Calendar.MINUTE, 0)
+        calendar.set(Calendar.SECOND, 0)
+        calendar.set(Calendar.MILLISECOND, 0)
+        return calendar.time
+    }
 }

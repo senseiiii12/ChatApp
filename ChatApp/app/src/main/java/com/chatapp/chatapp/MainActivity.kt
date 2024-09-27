@@ -33,6 +33,8 @@ import com.chatapp.chatapp.presentation.screens.MainEntrance.LoginScreen.LoginSc
 import com.chatapp.chatapp.presentation.screens.MainEntrance.MainEntrance
 import com.chatapp.chatapp.presentation.screens.MainEntrance.RegisterScreen.BottomSheetRegister
 import com.chatapp.chatapp.presentation.screens.MainEntrance.RegisterScreen.SignUpViewModel
+import com.chatapp.chatapp.presentation.screens.Notification.NotificationScreen
+import com.chatapp.chatapp.presentation.screens.SearchUsers.SearchUsersScreen
 import com.chatapp.chatapp.ui.theme.ChatAppTheme
 import com.chatapp.chatapp.ui.theme.PrimaryBackground
 import com.google.firebase.auth.FirebaseAuth
@@ -49,9 +51,11 @@ class MainActivity : ComponentActivity() {
     val splashViewModel by viewModels<SplashViewModel>()
     val usersViewModel by viewModels<UsersViewModel>()
 
-
+    var currentUserId: String? = null
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        currentUserId = FirebaseAuth.getInstance().currentUser?.uid
 
         installSplashScreen().apply {
             setKeepOnScreenCondition {
@@ -75,6 +79,12 @@ class MainActivity : ComponentActivity() {
                         composable(route = Route.HomePage.route) {
                             HomePage(navController = navController)
                         }
+                        composable(route = Route.Notification.route) {
+                            NotificationScreen(navController = navController)
+                        }
+                        composable(route = Route.SearchUsers.route) {
+                            SearchUsersScreen(navController = navController)
+                        }
                         composable(route = "chat/{otherUserJson}/{currentUserJson}") { backStackEntry ->
                             val otherUserJson = backStackEntry.arguments?.getString("otherUserJson") ?: ""
                             val currentUserJson = backStackEntry.arguments?.getString("currentUserJson") ?: ""
@@ -96,15 +106,22 @@ class MainActivity : ComponentActivity() {
 
     override fun onStart() {
         super.onStart()
-        val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
-        currentUserId?.let { usersViewModel.updateUserStatus(it, true) }
+        currentUserId?.let { usersViewModel.updateUserStatus(it, true){} }
     }
 
     override fun onStop() {
         super.onStop()
-        val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
-        currentUserId?.let { usersViewModel.updateUserStatus(it, false) }
+        currentUserId?.let { usersViewModel.updateUserStatus(it, false){} }
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        currentUserId?.let { usersViewModel.updateUserStatus(it, false){} }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        currentUserId?.let { usersViewModel.updateUserStatus(it, false){} }
+    }
 }
 

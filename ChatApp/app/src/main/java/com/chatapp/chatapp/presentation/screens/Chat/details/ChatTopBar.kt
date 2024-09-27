@@ -21,6 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,6 +41,7 @@ import coil.request.ImageRequest
 import com.chatapp.chatapp.R
 import com.chatapp.chatapp.domain.models.User
 import com.chatapp.chatapp.presentation.screens.HomePage.UsersViewModel
+import com.chatapp.chatapp.ui.theme.Bg_Default_Avatar
 import com.chatapp.chatapp.ui.theme.ChatText
 import com.chatapp.chatapp.ui.theme.DarkGray_1
 import com.chatapp.chatapp.ui.theme.Online
@@ -58,11 +60,11 @@ fun ChatTopBar(
     navController: NavController,
     usersViewModel: UsersViewModel = hiltViewModel()
 ) {
-    LaunchedEffect (otherUser){
+    LaunchedEffect (Unit){
         usersViewModel.listenForOtherUserStatus(otherUser.userId)
     }
     val isOnline by usersViewModel.userStatuses.collectAsState()
-    val timeManager = TimeManager()
+    val timeManager = remember { TimeManager() }
 
     TopAppBar(
         colors = TopAppBarDefaults.topAppBarColors(
@@ -87,7 +89,7 @@ fun ChatTopBar(
                 } ?: Image(
                     modifier = Modifier
                         .clip(CircleShape)
-                        .background(DarkGray_1)
+                        .background(Bg_Default_Avatar)
                         .size(30.dp),
                     painter = painterResource(id = R.drawable.defaulf_user_avatar),
                     contentScale = ContentScale.Crop,

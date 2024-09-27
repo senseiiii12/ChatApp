@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -21,7 +23,7 @@ import com.chatapp.chatapp.ui.theme.DarkGray_1
 
 @Composable
 fun TopBarHome(
-    onSettingsClick:() -> Unit
+    onNotificationClick:() -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -37,11 +39,11 @@ fun TopBarHome(
             color = DarkGray_1
         )
         IconButton(
-            onClick = onSettingsClick
+            onClick = onNotificationClick
         ) {
             Icon(
                 modifier = Modifier.size(25.dp),
-                painter = painterResource(id = R.drawable.filter),
+                imageVector = Icons.Default.Notifications,
                 tint = DarkGray_1,
                 contentDescription = null
             )

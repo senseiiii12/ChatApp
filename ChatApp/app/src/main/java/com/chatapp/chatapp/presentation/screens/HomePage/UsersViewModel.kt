@@ -1,10 +1,8 @@
 package com.chatapp.chatapp.presentation.screens.HomePage
 
-import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.chatapp.chatapp.domain.FirebaseDatabaseRepository
-import com.chatapp.chatapp.domain.MessageRepository
+import com.chatapp.chatapp.domain.UsersRepository
 import com.chatapp.chatapp.domain.models.User
 import com.chatapp.chatapp.util.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -17,33 +15,34 @@ import javax.inject.Inject
 
 @HiltViewModel
 class UsersViewModel @Inject constructor(
-    private val firebaseDatabaseRepository: FirebaseDatabaseRepository
+    private val usersRepository: UsersRepository
 ) : ViewModel() {
 
-    private val _users = MutableStateFlow(UserListState(isLoading = false, isSuccess = emptyList(), isError = null))
+    private val _users = MutableStateFlow(UserListState())
     val users = _users.asStateFlow()
 
     private val _userStatuses = MutableStateFlow<Map<String, Pair<Boolean,Date>>>(emptyMap())
     val userStatuses = _userStatuses.asStateFlow()
 
+    private var usersLoaded = false
 
     fun getUsers() {
-        if (_users.value.isSuccess.isEmpty()) {
-            viewModelScope.launch {
-                firebaseDatabaseRepository.getUsersList().collect { result ->
-                    when (result) {
-                        is Resource.Loading -> {
-                            _users.value = UserListState(isLoading = true, isSuccess = emptyList(), isError = null)
+        if (usersLoaded) return
+        viewModelScope.launch {
+            usersRepository.getUsersList().collect { result ->
+                when (result) {
+                    is Resource.Loading -> {
+                        _users.value = UserListState(isLoading = true)
+                    }
+                    is Resource.Success -> {
+                        _users.value = UserListState(isLoading = false, isSuccess = result.data ?: emptyList())
+                        usersLoaded = true
+                        result.data?.forEach { user ->
+                            listenForOtherUserStatus(user.userId)
                         }
-                        is Resource.Success -> {
-                            _users.value = UserListState(isLoading = false, isSuccess = result.data ?: emptyList(), isError = null)
-                            result.data?.forEach { user ->
-                                listenForOtherUserStatus(user.userId)
-                            }
-                        }
-                        is Resource.Error -> {
-                            _users.value = UserListState(isLoading = false, isSuccess = emptyList(), isError = result.message)
-                        }
+                    }
+                    is Resource.Error -> {
+                        _users.value = UserListState(isLoading = false,isError = result.message)
                     }
                 }
             }
@@ -51,7 +50,7 @@ class UsersViewModel @Inject constructor(
     }
 
     fun listenForOtherUserStatus(userId: String) {
-        firebaseDatabaseRepository.listenForUserStatusChanges(userId) { (isOnline,lastSeen) ->
+        usersRepository.listenForUserStatusChanges(userId) { (isOnline,lastSeen) ->
             _userStatuses.update { currentStatuses ->
                 currentStatuses.toMutableMap().apply {
                     put(userId, Pair(isOnline,lastSeen))
@@ -79,8 +78,10 @@ class UsersViewModel @Inject constructor(
 //        }
 //    }
 
-    fun updateUserStatus(userId: String, isOnline: Boolean){
-        firebaseDatabaseRepository.updateUserStatus(userId, isOnline)
+    fun updateUserStatus(userId: String, isOnline: Boolean,onSuccesUpdateStatus:() -> Unit){
+        usersRepository.updateUserStatus(userId, isOnline){
+            onSuccesUpdateStatus()
+        }
     }
 
     // Функция для получения пользователя по userId

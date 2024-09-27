@@ -14,9 +14,16 @@ class ValidateViewModel: ViewModel() {
     var errorPasswordRegister = mutableStateOf("")
 
 
+    fun validateRegisterFields(): Boolean{
+        return if (errorEmailRegister.value.isEmpty() && errorPasswordRegister.value.isEmpty())
+            true
+        else
+            false
+    }
+
     fun validateForgotEmail(email: String) {
         if (email.isEmpty()) {
-            errorForgotEmail.value = "Email cannot be empty"
+            errorForgotEmail.value = ""
         } else if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
             errorForgotEmail.value = "Invalid email format"
         } else {
@@ -25,26 +32,20 @@ class ValidateViewModel: ViewModel() {
     }
     fun validateEmail(email: String) {
         if (email.isEmpty()) {
-            errorEmail.value = "Email cannot be empty"
+            errorEmail.value = ""
         } else if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
             errorEmail.value = "Invalid email format"
         } else {
             errorEmail.value = ""
         }
     }
-    fun validateEmailRegister(email: String) {
-        if (email.isEmpty()) {
-            errorEmailRegister.value = "Email cannot be empty"
-        } else if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-            errorEmailRegister.value = "Invalid email format"
-        } else {
-            errorEmailRegister.value = ""
-        }
-    }
 
     fun validatePassword(password: String) {
         val invalidChars = """[^a-zA-Z0-9!@#\$%^&*()_+\[\]{}|\\,.<>?/~`-]""".toRegex()
         when {
+            password.isEmpty() -> {
+                errorPassword.value = "Password cannot be empty"
+            }
             password.length < 8 -> {
                 errorPassword.value = "Password must be at least 8 characters long"
             }
@@ -62,9 +63,22 @@ class ValidateViewModel: ViewModel() {
             }
         }
     }
+    fun validateEmailRegister(email: String) {
+        if (email.isEmpty()) {
+            errorEmailRegister.value = ""
+        } else if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            errorEmailRegister.value = "Invalid email format"
+        } else {
+            errorEmailRegister.value = ""
+        }
+    }
+
     fun validatePasswordRegister(password: String) {
         val invalidChars = """[^a-zA-Z0-9!@#\$%^&*()_+\[\]{}|\\,.<>?/~`-]""".toRegex()
         when {
+            password.isEmpty() -> {
+                errorPasswordRegister.value = ""
+            }
             password.length < 8 -> {
                 errorPasswordRegister.value = "Password must be at least 8 characters long"
             }

@@ -1,7 +1,7 @@
 package com.chatapp.chatapp.data
 
 import android.util.Log
-import com.chatapp.chatapp.domain.FirebaseDatabaseRepository
+import com.chatapp.chatapp.domain.UsersRepository
 import com.chatapp.chatapp.domain.models.User
 import com.chatapp.chatapp.util.Resource
 import com.google.firebase.auth.FirebaseAuth
@@ -14,20 +14,17 @@ import kotlinx.coroutines.tasks.await
 import java.util.Date
 import javax.inject.Inject
 
-class FirebaseDatabaseRepositoryImpl @Inject constructor(
+class UsersRepositoryImpl @Inject constructor(
     private val firebaseFirestore: FirebaseFirestore,
     private val firebaseAuth: FirebaseAuth
-) : FirebaseDatabaseRepository {
+) : UsersRepository {
 
 
     override fun saveUserToDatabase(user: Map<String, Any?>) {
-        val userUid = firebaseAuth.currentUser?.uid ?: ""
-        firebaseFirestore.collection("users").document(userUid).set(user)
+        val currentUserId = firebaseAuth.currentUser?.uid ?: ""
+        firebaseFirestore.collection("users").document(currentUserId).set(user)
             .addOnSuccessListener {
                 firebaseAuth.signOut()
-            }
-            .addOnFailureListener {
-                // Обработка ошибки
             }
     }
 
@@ -55,7 +52,38 @@ class FirebaseDatabaseRepositoryImpl @Inject constructor(
         }
     }
 
-    override fun updateUserStatus(userId: String, isOnline: Boolean) {
+    override suspend fun searchUsers(query: String): Flow<List<User>> = flow {
+        val currentUserId = firebaseAuth.currentUser?.uid ?: ""
+        try {
+            val result = firebaseFirestore
+                .collection("users")
+                .get(Source.DEFAULT)
+                .await()
+
+            val usersList = result.documents.map { document ->
+                User(
+                    userId = document.getString("userId") ?: "",
+                    avatar = document.getString("avatar"),
+                    name = document.getString("name") ?: "",
+                    email = document.getString("email") ?: "",
+                    password = document.getString("password") ?: "",
+                    online = document.getBoolean("online") ?: false,
+                    lastSeen = document.getTimestamp("lastSeen")?.toDate() ?: Date(0),
+                    friends = document.get("friends") as? List<String> ?: emptyList()
+                )
+            }
+             val listFiltered = usersList.filter {
+                 it.userId != currentUserId && it.name.contains(query, ignoreCase = true)
+            }
+            emit(listFiltered)
+        } catch (e: Exception) {
+            emit(emptyList())
+        }
+    }
+
+
+
+    override fun updateUserStatus(userId: String, isOnline: Boolean,onSuccesUpdateStatus:() -> Unit) {
         val userStatusUpdate = mapOf(
             "online" to isOnline,
             "lastSeen" to FieldValue.serverTimestamp()
@@ -64,6 +92,7 @@ class FirebaseDatabaseRepositoryImpl @Inject constructor(
         firebaseFirestore.collection("users").document(userId)
             .update(userStatusUpdate)
             .addOnSuccessListener {
+                onSuccesUpdateStatus()
                 Log.d("MainActivity", "User status updated successfully.")
             }
             .addOnFailureListener { e ->

@@ -3,7 +3,7 @@ package com.chatapp.chatapp.presentation.screens.MainEntrance.RegisterScreen
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chatapp.chatapp.domain.AuthRepository
-import com.chatapp.chatapp.domain.FirebaseDatabaseRepository
+import com.chatapp.chatapp.domain.UsersRepository
 import com.chatapp.chatapp.util.Resource
 import com.google.firebase.firestore.FieldValue
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -17,7 +17,7 @@ import javax.inject.Inject
 @HiltViewModel
 class SignUpViewModel @Inject constructor(
     private val authRepository: AuthRepository,
-    private val firebaseDatabaseRepository: FirebaseDatabaseRepository
+    private val usersRepository: UsersRepository
 ) : ViewModel() {
 
     val _signUpState = Channel<SignUpState>()
@@ -34,13 +34,13 @@ class SignUpViewModel @Inject constructor(
         _showBottomSheet.value = false
     }
 
-    fun registerUser(avatar: String, name: String,email: String, password: String) = viewModelScope.launch {
+    fun registerUser(avatar: String?, name: String,email: String, password: String) = viewModelScope.launch {
         authRepository.registerUser(email, password).collect { result ->
             when (result) {
                 is Resource.Success -> {
                     _signUpState.send(
                         SignUpState(
-                            isSuccess = "SignUp Success",
+                            isSuccess = "Success Registration",
                             isLoading = false
                         )
                     )
@@ -52,7 +52,7 @@ class SignUpViewModel @Inject constructor(
                         "password" to password,
                         "lastSeen" to FieldValue.serverTimestamp()
                     )
-                    firebaseDatabaseRepository.saveUserToDatabase(user)
+                    usersRepository.saveUserToDatabase(user)
                 }
                 is Resource.Loading -> {
                     _signUpState.send(SignUpState(isLoading = true))

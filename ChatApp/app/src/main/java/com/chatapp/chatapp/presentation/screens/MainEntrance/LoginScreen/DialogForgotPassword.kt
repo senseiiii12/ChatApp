@@ -35,6 +35,8 @@ import com.chatapp.chatapp.presentation.ValidateViewModel
 import com.chatapp.chatapp.ui.theme.PrimaryBackground
 import com.chatapp.chatapp.util.ErrorMessage
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.chatapp.chatapp.ui.theme.DarkGray_1
+import com.chatapp.chatapp.ui.theme.DarkGray_2
 
 
 @Composable
@@ -52,7 +54,7 @@ fun DialogForgotPassword(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(8.dp))
+                .clip(RoundedCornerShape(10.dp))
                 .background(PrimaryBackground)
         ) {
             AnimatedContent(targetState = submit) { isSubmit ->
@@ -92,7 +94,7 @@ fun DialogForgotPassword(
                     Column(modifier = Modifier.padding(horizontal = 10.dp)) {
                         Spacer(modifier = Modifier.height(20.dp))
                         Text(
-                            modifier = Modifier.padding(start = 2.dp, bottom = 2.dp),
+                            modifier = Modifier.padding(start = 2.dp, bottom = 16.dp),
                             text = "Enter the account's email address",
                             fontSize = 12.sp,
                             color = Color.White,
@@ -115,6 +117,7 @@ fun DialogForgotPassword(
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         ButtonEnter(
+                            background = DarkGray_2,
                             text = "Reset password",
                             OnClick = {
                                 if (validateViewModel.errorForgotEmail.value.isEmpty() && forgotEmail.isNotEmpty()){

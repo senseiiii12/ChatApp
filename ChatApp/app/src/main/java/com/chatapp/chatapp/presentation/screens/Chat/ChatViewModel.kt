@@ -74,20 +74,12 @@ class ChatViewModel @Inject constructor(
 
     private fun processChatMessages(chatMessagesMap: Map<String, List<Message>>) {
         _latestMessages.value = chatMessagesMap.mapValues { (_, messages) ->
-            messages.maxByOrNull { it.timestamp } ?: defaultMessage()
+            messages.maxByOrNull { it.timestamp } ?: Message()
         }
         _messageCounts.value = chatMessagesMap.mapValues { (_, messages) ->
             messages.count { it.status == MessageStatus.DELIVERED }
         }
     }
-
-    private fun defaultMessage() = Message(
-        userId = "",
-        text = "",
-        timestamp = Date(0),
-        messageId = "",
-        status = MessageStatus.SENT
-    )
 
     fun updateChatIds(chatIds: List<String>) {
         _chatIds.value = chatIds
@@ -132,8 +124,22 @@ class ChatViewModel @Inject constructor(
 
 
     fun listenForMessages(chatId: String) {
-        messageRepository.listenForMessages(chatId) { messagesList ->
-            _messages.value = messagesList
+        messageRepository.listenForMessages(chatId) { newMessages, updatedMessages, removedMessagesIds ->
+            val currentMessages = _messages.value.toMutableList()
+
+            currentMessages.addAll(0, newMessages)
+            updatedMessages.forEach { updatedMessage ->
+                val index = currentMessages.indexOfFirst { it.messageId == updatedMessage.messageId }
+                if (index != -1) {
+                    currentMessages[index] = updatedMessage
+                }
+            }
+            currentMessages.removeAll { message -> removedMessagesIds.contains(message.messageId) }
+            if (currentMessages != _messages.value) {
+                _messages.value = currentMessages
+            }
+
+            Log.d("ViewModel1", "currentMessages = $currentMessages")
         }
     }
 
