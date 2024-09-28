@@ -101,5 +101,8 @@ dependencies {
     implementation(libs.navigation.compose)
     implementation(libs.kotlinx.serialization.json)
 
+    implementation("androidx.tracing:tracing-perfetto:1.0.0")
+    implementation("androidx.tracing:tracing-perfetto-binary:1.0.0")
 
 }
+

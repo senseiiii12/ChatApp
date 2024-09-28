@@ -2,6 +2,7 @@ package com.chatapp.chatapp.presentation.screens.Chat
 
 import android.util.Log
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
@@ -26,6 +27,7 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.UUID
 import javax.inject.Inject
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -56,13 +58,13 @@ class ChatViewModel @Inject constructor(
         private set
 
 
-    fun generateChatId(userJson: String,currentUser: String): Triple<String,User,User> {
+    fun generateChatId(userJson: String, currentUser: String): Triple<String, User, User> {
         val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
         val userType = object : TypeToken<User>() {}.type
         val otherUser: User = Gson().fromJson(userJson, userType)
         val currentUser: User = Gson().fromJson(currentUser, userType)
         val chatId = if (currentUserId < otherUser.userId) "$currentUserId-${otherUser.userId}" else "${otherUser.userId}-$currentUserId"
-        return Triple(chatId,otherUser,currentUser)
+        return Triple(chatId, otherUser, currentUser)
     }
 
 
@@ -123,25 +125,37 @@ class ChatViewModel @Inject constructor(
     }
 
 
+//    fun addTestMessage(){
+//
+//        val currentMessages = _messages.value.toMutableList()
+//        currentMessages.addAll(0, listOf(Message(text = "qwerty", messageId = "${UUID.randomUUID()}")))
+//        _messages.value = currentMessages
+//    }
+
     fun listenForMessages(chatId: String) {
         messageRepository.listenForMessages(chatId) { newMessages, updatedMessages, removedMessagesIds ->
-            val currentMessages = _messages.value.toMutableList()
+            _messages.update { currentMessages ->
+                // Удаляем сообщения, только если они действительно были удалены
+                val updatedList = currentMessages.filterNot { message ->
+                    removedMessagesIds.contains(message.messageId)
+                }.toMutableList()
 
-            currentMessages.addAll(0, newMessages)
-            updatedMessages.forEach { updatedMessage ->
-                val index = currentMessages.indexOfFirst { it.messageId == updatedMessage.messageId }
-                if (index != -1) {
-                    currentMessages[index] = updatedMessage
+                // Обновляем существующие сообщения
+                updatedMessages.forEach { updatedMessage ->
+                    val index = updatedList.indexOfFirst { it.messageId == updatedMessage.messageId }
+                    if (index != -1) {
+                        updatedList[index] = updatedMessage // Обновляем только измененное сообщение
+                    }
                 }
-            }
-            currentMessages.removeAll { message -> removedMessagesIds.contains(message.messageId) }
-            if (currentMessages != _messages.value) {
-                _messages.value = currentMessages
-            }
 
-            Log.d("ViewModel1", "currentMessages = $currentMessages")
+                // Добавляем новые сообщения в начало списка
+                updatedList.addAll(0, newMessages)
+
+                updatedList // Возвращаем обновленный список
+            }
         }
     }
+
 
     fun deleteMessage(chatId: String, messageId: String) {
         viewModelScope.launch {

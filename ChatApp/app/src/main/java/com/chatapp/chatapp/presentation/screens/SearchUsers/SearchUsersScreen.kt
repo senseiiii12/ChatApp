@@ -79,6 +79,7 @@ fun SearchUsersScreen(
     searchUsersViewModel: SearchUsersViewModel = hiltViewModel(),
     friendRequestViewModel: FriendRequestViewModel = hiltViewModel()
 ) {
+
     val searchUserList by searchUsersViewModel.users.collectAsState()
     var searchText by remember { mutableStateOf("") }
     var resultFriendRequest by remember { mutableStateOf(false) }

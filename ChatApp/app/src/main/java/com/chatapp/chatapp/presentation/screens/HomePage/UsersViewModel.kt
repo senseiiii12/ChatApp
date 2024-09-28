@@ -1,5 +1,6 @@
 package com.chatapp.chatapp.presentation.screens.HomePage
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chatapp.chatapp.domain.UsersRepository

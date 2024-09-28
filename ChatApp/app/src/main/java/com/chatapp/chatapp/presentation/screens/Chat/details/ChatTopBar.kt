@@ -1,5 +1,6 @@
 package com.chatapp.chatapp.presentation.screens.Chat.details
 
+import android.util.Log
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -60,11 +61,10 @@ fun ChatTopBar(
     navController: NavController,
     usersViewModel: UsersViewModel = hiltViewModel()
 ) {
+
     LaunchedEffect (Unit){
         usersViewModel.listenForOtherUserStatus(otherUser.userId)
     }
-    val isOnline by usersViewModel.userStatuses.collectAsState()
-    val timeManager = remember { TimeManager() }
 
     TopAppBar(
         colors = TopAppBarDefaults.topAppBarColors(
@@ -103,36 +103,10 @@ fun ChatTopBar(
                         color = ChatText,
                         fontFamily = FontFamily(Font(R.font.gilroy_bold)),
                     )
-                    AnimatedContent(targetState = isOnline[otherUser.userId]) { isOnline ->
-                        if (isOnline?.first == true) {
-                            Row(
-                                modifier = Modifier.padding(start = 10.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .clip(CircleShape)
-                                        .size(8.dp)
-                                        .background(Online)
-                                )
-                                Text(
-                                    modifier = Modifier.padding(start = 5.dp),
-                                    text = "Online",
-                                    fontSize = 10.sp,
-                                    color = Online,
-                                    fontFamily = FontFamily(Font(R.font.gilroy_semibold)),
-                                )
-                            }
-                        } else {
-                            Text(
-                                modifier = Modifier.padding(start = 10.dp),
-                                text = timeManager.formatLastSeenDate(isOnline?.second ?: Date(0)),
-                                fontSize = 12.sp,
-                                color = DarkGray_1,
-                                fontFamily = FontFamily(Font(R.font.gilroy_semibold)),
-                            )
-                        }
-                    }
+                    OnlineStatus(
+                        otherUser = otherUser,
+                        usersViewModel = usersViewModel
+                    )
                 }
             }
         },
@@ -146,4 +120,47 @@ fun ChatTopBar(
             }
         }
     )
+}
+
+@Composable
+fun OnlineStatus(
+    otherUser: User,
+    usersViewModel: UsersViewModel
+) {
+
+    val isOnline by usersViewModel.userStatuses.collectAsState()
+    val onlineStatus =   isOnline[otherUser.userId]?.first ?: false
+    val lastSeenStatus =  isOnline[otherUser.userId]?.second ?: Date(0)
+    val timeManager = remember { TimeManager() }
+
+    AnimatedContent(targetState = onlineStatus) { isOnline ->
+        if (isOnline) {
+            Row(
+                modifier = Modifier.padding(start = 10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .size(8.dp)
+                        .background(Online)
+                )
+                Text(
+                    modifier = Modifier.padding(start = 5.dp),
+                    text = "Online",
+                    fontSize = 10.sp,
+                    color = Online,
+                    fontFamily = FontFamily(Font(R.font.gilroy_semibold)),
+                )
+            }
+        } else {
+            Text(
+                modifier = Modifier.padding(start = 10.dp),
+                text = timeManager.formatLastSeenDate(lastSeenStatus),
+                fontSize = 12.sp,
+                color = DarkGray_1,
+                fontFamily = FontFamily(Font(R.font.gilroy_semibold)),
+            )
+        }
+    }
 }

@@ -1,15 +1,21 @@
 package com.chatapp.chatapp.presentation.screens.Chat
 
+import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -18,8 +24,8 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import com.chatapp.chatapp.domain.models.Message
 import com.chatapp.chatapp.domain.models.MessageStatus
 import com.chatapp.chatapp.domain.models.User
 import com.chatapp.chatapp.presentation.screens.Chat.details.ChatInputField
@@ -43,23 +49,17 @@ fun ChatScreen(
     chatViewModel: ChatViewModel
 ) {
 
-    val listState = rememberLazyListState()
     val systemUiController = rememberSystemUiController()
     systemUiController.setSystemBarsColor(Surface_Card)
-
-    val timeManager = remember { TimeManager() }
     val currentUserId = remember { FirebaseAuth.getInstance().currentUser?.uid ?: "" }
-
     val isEditing by remember { derivedStateOf { chatViewModel.isEditing } }
     val inputMessage by remember { derivedStateOf { chatViewModel.inputMessage } }
     val newMessageText by remember { derivedStateOf { chatViewModel.newMessageText } }
-    val messages by chatViewModel.messages.collectAsStateWithLifecycle()
-
 
     LaunchedEffect(Unit) {
         chatViewModel.listenForMessages(chatId)
     }
-
+    
     Scaffold(
         containerColor = PrimaryBackground,
         topBar = {
@@ -88,68 +88,96 @@ fun ChatScreen(
                 },
                 onCancelEdit = chatViewModel::resetEditMode
             )
+        },
+        floatingActionButton = {
+            Button(onClick = {  }) {
+                Text(text = "add test")
+            }
         }
     ) { paddingValues ->
-        Column(
+        MessageList(
+            currentUser = currentUser ,
+            currentUserId = currentUserId,
+            otherUser = otherUser,
+            chatId = chatId,
+            paddingValues = paddingValues ,
+            chatViewModel = chatViewModel
+        )
+    }
+
+}
+
+
+@Composable
+fun MessageList(
+    currentUser: User,
+    currentUserId: String,
+    otherUser: User,
+    chatId: String,
+    paddingValues: PaddingValues,
+    chatViewModel: ChatViewModel
+) {
+    val listState = rememberLazyListState()
+    val messages by chatViewModel.messages.collectAsState()
+    val timeManager = remember { TimeManager() }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(paddingValues)
+    ) {
+        LazyColumn(
+            state = listState,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .padding(horizontal = 16.dp),
+            reverseLayout = true,
+            verticalArrangement = Arrangement.Bottom
         ) {
-            LazyColumn(
-                state = listState,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 16.dp),
-                reverseLayout = true,
-                verticalArrangement = Arrangement.Bottom
-            ) {
-                itemsIndexed(messages, key = {_, msg -> msg.messageId}) { index, message ->
-                    val previousMessage = remember { if (index < messages.size - 1) messages[index + 1] else null }
-                    val isCurrentUser = remember { message.userId == currentUserId }
+            itemsIndexed(messages, key = {_, msg -> msg.messageId}) { index, message ->
+                val previousMessage =  if (index < messages.size - 1) messages[index + 1] else null
+                val isCurrentUser = remember { message.userId == currentUserId }
 
-                    Column {
-                        if (timeManager.showDateSeparator(previousMessage, message)) {
-                            DateSeparator(message.timestamp)
-                        }
-                        MessageItem(
-                            modifier = Modifier
-                                .animateItem()
-                                .onGloballyPositioned { layoutCoordinates ->
-                                    if (!isCurrentUser && message.status != MessageStatus.READ) {
-                                        val viewportBounds = listState.layoutInfo.viewportEndOffset
-                                        if (layoutCoordinates.positionInParent().y < viewportBounds) {
-                                            chatViewModel.markMessageAsRead(
-                                                chatId,
-                                                message.messageId
-                                            )
-                                        }
-                                    }
-                                },
-                            message = message,
-                            isCurrentUser = isCurrentUser,
-                            currentUser = currentUser,
-                            otherUser = otherUser,
-                            isEditing = chatViewModel.editingMessageId == message.messageId,
-                            status = message.status,
-                            onDelete = remember { { currentMessage ->
-                                    if (isCurrentUser) {
-                                        chatViewModel.deleteMessage(
+                Column {
+                    if (timeManager.showDateSeparator(previousMessage, message)) {
+                        DateSeparator(message.timestamp)
+                    }
+                    MessageItem(
+                        modifier = Modifier
+                            .animateItem()
+                            .onGloballyPositioned { layoutCoordinates ->
+                                if (!isCurrentUser && message.status != MessageStatus.READ) {
+                                    val viewportBounds = listState.layoutInfo.viewportEndOffset
+                                    if (layoutCoordinates.positionInParent().y < viewportBounds) {
+                                        chatViewModel.markMessageAsRead(
                                             chatId,
-                                            currentMessage.messageId
+                                            message.messageId
                                         )
                                     }
                                 }
                             },
-                            onEditMessage = remember { { currentMessage ->
-                                    chatViewModel.initEditMessageState(
-                                        isEditing = true,
-                                        newMessageText = currentMessage.text,
-                                        editingMessageId = currentMessage.messageId
-                                    )
-                                }
+                        message = message,
+                        isCurrentUser = isCurrentUser,
+                        currentUser = currentUser,
+                        otherUser = otherUser,
+                        isEditing = chatViewModel.editingMessageId == message.messageId,
+                        status = message.status,
+                        onDelete =  { currentMessage ->
+                            if (isCurrentUser) {
+                                chatViewModel.deleteMessage(
+                                    chatId,
+                                    currentMessage.messageId
+                                )
                             }
-                        )
-                    }
+                        },
+                        onEditMessage = { currentMessage ->
+                            chatViewModel.initEditMessageState(
+                                isEditing = true,
+                                newMessageText = currentMessage.text,
+                                editingMessageId = currentMessage.messageId
+                            )
+                        }
+                    )
                 }
             }
         }
@@ -161,9 +189,6 @@ fun ChatScreen(
         }
     }
 }
-
-
-
 
 
 

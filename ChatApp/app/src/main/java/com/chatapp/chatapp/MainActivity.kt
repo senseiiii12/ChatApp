@@ -13,6 +13,7 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -89,7 +90,10 @@ class MainActivity : ComponentActivity() {
                             val otherUserJson = backStackEntry.arguments?.getString("otherUserJson") ?: ""
                             val currentUserJson = backStackEntry.arguments?.getString("currentUserJson") ?: ""
                             val chatViewModel: ChatViewModel = hiltViewModel()
-                            val (chatId,otherUser,currentUser) = chatViewModel.generateChatId(otherUserJson,currentUserJson)
+                            val (chatId,otherUser,currentUser) = remember(otherUserJson, currentUserJson) {
+                                chatViewModel.generateChatId(otherUserJson,currentUserJson)
+                            }
+                            Log.d("Recomposition", "ChatScreen enter")
                             ChatScreen(
                                 chatId = chatId ,
                                 currentUser = currentUser,
