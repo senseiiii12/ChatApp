@@ -27,6 +27,9 @@ class UsersViewModel @Inject constructor(
 
     private var usersLoaded = false
 
+    init {
+        Log.d("ViewModel", "init UsersViewModel")
+    }
     fun getUsers() {
         if (usersLoaded) return
         viewModelScope.launch {
@@ -59,25 +62,7 @@ class UsersViewModel @Inject constructor(
             }
         }
     }
-//    private fun listenForUserStatus(userId: String) {
-//        firebaseDatabaseRepository.listenForUserStatusChanges(userId) { isOnline ->
-//            _userStatuses.update { currentStatuses ->
-//                val updatedStatuses = currentStatuses.toMutableMap().apply {
-//                    put(userId, isOnline)
-//                }
-//                // Обновляем список пользователей с новым статусом
-//                val updatedUsers = _users.value.isSuccess.map { user ->
-//                    if (user.userId == userId) {
-//                        user.copy(online = isOnline)
-//                    } else {
-//                        user
-//                    }
-//                }
-//                _users.value = _users.value.copy(isSuccess = updatedUsers)
-//                updatedStatuses
-//            }
-//        }
-//    }
+
 
     fun updateUserStatus(userId: String, isOnline: Boolean,onSuccesUpdateStatus:() -> Unit){
         usersRepository.updateUserStatus(userId, isOnline){

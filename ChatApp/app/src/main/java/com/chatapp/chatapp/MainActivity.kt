@@ -79,9 +79,11 @@ class MainActivity : ComponentActivity() {
                         }
                         composable(route = Route.HomePage.route) {
                             HomePage(navController = navController)
+                            Log.d("Recomposition", "HomePage enter")
                         }
                         composable(route = Route.Notification.route) {
                             NotificationScreen(navController = navController)
+                            Log.d("Recomposition", "NotificationScreen enter")
                         }
                         composable(route = Route.SearchUsers.route) {
                             SearchUsersScreen(navController = navController)
@@ -99,7 +101,6 @@ class MainActivity : ComponentActivity() {
                                 currentUser = currentUser,
                                 otherUser = otherUser,
                                 navController = navController,
-                                chatViewModel = chatViewModel
                             )
                         }
                     }

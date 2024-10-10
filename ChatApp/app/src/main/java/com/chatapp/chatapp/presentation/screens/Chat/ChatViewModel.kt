@@ -1,6 +1,7 @@
 package com.chatapp.chatapp.presentation.screens.Chat
 
 import android.util.Log
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -17,18 +18,15 @@ import com.google.gson.reflect.TypeToken
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 import java.util.UUID
 import javax.inject.Inject
+
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
@@ -47,6 +45,9 @@ class ChatViewModel @Inject constructor(
 
     private val _chatIds = MutableStateFlow<List<String>>(emptyList())
 
+    init {
+        Log.d("ViewModel", "init ChatViewModel")
+    }
 
     var inputMessage by mutableStateOf("")
         private set
@@ -58,11 +59,11 @@ class ChatViewModel @Inject constructor(
         private set
 
 
-    fun generateChatId(userJson: String, currentUser: String): Triple<String, User, User> {
+    fun generateChatId(otehrUserJson: String, currentUserJson: String): Triple<String, User, User> {
         val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
         val userType = object : TypeToken<User>() {}.type
-        val otherUser: User = Gson().fromJson(userJson, userType)
-        val currentUser: User = Gson().fromJson(currentUser, userType)
+        val otherUser: User = Gson().fromJson(otehrUserJson, userType)
+        val currentUser: User = Gson().fromJson(currentUserJson, userType)
         val chatId = if (currentUserId < otherUser.userId) "$currentUserId-${otherUser.userId}" else "${otherUser.userId}-$currentUserId"
         return Triple(chatId, otherUser, currentUser)
     }
@@ -112,9 +113,9 @@ class ChatViewModel @Inject constructor(
     }
 
 
-    fun sendMessage(chatId: String, userName: String, message: String) {
+    fun sendMessage(chatId: String, currentUserId: String, message: String) {
         viewModelScope.launch {
-            messageRepository.sendMessage(chatId, userName, message)
+            messageRepository.sendMessage(chatId, currentUserId, message)
         }
     }
 
@@ -124,13 +125,6 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-
-//    fun addTestMessage(){
-//
-//        val currentMessages = _messages.value.toMutableList()
-//        currentMessages.addAll(0, listOf(Message(text = "qwerty", messageId = "${UUID.randomUUID()}")))
-//        _messages.value = currentMessages
-//    }
 
     fun listenForMessages(chatId: String) {
         messageRepository.listenForMessages(chatId) { newMessages, updatedMessages, removedMessagesIds ->

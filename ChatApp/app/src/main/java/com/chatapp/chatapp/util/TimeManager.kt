@@ -15,7 +15,7 @@ class TimeManager {
         }
 
         val currentTime = System.currentTimeMillis()
-        val timeDifference = currentTime - lastMessage.timestamp.time
+        val timeDifference = currentTime - lastMessage.timestamp
 
         val seconds = TimeUnit.MILLISECONDS.toSeconds(timeDifference)
         val minutes = TimeUnit.MILLISECONDS.toMinutes(timeDifference)
@@ -23,7 +23,7 @@ class TimeManager {
         val days = TimeUnit.MILLISECONDS.toDays(timeDifference)
         val weeks = days / 7
 
-         val calendar = Calendar.getInstance().apply { time = lastMessage.timestamp }
+         val calendar = Calendar.getInstance().apply { time = Date(lastMessage.timestamp) }
          val currentCalendar = Calendar.getInstance()
 
          val years = currentCalendar.get(Calendar.YEAR) - calendar.get(Calendar.YEAR)
@@ -93,8 +93,8 @@ class TimeManager {
     fun showDateSeparator(previousMessage: Message?, currentMessage: Message): Boolean {
         if (previousMessage == null) return true
 
-        val previousDate = previousMessage.timestamp.toStartOfDay()
-        val currentDate = currentMessage.timestamp.toStartOfDay()
+        val previousDate = Date(previousMessage.timestamp).toStartOfDay()
+        val currentDate = Date(currentMessage.timestamp).toStartOfDay()
 
         return previousDate != currentDate
     }

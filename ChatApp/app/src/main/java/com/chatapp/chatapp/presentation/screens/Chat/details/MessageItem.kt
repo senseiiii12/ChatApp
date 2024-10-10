@@ -110,7 +110,7 @@ fun MessageItem(
                 modifier = anchor_toolTip
                     .padding(horizontal = 4.dp)
                     .clip(RoundedCornerShape(16.dp))
-                    .widthIn(min = 20.dp, max = (screenWidth * 0.45).dp)
+                    .widthIn(min = 20.dp, max = (screenWidth * 0.5).dp)
                     .background(backgroundColor)
                     .padding(start = 10.dp, top = 10.dp, end = 10.dp, bottom = 6.dp)
                     .animateContentSize(animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy)),
@@ -137,7 +137,7 @@ fun MessageItem(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = formatTimestampToDate(message.timestamp),
+                        text = formatTimestampToDate(Date(message.timestamp)),
                         fontSize = 6.sp,
                         fontFamily = FontFamily(Font(R.font.gilroy_medium)),
                         color = ChatText.copy(alpha = 0.6f),

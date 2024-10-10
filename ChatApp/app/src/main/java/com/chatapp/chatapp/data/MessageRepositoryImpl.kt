@@ -8,7 +8,6 @@ import com.google.firebase.firestore.DocumentChange
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenSource
-import com.google.firebase.firestore.MetadataChanges
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.SnapshotListenOptions
 import kotlinx.coroutines.channels.awaitClose
@@ -29,10 +28,10 @@ class MessageRepositoryImpl @Inject constructor(
         .setSource(ListenSource.DEFAULT)
         .build()
 
-    override suspend fun sendMessage(chatId: String, userId: String, messageText: String) {
+    override suspend fun sendMessage(chatId: String, currentUserId: String, messageText: String) {
         val messageId = UUID.randomUUID().toString()
         val messageMap = mutableMapOf(
-            "userId" to userId,
+            "userId" to currentUserId,
             "text" to messageText,
             "messageId" to messageId,
             "status" to MessageStatus.DELIVERED.name,
@@ -45,16 +44,12 @@ class MessageRepositoryImpl @Inject constructor(
                 .set(messageMap)
                 .await()
 
-//            chatCollection.document(chatId)
-//                .collection("messages")
-//                .document(messageId)
-//                .update("status", MessageStatus.DELIVERED.name)
-//                .await()
-
         }catch (e:Exception){
             Log.e("ChatViewModel", "Send message: $messageId", e)
         }
     }
+
+
 
     override suspend fun markMessageAsRead(chatId: String, messageId: String) {
         try {
@@ -86,7 +81,7 @@ class MessageRepositoryImpl @Inject constructor(
                     val message = Message(
                         userId = document.getString("userId") ?: "",
                         text = document.getString("text") ?: "",
-                        timestamp = document.getTimestamp("timestamp")?.toDate() ?: Date(0),
+                        timestamp = document.getTimestamp("timestamp")?.toDate()?.time ?: 0L,
                         messageId = document.getString("messageId") ?: "",
                         status = MessageStatus.valueOf(document.getString("status") ?: MessageStatus.SENT.name)
                     )
@@ -118,7 +113,7 @@ class MessageRepositoryImpl @Inject constructor(
                             Message(
                                 userId = document.getString("userId") ?: "",
                                 text = document.getString("text") ?: "",
-                                timestamp = document.getTimestamp("timestamp")?.toDate() ?: Date(0),
+                                timestamp = document.getTimestamp("timestamp")?.toDate()?.time ?: 0L,
                                 messageId = document.getString("messageId") ?: "",
                                 status = MessageStatus.valueOf(document.getString("status") ?: MessageStatus.SENT.name)
                             )

@@ -29,7 +29,6 @@ import com.google.firebase.auth.FirebaseAuth
 
 @Composable
 fun UserList(
-    stateUserList: UserListState,
     filteredUsers: List<User>,
     onUserClick: (User) -> Unit,
     chatViewModel: ChatViewModel = hiltViewModel(),
@@ -41,41 +40,30 @@ fun UserList(
     val messageCounts by chatViewModel.messageCounts.collectAsState()
     val isOnline by usersViewModel.userStatuses.collectAsState()
 
-    var isVisible by remember { mutableStateOf(false) }
-
-    LaunchedEffect(key1 = stateUserList.isSuccess) {
-        isVisible = true
-    }
 
     Column {
-        AnimatedVisibility(
-            visible = isVisible,
-            enter = fadeIn(animationSpec = tween(durationMillis = 500)),
-            exit = fadeOut(animationSpec = tween(durationMillis = 500))
+        LazyColumn(
+            contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            LazyColumn(
-                contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(filteredUsers, key = { user -> user.userId }) { user ->
-                    val chatId = generateChatId(firebaseCurrentUserId,user.userId)
-                    UserListItem(
-                        modifier = Modifier.animateItem(),
-                        currentUserId = firebaseCurrentUserId,
-                        user = user,
-                        lastMessage = latestMessages[chatId],
-                        newMessageCount = messageCounts[chatId] ?: 0,
-                        isOnline = isOnline[user.userId]?.first ?: false,
-                        onClick = { onUserClick(user) }
-                    )
-                }
+            items(filteredUsers, key = { user -> user.userId }) { user ->
+                val chatId = generateChatId(firebaseCurrentUserId, user.userId)
+                UserListItem(
+                    modifier = Modifier.animateItem(),
+                    currentUserId = firebaseCurrentUserId,
+                    user = user,
+                    lastMessage = latestMessages[chatId],
+                    newMessageCount = messageCounts[chatId] ?: 0,
+                    isOnline = isOnline[user.userId]?.first ?: false,
+                    onClick = { onUserClick(user) }
+                )
             }
         }
     }
 }
 
 
-fun generateChatId(currentUserId: String, otherUserId: String): String{
+fun generateChatId(currentUserId: String, otherUserId: String): String {
     return if (currentUserId < otherUserId) {
         "${currentUserId}-${otherUserId}"
     } else {

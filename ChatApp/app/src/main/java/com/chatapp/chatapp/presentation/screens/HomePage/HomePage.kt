@@ -32,30 +32,33 @@ import com.google.gson.Gson
 @Composable
 fun HomePage(
     navController: NavController,
-    usersViewModel: UsersViewModel = hiltViewModel(),
-    chatViewModel: ChatViewModel = hiltViewModel()
 ) {
+    val usersViewModel: UsersViewModel = hiltViewModel()
+    val chatViewModel: ChatViewModel = hiltViewModel()
     val systemUiController = rememberSystemUiController()
     systemUiController.setSystemBarsColor(PrimaryBackground)
     val currentUserId = remember { FirebaseAuth.getInstance().currentUser?.uid ?: "" }
 
     val usersState = usersViewModel.users.collectAsState()
-    val filteredUsers = usersState.value.isSuccess.filter { it.userId != currentUserId }
-    val currentUser = usersState.value.isSuccess.find { it.userId == currentUserId }
+    val filteredUsers =  usersState.value.isSuccess.filter { it.userId != currentUserId }
+    val currentUser =  usersState.value.isSuccess.find { it.userId == currentUserId }
 
-
-
-    LaunchedEffect(Unit) {
-        usersViewModel.getUsers()
-    }
-
-    LaunchedEffect(filteredUsers) {
-        val chatIds = filteredUsers.map { user ->
+    val chatIds = remember(filteredUsers) {
+        filteredUsers.map { user ->
             val otherUserId = user.userId
             if (currentUserId < otherUserId) "$currentUserId-$otherUserId" else "$otherUserId-$currentUserId"
         }
-        chatViewModel.updateChatIds(chatIds)
+    }
+
+    LaunchedEffect(Unit) {
+        usersViewModel.getUsers()
         chatViewModel.startListeningToChats()
+        Log.d("Recomposition", "getUsers")
+    }
+
+    LaunchedEffect(filteredUsers) {
+        chatViewModel.updateChatIds(chatIds)
+        Log.d("Recomposition", "filteredUsers")
     }
 
 
@@ -83,31 +86,23 @@ fun HomePage(
         if (usersState.value.isLoading) {
             Spacer(modifier = Modifier.height(16.dp))
             repeat(6) {
-                UserListItemShimmerEffect(
-                    state = usersState.value
-                )
+                UserListItemShimmerEffect()
                 Spacer(modifier = Modifier.height(8.dp))
             }
         }
         UserList(
-            stateUserList = usersState.value,
             filteredUsers = filteredUsers,
             onUserClick = { user ->
                 val otherUserJson = Gson().toJson(user)
                 val currentUserJson = Gson().toJson(currentUser)
-                navController.navigate(
-                    "chat/${Uri.encode(otherUserJson)}/${
-                        Uri.encode(
-                            currentUserJson
-                        )
-                    }"
+                navController.navigate("chat/${Uri.encode(otherUserJson)}/${
+                    Uri.encode(currentUserJson)}"
                 )
             }
         )
         Button(onClick = {
             usersViewModel.updateUserStatus(currentUserId, false) {
                 FirebaseAuth.getInstance().signOut()
-//                navController.navigate(Route.MainEntrance.route)
                 navigateToMainEntrance(navController)
             }
         }) {
