@@ -167,7 +167,7 @@ fun UserListItem(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "+${newMessageCount}",
+                            text = "${newMessageCount}",
                             fontSize = 9.sp,
                             fontFamily = FontFamily(Font(R.font.gilroy_bold)),
                             color = Color.White

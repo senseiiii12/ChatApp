@@ -4,10 +4,13 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
@@ -22,22 +25,26 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Create
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.RichTooltipBox
 import androidx.compose.material3.Text
-import androidx.compose.material3.TooltipDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.PlatformTextStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
@@ -59,7 +66,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun MessageItem(
     modifier: Modifier = Modifier,
@@ -72,16 +79,23 @@ fun MessageItem(
     onDelete: (Message) -> Unit,
     onEditMessage: (Message) -> Unit,
 ) {
-
+    var expanded by remember { mutableStateOf(false) }
+//    val myTooltipState = rememberRichTooltipState(isPersistent = true)
     val currentUserColor = remember {
-        Brush.linearGradient(listOf(PrimaryPurple.copy(alpha = 0.8f), PrimaryPurple.copy(alpha = 0.5f)))
+        Brush.linearGradient(
+            listOf(
+                PrimaryPurple.copy(alpha = 0.8f),
+                PrimaryPurple.copy(alpha = 0.5f)
+            )
+        )
     }
     val otherUserColor = remember {
         Brush.linearGradient(listOf(Surface_Card.copy(alpha = 0.8f), Surface_Card))
     }
     val backgroundColor = remember { if (isCurrentUser) currentUserColor else otherUserColor }
-    val horizontalArrangement = remember { if (isCurrentUser) Arrangement.End else Arrangement.Start }
-    val screenWidth =  LocalConfiguration.current.screenWidthDp
+    val horizontalArrangement =
+        remember { if (isCurrentUser) Arrangement.End else Arrangement.Start }
+    val screenWidth = LocalConfiguration.current.screenWidthDp
 
     Row(
         modifier = modifier
@@ -89,84 +103,96 @@ fun MessageItem(
             .padding(vertical = 8.dp),
         horizontalArrangement = horizontalArrangement
     ) {
-        if (!isCurrentUser){
+        if (!isCurrentUser) {
             UserAvatar(otherUser.avatar)
         }
-        RichTooltipBox(
-            modifier = Modifier.shadow(5.dp, RoundedCornerShape(16.dp)),
-            colors = TooltipDefaults.richTooltipColors(
-                containerColor = DarkGray_2
-            ),
-            shape = RoundedCornerShape(16.dp),
-            text = {
-                ToolTipMenu(
-                    onDelete = { onDelete(message) },
-                    onEditMessage = { onEditMessage(message) }
+        Column(
+            modifier = Modifier
+                .padding(horizontal = 4.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .widthIn(min = 20.dp, max = (screenWidth * 0.7).dp)
+                .background(backgroundColor)
+                .combinedClickable(
+                    onClick = {},
+                    onLongClick = { if (isCurrentUser) expanded = true }
+                )
+                .padding(start = 10.dp, top = 10.dp, end = 10.dp, bottom = 6.dp)
+                .animateContentSize(animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy)),
+        ) {
+            AnimatedVisibility(
+                visible = expanded
+            ) {
+                DropdownMenu(
+                    modifier = Modifier.background(DarkGray_2),
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false }
+                ) {
+                    ToolTipMenu(
+                        onDelete = {
+                            onDelete(message)
+                            expanded = false
+                        },
+                        onEditMessage = {
+                            onEditMessage(message)
+                            expanded = false
+                        }
+                    )
+                }
+            }
+
+            AnimatedVisibility(visible = isEditing) {
+                Icon(
+                    modifier = Modifier
+                        .align(Alignment.Start)
+                        .size(12.dp),
+                    imageVector = Icons.Default.Create,
+                    contentDescription = null,
+                    tint = ChatText
                 )
             }
-        ) {
-            val anchor_toolTip: Modifier = remember { if (isCurrentUser && !isEditing) Modifier.tooltipAnchor() else Modifier }
-            Column(
-                modifier = anchor_toolTip
-                    .padding(horizontal = 4.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .widthIn(min = 20.dp, max = (screenWidth * 0.5).dp)
-                    .background(backgroundColor)
-                    .padding(start = 10.dp, top = 10.dp, end = 10.dp, bottom = 6.dp)
-                    .animateContentSize(animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy)),
+            Text(
+                text = message.text,
+                fontSize = 14.sp,
+                fontFamily = FontFamily(Font(R.font.gilroy_semibold)),
+                color = ChatText,
+            )
+            Row(
+                modifier = Modifier.align(Alignment.End),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                AnimatedVisibility(visible = isEditing) {
-                    Icon(
-                        modifier = Modifier
-                            .align(Alignment.Start)
-                            .size(12.dp),
-                        imageVector = Icons.Default.Create,
-                        contentDescription = null,
-                        tint = ChatText
-                    )
-                }
                 Text(
-                    text = message.text,
-                    fontSize = 14.sp,
-                    fontFamily = FontFamily(Font(R.font.gilroy_semibold)),
-                    color = ChatText,
+                    modifier = Modifier,
+                    text = formatTimestampToDate(Date(message.timestamp)),
+                    fontSize = 8.sp,
+                    fontFamily = FontFamily(Font(R.font.gilroy_medium)),
+                    color = ChatText.copy(alpha = 0.6f),
                 )
-                Row(
-                    modifier = Modifier.align(Alignment.End),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = formatTimestampToDate(Date(message.timestamp)),
-                        fontSize = 6.sp,
-                        fontFamily = FontFamily(Font(R.font.gilroy_medium)),
-                        color = ChatText.copy(alpha = 0.6f),
-                    )
-                    if (isCurrentUser) Spacer(modifier = Modifier.width(4.dp))
-                    AnimatedVisibility(visible = isCurrentUser) {
-                        when (status) {
-                            MessageStatus.DELIVERED -> {
-                                Icon(
-                                    modifier = Modifier.size(12.dp),
-                                    imageVector = Icons.Default.Check,
-                                    contentDescription = null,
-                                    tint = Mark_Message
-                                )
-                            }
-                            MessageStatus.READ -> {
-                                Image(
-                                    modifier = Modifier.size(12.dp),
-                                    painter = painterResource(id = R.drawable.double_check_icon),
-                                    contentDescription = null,
-                                )
-                            }
-                            else -> {}
-                        }
+                Spacer(modifier = Modifier.width(4.dp))
+                when (status) {
+                    MessageStatus.DELIVERED -> {
+                        Icon(
+                            modifier = Modifier.size(12.dp),
+                            imageVector = Icons.Default.Check,
+                            contentDescription = null,
+                            tint = Mark_Message
+                        )
                     }
+
+                    MessageStatus.READ -> {
+                        Image(
+                            modifier = Modifier.size(12.dp),
+                            painter = painterResource(id = R.drawable.double_check_icon),
+                            contentDescription = null,
+                        )
+                    }
+
+                    else -> {}
                 }
+
             }
         }
-        if (isCurrentUser){
+        if (isCurrentUser) {
             UserAvatar(currentUser.avatar)
         }
     }
@@ -175,8 +201,8 @@ fun MessageItem(
 
 @Composable
 fun UserAvatar(avatar: String?) {
-    when(avatar){
-        null ->{
+    when (avatar) {
+        null -> {
             Image(
                 modifier = Modifier
                     .clip(CircleShape)
@@ -187,6 +213,7 @@ fun UserAvatar(avatar: String?) {
                 contentDescription = null,
             )
         }
+
         else -> {
             AsyncImage(
                 modifier = Modifier
@@ -212,7 +239,7 @@ fun ToolTipMenu(
     onEditMessage: () -> Unit
 ) {
     Column(
-        modifier = Modifier.width(IntrinsicSize.Max)
+        modifier = Modifier.width(IntrinsicSize.Max).padding(horizontal = 4.dp)
     ) {
         Row(
             modifier = Modifier
@@ -223,14 +250,14 @@ fun ToolTipMenu(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Image(
-                modifier = Modifier.size(20.dp),
+                modifier = Modifier.size(16.dp),
                 painter = painterResource(id = R.drawable.ic_edit),
                 contentDescription = null,
             )
             Text(
                 modifier = Modifier.padding(start = 4.dp),
                 text = "Edit",
-                fontSize = 12.sp,
+                fontSize = 10.sp,
                 fontFamily = FontFamily(Font(R.font.gilroy_medium)),
                 color = ChatText
             )
@@ -238,20 +265,20 @@ fun ToolTipMenu(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(15.dp))
+                .clip(RoundedCornerShape(16.dp))
                 .clickable { onDelete() }
                 .padding(vertical = 2.dp, horizontal = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Image(
-                modifier = Modifier.size(20.dp),
+                modifier = Modifier.size(16.dp),
                 painter = painterResource(id = R.drawable.ic_delete),
                 contentDescription = null,
             )
             Text(
                 modifier = Modifier.padding(start = 4.dp),
                 text = "Delete",
-                fontSize = 12.sp,
+                fontSize = 10.sp,
                 fontFamily = FontFamily(Font(R.font.gilroy_medium)),
                 color = ChatText
             )
@@ -279,7 +306,6 @@ fun ToolTipMenu(
 //        )
 //    }
 //}
-
 
 
 fun formatTimestampToDate(date: Date): String {
