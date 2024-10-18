@@ -2,6 +2,9 @@ package com.chatapp.chatapp.util
 
 import com.chatapp.chatapp.domain.models.Message
 import java.text.SimpleDateFormat
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
@@ -91,21 +94,17 @@ class TimeManager {
 
 
     fun showDateSeparator(previousMessage: Message?, currentMessage: Message): Boolean {
-        if (previousMessage == null) return true
+//        if (previousMessage == null) return true
 
-        val previousDate = Date(previousMessage.timestamp).toStartOfDay()
-        val currentDate = Date(currentMessage.timestamp).toStartOfDay()
+        val previousDate = previousMessage?.timestamp?.toLocalDate()
+        val currentDate = currentMessage.timestamp.toLocalDate()
 
         return previousDate != currentDate
     }
 
-    fun Date.toStartOfDay(): Date {
-        val calendar = Calendar.getInstance()
-        calendar.time = this
-        calendar.set(Calendar.HOUR_OF_DAY, 0)
-        calendar.set(Calendar.MINUTE, 0)
-        calendar.set(Calendar.SECOND, 0)
-        calendar.set(Calendar.MILLISECOND, 0)
-        return calendar.time
+    fun Long.toLocalDate(): LocalDate {
+        return Instant.ofEpochMilli(this)  // Преобразуем timestamp в Instant
+            .atZone(ZoneId.systemDefault()) // Преобразуем в зону системы (местное время)
+            .toLocalDate()                  // Получаем LocalDate (только дата)
     }
 }

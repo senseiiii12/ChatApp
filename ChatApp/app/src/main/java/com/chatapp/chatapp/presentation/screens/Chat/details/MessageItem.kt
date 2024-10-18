@@ -80,7 +80,6 @@ fun MessageItem(
     onEditMessage: (Message) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
-//    val myTooltipState = rememberRichTooltipState(isPersistent = true)
     val currentUserColor = remember {
         Brush.linearGradient(
             listOf(
@@ -169,27 +168,28 @@ fun MessageItem(
                     color = ChatText.copy(alpha = 0.6f),
                 )
                 Spacer(modifier = Modifier.width(4.dp))
-                when (status) {
-                    MessageStatus.DELIVERED -> {
-                        Icon(
-                            modifier = Modifier.size(12.dp),
-                            imageVector = Icons.Default.Check,
-                            contentDescription = null,
-                            tint = Mark_Message
-                        )
-                    }
+                if(isCurrentUser){
+                    when (status) {
+                        MessageStatus.DELIVERED -> {
+                            Icon(
+                                modifier = Modifier.size(12.dp),
+                                imageVector = Icons.Default.Check,
+                                contentDescription = null,
+                                tint = Mark_Message
+                            )
+                        }
 
-                    MessageStatus.READ -> {
-                        Image(
-                            modifier = Modifier.size(12.dp),
-                            painter = painterResource(id = R.drawable.double_check_icon),
-                            contentDescription = null,
-                        )
-                    }
+                        MessageStatus.READ -> {
+                            Image(
+                                modifier = Modifier.size(12.dp),
+                                painter = painterResource(id = R.drawable.double_check_icon),
+                                contentDescription = null,
+                            )
+                        }
 
-                    else -> {}
+                        else -> {}
+                    }
                 }
-
             }
         }
         if (isCurrentUser) {

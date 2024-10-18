@@ -111,22 +111,22 @@ class MainActivity : ComponentActivity() {
 
     override fun onStart() {
         super.onStart()
-        currentUserId?.let { usersViewModel.updateUserStatus(it, true){} }
+        currentUserId?.let { usersViewModel.updateUserStatus(it, true) }
     }
 
     override fun onStop() {
         super.onStop()
-        currentUserId?.let { usersViewModel.updateUserStatus(it, false){} }
+        currentUserId?.let { usersViewModel.updateUserStatus(it, false) }
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        currentUserId?.let { usersViewModel.updateUserStatus(it, false){} }
-    }
-
-    override fun onPause() {
-        super.onPause()
-        currentUserId?.let { usersViewModel.updateUserStatus(it, false){} }
-    }
+//    override fun onDestroy() {
+//        super.onDestroy()
+//        currentUserId?.let { usersViewModel.updateUserStatus(it, false){} }
+//    }
+//
+//    override fun onPause() {
+//        super.onPause()
+//        currentUserId?.let { usersViewModel.updateUserStatus(it, false){} }
+//    }
 }
 

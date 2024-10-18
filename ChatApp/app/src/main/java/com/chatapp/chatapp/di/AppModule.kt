@@ -1,5 +1,6 @@
 package com.chatapp.chatapp.di
 
+import android.content.Context
 import com.chatapp.chatapp.domain.AuthRepository
 import com.chatapp.chatapp.data.AuthRepositoryImpl
 import com.chatapp.chatapp.data.FriendRequestRepositoryImpl
@@ -13,6 +14,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
@@ -49,9 +51,10 @@ object AppModule {
     @Singleton
     fun providesUsersRepositoryImpl(
         firebaseFirestore: FirebaseFirestore,
-        firebaseAuth: FirebaseAuth
+        firebaseAuth: FirebaseAuth,
+        @ApplicationContext context: Context
     ) : UsersRepository {
-        return UsersRepositoryImpl(firebaseFirestore,firebaseAuth)
+        return UsersRepositoryImpl(firebaseFirestore,firebaseAuth,context)
     }
 
 }

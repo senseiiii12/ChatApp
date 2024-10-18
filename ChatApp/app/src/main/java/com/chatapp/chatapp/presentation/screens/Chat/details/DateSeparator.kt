@@ -23,9 +23,12 @@ import java.util.Locale
 
 
 @Composable
-fun DateSeparator(timestamp: Date) {
-    val dateFormat = remember { SimpleDateFormat("MMMM dd, yyyy", Locale.ENGLISH) }
-    val dateText = remember { dateFormat.format(timestamp) }
+fun DateSeparator(
+//    timestamp: Date,
+    date: String
+) {
+//    val dateFormat = remember { SimpleDateFormat("MMMM dd, yyyy", Locale.ENGLISH) }
+//    val dateText = remember { dateFormat.format(timestamp) }
 
     Row(
         modifier = Modifier
@@ -39,7 +42,7 @@ fun DateSeparator(timestamp: Date) {
             color = DarkGray_2
         )
         Text(
-            text = dateText,
+            text = date,
             modifier = Modifier.padding(horizontal = 8.dp),
             fontFamily = FontFamily(Font(R.font.gilroy_medium)),
             color = DarkGray_1,

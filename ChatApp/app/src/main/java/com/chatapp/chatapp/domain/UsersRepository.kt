@@ -11,6 +11,7 @@ interface UsersRepository {
     suspend fun getUsersList(): Flow<Resource<List<User>>>
     suspend fun searchUsers(query: String): Flow<List<User>>
     fun updateUserStatus(userId: String, isOnline: Boolean,onSuccesUpdateStatus:() -> Unit)
+    fun scheduleUpdateUserStatusWork(userId: String, isOnline: Boolean)
     fun listenForUserStatusChanges(userId: String, onStatusChanged: (Pair<Boolean,Date>) -> Unit)
 
 }

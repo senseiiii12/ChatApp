@@ -151,7 +151,7 @@ fun LoginScreen(
                         scope.launch {
                             viewModel.loginUser(email, password){
                                 viewModel.getCurrentUserUID()?.let {
-                                    usersViewModel.updateUserStatus(it,true) {}
+                                    usersViewModel.updateUserStatus(it,true)
                                 }
                             }
                         }

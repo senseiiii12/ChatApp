@@ -3,9 +3,13 @@ package com.chatapp.chatapp.presentation.screens.HomePage
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.workDataOf
 import com.chatapp.chatapp.domain.UsersRepository
 import com.chatapp.chatapp.domain.models.User
 import com.chatapp.chatapp.util.Resource
+import com.chatapp.chatapp.util.UpdateStatusWorker
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -64,11 +68,11 @@ class UsersViewModel @Inject constructor(
     }
 
 
-    fun updateUserStatus(userId: String, isOnline: Boolean,onSuccesUpdateStatus:() -> Unit){
-        usersRepository.updateUserStatus(userId, isOnline){
-            onSuccesUpdateStatus()
-        }
+    fun updateUserStatus(userId: String, isOnline: Boolean){
+        usersRepository.scheduleUpdateUserStatusWork(userId, isOnline)
     }
+
+
 
     // Функция для получения пользователя по userId
     fun getUserById(userId: String): User? {

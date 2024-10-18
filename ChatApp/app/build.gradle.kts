@@ -12,7 +12,7 @@ android {
 
     defaultConfig {
         applicationId = "com.chatapp.chatapp"
-        minSdk = 24
+        minSdk = 26
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
@@ -103,6 +103,8 @@ dependencies {
 
     implementation("androidx.tracing:tracing-perfetto:1.0.0")
     implementation("androidx.tracing:tracing-perfetto-binary:1.0.0")
+
+    implementation ("androidx.work:work-runtime-ktx:2.8.0")
 
 
 

@@ -1,9 +1,14 @@
 package com.chatapp.chatapp.data
 
+import android.content.Context
 import android.util.Log
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.workDataOf
 import com.chatapp.chatapp.domain.UsersRepository
 import com.chatapp.chatapp.domain.models.User
 import com.chatapp.chatapp.util.Resource
+import com.chatapp.chatapp.util.UpdateStatusWorker
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
@@ -16,7 +21,8 @@ import javax.inject.Inject
 
 class UsersRepositoryImpl @Inject constructor(
     private val firebaseFirestore: FirebaseFirestore,
-    private val firebaseAuth: FirebaseAuth
+    private val firebaseAuth: FirebaseAuth,
+    private val context: Context
 ) : UsersRepository {
 
 
@@ -99,6 +105,22 @@ class UsersRepositoryImpl @Inject constructor(
                 Log.e("MainActivity", "Failed to update user status.", e)
             }
     }
+    override fun scheduleUpdateUserStatusWork(userId: String, isOnline: Boolean) {
+        // Создаем данные для передачи в Worker
+        val inputData = workDataOf(
+            "userId" to userId,
+            "isOnline" to isOnline
+        )
+
+        // Создаем OneTimeWorkRequest для запуска задачи один раз
+        val workRequest = OneTimeWorkRequestBuilder<UpdateStatusWorker>()
+            .setInputData(inputData)
+            .build()
+
+        // Запускаем WorkManager для выполнения задачи
+        WorkManager.getInstance(context).enqueue(workRequest)
+    }
+
 
     override fun listenForUserStatusChanges(userId: String, onStatusChanged: (Pair<Boolean,Date>) -> Unit) {
         val userRef = firebaseFirestore.collection("users").document(userId)
