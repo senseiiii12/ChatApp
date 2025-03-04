@@ -1,6 +1,7 @@
 package com.chatapp.chatapp.presentation.screens.Chat
 
 import android.util.Log
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -19,6 +20,7 @@ import com.google.gson.reflect.TypeToken
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
@@ -50,6 +52,10 @@ class ChatViewModel @Inject constructor(
     private val _messageCounts = MutableStateFlow<Map<String, Int>>(emptyMap())
     val messageCounts = _messageCounts.asStateFlow()
 
+    val unreadMessages = mutableListOf<Message>()
+    private val _unreadMessagesCount = MutableStateFlow(0)
+    val unreadMessagesCount = _unreadMessagesCount.asStateFlow()
+
     private val _chatIds = MutableStateFlow<List<String>>(emptyList())
 
     init {
@@ -74,7 +80,6 @@ class ChatViewModel @Inject constructor(
         val chatId = if (currentUserId < otherUser.userId) "$currentUserId-${otherUser.userId}" else "${otherUser.userId}-$currentUserId"
         return Triple(chatId, otherUser, currentUser)
     }
-
 
     fun startListeningToChats() {
         _chatIds.flatMapLatest { chatIds -> messageRepository.listenForMessagesInChats(chatIds) }
@@ -133,7 +138,7 @@ class ChatViewModel @Inject constructor(
     }
 
 
-    fun listenForMessages(chatId: String) {
+    fun listenForMessages(chatId: String, listState: LazyListState) {
         messageRepository.listenForMessages(chatId) { newMessages, updatedMessages, removedMessagesIds ->
             _messages.update { currentMessages ->
                 val updatedList = currentMessages.filterNot { message ->
@@ -154,7 +159,21 @@ class ChatViewModel @Inject constructor(
 
                 updatedList
             }
+            if (listState.firstVisibleItemIndex > 1) {
+                unreadMessages.addAll(newMessages)
+                _unreadMessagesCount.value = unreadMessages.size
+            }
         }
+    }
+
+    fun resetUnreadMessagesCount() {
+        unreadMessages.clear()
+        _unreadMessagesCount.value = unreadMessages.size
+    }
+
+    fun deleteUnreadMessageToScroll(currentMessage: Message){
+        unreadMessages.remove(currentMessage)
+        _unreadMessagesCount.value = unreadMessages.size
     }
 
     fun generateChatItems(messages: List<Message>): List<ChatItem> {
@@ -173,7 +192,6 @@ class ChatViewModel @Inject constructor(
         }
         return chatItems.reversed()
     }
-
 
 
 

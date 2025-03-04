@@ -1,3 +1,5 @@
+import org.apache.tools.ant.util.JavaEnvUtils.VERSION_1_8
+
 plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.jetbrainsKotlinAndroid)
@@ -57,7 +59,6 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
-    implementation(platform("androidx.compose:compose-bom:2023.10.00"))
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
@@ -70,41 +71,57 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
-    implementation ("androidx.compose.animation:animation:1.0.5")
-
-    //Firebase Auth
-    implementation("com.google.firebase:firebase-auth:21.1.0")
-    implementation("com.google.android.gms:play-services-auth:20.7.0")
-    implementation("com.google.firebase:firebase-auth")
-
-    implementation ("com.google.firebase:firebase-firestore:25.0.0")
-    implementation ("com.google.firebase:firebase-storage:21.0.0")
-
-    implementation ("com.google.accompanist:accompanist-systemuicontroller:0.27.0")
-
-    // Dagger - Hilt
-    implementation("com.google.dagger:hilt-android:2.48")
-    kapt("com.google.dagger:hilt-android-compiler:2.48")
-    implementation ("androidx.hilt:hilt-navigation-compose:1.0.0")
-    implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.3.9")
-
-    implementation ("io.coil-kt:coil-compose:2.4.0")
-
-    implementation ("com.github.GrenderG:Toasty:1.5.2")
-
-    implementation ("androidx.navigation:navigation-compose:2.5.3")
-
-    implementation("androidx.core:core-splashscreen:1.0.0")
-
-    implementation ("com.google.code.gson:gson:2.8.7")
 
     implementation(libs.navigation.compose)
     implementation(libs.kotlinx.serialization.json)
+    implementation(platform("androidx.compose:compose-bom:2023.10.00"))
 
+
+    // Compose анимации
+    implementation("androidx.compose.animation:animation:1.0.5")
+
+    // Firebase Authentication
+    implementation("com.google.firebase:firebase-auth:21.1.0")
+    implementation("com.google.android.gms:play-services-auth:20.7.0")
+    implementation("com.google.firebase:firebase-auth") // Дублирующая зависимость, можно удалить
+
+    // Firebase Firestore (База данных) и Storage (Хранилище файлов)
+    implementation("com.google.firebase:firebase-firestore:25.0.0")
+    implementation("com.google.firebase:firebase-storage:21.0.0")
+
+    // Управление статус-баром и системными цветами
+    implementation("com.google.accompanist:accompanist-systemuicontroller:0.27.0")
+
+    // Dagger - Hilt (Dependency Injection)
+    implementation("com.google.dagger:hilt-android:2.48")
+    kapt("com.google.dagger:hilt-android-compiler:2.48")
+    implementation("androidx.hilt:hilt-navigation-compose:1.0.0")
+
+    // Поддержка корутин
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+
+    // Coil (Загрузка изображений)
+    implementation("io.coil-kt:coil-compose:2.4.0")
+
+    // Toasty (Кастомные всплывающие сообщения)
+    implementation("com.github.GrenderG:Toasty:1.5.2")
+
+    // Jetpack Navigation для Compose
+    implementation("androidx.navigation:navigation-compose:2.5.3")
+
+    // Экран загрузки (Splash Screen API)
+    implementation("androidx.core:core-splashscreen:1.0.0")
+
+    // Gson (Работа с JSON)
+    implementation("com.google.code.gson:gson:2.8.7")
+
+    // Инструменты трассировки (Performance Profiler)
     implementation("androidx.tracing:tracing-perfetto:1.0.0")
     implementation("androidx.tracing:tracing-perfetto-binary:1.0.0")
 
-    implementation ("androidx.work:work-runtime-ktx:2.8.0")
+    // WorkManager (Фоновая работа)
+    implementation("androidx.work:work-runtime-ktx:2.8.0")
 
 
 
