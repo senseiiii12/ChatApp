@@ -1,15 +1,11 @@
 package com.chatapp.chatapp.presentation.screens.Chat
 
-import android.util.Log
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -26,7 +22,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.Badge
-import androidx.compose.material3.BadgeDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -46,6 +41,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -64,7 +60,6 @@ import com.chatapp.chatapp.ui.theme.Surface_Card
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 
@@ -75,28 +70,43 @@ fun ChatScreen(
     otherUser: User,
     navController: NavController,
 ) {
-    val chatViewModel: ChatViewModel = hiltViewModel()
-    val listState = rememberLazyListState()
     val systemUiController = rememberSystemUiController()
     systemUiController.setSystemBarsColor(Surface_Card)
+    val clipboardManager = LocalClipboardManager.current
+
+    val chatViewModel: ChatViewModel = hiltViewModel()
+    val listState = rememberLazyListState()
 
     val currentUserId = remember { FirebaseAuth.getInstance().currentUser?.uid ?: "" }
     val isEditing by remember { derivedStateOf { chatViewModel.isEditing } }
     val inputMessage by remember { derivedStateOf { chatViewModel.inputMessage } }
     val newMessageText by remember { derivedStateOf { chatViewModel.newMessageText } }
 
+    val stateTopMenuMessage by remember { derivedStateOf { chatViewModel.isOpenTopMenuMessage } }
+    val countSelectedMessage by chatViewModel.countSelectedMessage.collectAsState()
+
+
 
 
     LaunchedEffect(Unit) {
-        chatViewModel.listenForMessages(chatId,listState)
+        chatViewModel.listenForMessagesInChat(chatId, listState)
     }
-    
+
     Scaffold(
         containerColor = PrimaryBackground,
         topBar = {
             ChatTopBar(
                 otherUser = otherUser,
+                stateTopMenuMessage = stateTopMenuMessage,
                 navController = navController,
+                countSelectedMessage = countSelectedMessage,
+                onCloseMenu = {
+                    chatViewModel.stateTopMenuMessage(false)
+                    chatViewModel.clearSelectedMessage()
+                },
+                onDeleteMessage = {},
+                onEditMessage = {},
+                onCopyMessage = {}
             )
         },
         bottomBar = {
@@ -108,11 +118,14 @@ fun ChatScreen(
                 onNewMessageChange = chatViewModel::updateNewMessageText,
                 onSendMessage = {
                     if (isEditing && newMessageText.isNotEmpty()) {
-                        chatViewModel.onSaveEditMessage(chatId, chatViewModel.editingMessageId, newMessageText)
+                        chatViewModel.onSaveEditMessage(
+                            chatId,
+                            chatViewModel.editingMessageId,
+                            newMessageText
+                        )
                         chatViewModel.resetEditMode()
-                    }
-                    else {
-                        if (inputMessage.isNotEmpty()){
+                    } else {
+                        if (inputMessage.isNotEmpty()) {
                             chatViewModel.sendMessage(chatId, currentUserId, inputMessage)
                             chatViewModel.resetInputMessage()
                         }
@@ -123,16 +136,15 @@ fun ChatScreen(
         }
     ) { paddingValues ->
         MessageList(
-            currentUser = currentUser ,
+            currentUser = currentUser,
             currentUserId = currentUserId,
             otherUser = otherUser,
             chatId = chatId,
-            paddingValues = paddingValues ,
+            paddingValues = paddingValues,
             listState = listState
         )
     }
 }
-
 
 
 @Composable
@@ -151,15 +163,19 @@ fun MessageList(
     val scope = rememberCoroutineScope()
 
     Box(
-        modifier = Modifier.fillMaxSize().padding(paddingValues)
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(paddingValues)
     ) {
         LazyColumn(
             state = listState,
-            modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp),
             reverseLayout = true,
             verticalArrangement = Arrangement.Bottom
         ) {
-            itemsIndexed(chatItems, key = {_, item ->
+            itemsIndexed(chatItems, key = { _, item ->
                 when (item) {
                     is ChatItem.MessageItem -> item.message.messageId
                     is ChatItem.DateSeparatorItem -> item.date
@@ -187,22 +203,37 @@ fun MessageList(
                             isCurrentUser = isCurrentUser,
                             currentUser = currentUser,
                             otherUser = otherUser,
-                            isEditing = chatViewModel.editingMessageId == item.message.messageId,
+                            isEditing = chatViewModel.isSelectedMessage(item.message),
                             status = item.message.status,
-                            onDelete =  { currentMessage ->
-                                if (isCurrentUser) {
-                                    chatViewModel.deleteMessage(chatId, currentMessage.messageId)
+                            onOpenTopMenu = { currentMessage ->
+                                if (chatViewModel.isSelectedMessage(item.message)) {
+                                    chatViewModel.removeSelectedMessage(item.message)
+                                } else {
+                                    chatViewModel.addSelectedMessage(item.message)
                                 }
-                            },
-                            onEditMessage = { currentMessage ->
-                                chatViewModel.initEditMessageState(
-                                    isEditing = true,
-                                    newMessageText = currentMessage.text,
-                                    editingMessageId = currentMessage.messageId
-                                )
+
+                                if (chatViewModel.countSelectedMessage.value == 0) {
+                                    chatViewModel.stateTopMenuMessage(false)
+                                } else {
+                                    chatViewModel.stateTopMenuMessage(true)
+                                }
                             }
+
+//                            onDelete =  { currentMessage ->
+//                                if (isCurrentUser) {
+//                                    chatViewModel.deleteMessage(chatId, currentMessage.messageId)
+//                                }
+//                            },
+//                            onEditMessage = { currentMessage ->
+//                                chatViewModel.initEditMessageState(
+//                                    isEditing = true,
+//                                    newMessageText = currentMessage.text,
+//                                    editingMessageId = currentMessage.messageId
+//                                )
+//                            }
                         )
                     }
+
                     is ChatItem.DateSeparatorItem -> {
                         DateSeparator(date = item.date)
                     }
@@ -216,7 +247,7 @@ fun MessageList(
         )
 
         FAB(
-            modifier = Modifier.align(Alignment.BottomEnd) ,
+            modifier = Modifier.align(Alignment.BottomEnd),
             scope = scope,
             listState = listState,
             unreadMessagesCount = unreadMessagesCount,
@@ -241,7 +272,7 @@ fun FAB(
     AnimatedVisibility(
         modifier = modifier,
         visible = isVisibleFab,
-        enter = fadeIn(initialAlpha = 0f) ,
+        enter = fadeIn(initialAlpha = 0f),
         exit = fadeOut()
     ) {
         Box {
@@ -293,11 +324,11 @@ fun FAB(
 fun ScrollToEndList(
     chatItems: List<ChatItem>,
     listState: LazyListState,
-){
+) {
     val isVisibleFab by remember {
         derivedStateOf { listState.firstVisibleItemIndex > 1 }
     }
-    if (!isVisibleFab){
+    if (!isVisibleFab) {
         LaunchedEffect(chatItems.size) {
 //            delay(100)
             if (chatItems.isNotEmpty()) {

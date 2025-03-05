@@ -1,8 +1,6 @@
 package com.chatapp.chatapp.presentation.screens.Chat
 
-import android.util.Log
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -20,7 +18,6 @@ import com.google.gson.reflect.TypeToken
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
@@ -30,7 +27,6 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import java.util.UUID
 import javax.inject.Inject
 
 
@@ -40,11 +36,14 @@ class ChatViewModel @Inject constructor(
     private val messageRepository: MessageRepository
 ) : ViewModel() {
 
+
     private val _messages = MutableStateFlow<List<Message>>(emptyList())
     val messages = _messages.asStateFlow()
 
     private val _chatItems = MutableStateFlow<List<ChatItem>>(emptyList())
     val chatItems = _chatItems.asStateFlow()
+
+    private val _chatIds = MutableStateFlow<List<String>>(emptyList())
 
     private val _latestMessages = MutableStateFlow<Map<String, Message>>(emptyMap())
     val latestMessages = _latestMessages.asStateFlow()
@@ -52,15 +51,39 @@ class ChatViewModel @Inject constructor(
     private val _messageCounts = MutableStateFlow<Map<String, Int>>(emptyMap())
     val messageCounts = _messageCounts.asStateFlow()
 
-    val unreadMessages = mutableListOf<Message>()
+    private val unreadMessages = mutableListOf<Message>()
     private val _unreadMessagesCount = MutableStateFlow(0)
     val unreadMessagesCount = _unreadMessagesCount.asStateFlow()
 
-    private val _chatIds = MutableStateFlow<List<String>>(emptyList())
 
-    init {
-        Log.d("ViewModel", "init ChatViewModel")
+    ////////////////////РЕДАКТИРОВАНИЕ СООБЩЕНИЙ////////////////////
+    private val listSelectedMessages = mutableStateListOf<Message>()
+    private val _countSelectedMessage = MutableStateFlow(0)
+    val countSelectedMessage = _countSelectedMessage.asStateFlow()
+    var isOpenTopMenuMessage by mutableStateOf(false)
+    fun addSelectedMessage(message: Message) {
+        if (message !in listSelectedMessages) {
+            listSelectedMessages.add(message)
+            _countSelectedMessage.value = listSelectedMessages.size
+        }
     }
+    fun removeSelectedMessage(message: Message) {
+        listSelectedMessages.remove(message)
+        _countSelectedMessage.value = listSelectedMessages.size
+    }
+    fun isSelectedMessage(message: Message): Boolean {
+        return message in listSelectedMessages
+    }
+    fun clearSelectedMessage(){
+        listSelectedMessages.clear()
+    }
+    fun stateTopMenuMessage(value: Boolean) {
+        this.isOpenTopMenuMessage = value
+    }
+    ////////////////////////////////////////////////////////////
+
+
+
 
     var inputMessage by mutableStateOf("")
         private set
@@ -70,6 +93,8 @@ class ChatViewModel @Inject constructor(
         private set
     var newMessageText by mutableStateOf("")
         private set
+
+
 
 
     fun generateChatId(otehrUserJson: String, currentUserJson: String): Triple<String, User, User> {
@@ -114,6 +139,7 @@ class ChatViewModel @Inject constructor(
         this.editingMessageId = editingMessageId
     }
 
+
     fun resetEditMode() {
         isEditing = false
         editingMessageId = ""
@@ -123,7 +149,6 @@ class ChatViewModel @Inject constructor(
     fun resetInputMessage() {
         inputMessage = ""
     }
-
 
     fun sendMessage(chatId: String, currentUserId: String, message: String) {
         viewModelScope.launch {
@@ -138,7 +163,7 @@ class ChatViewModel @Inject constructor(
     }
 
 
-    fun listenForMessages(chatId: String, listState: LazyListState) {
+    fun listenForMessagesInChat(chatId: String, listState: LazyListState) {
         messageRepository.listenForMessages(chatId) { newMessages, updatedMessages, removedMessagesIds ->
             _messages.update { currentMessages ->
                 val updatedList = currentMessages.filterNot { message ->

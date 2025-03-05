@@ -1,9 +1,11 @@
 package com.chatapp.chatapp.presentation.screens.Chat.details
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -30,6 +32,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -60,6 +63,7 @@ import com.chatapp.chatapp.ui.theme.Bg_Default_Avatar
 import com.chatapp.chatapp.ui.theme.ChatText
 import com.chatapp.chatapp.ui.theme.DarkGray_2
 import com.chatapp.chatapp.ui.theme.Mark_Message
+import com.chatapp.chatapp.ui.theme.PrimaryBackground
 import com.chatapp.chatapp.ui.theme.PrimaryPurple
 import com.chatapp.chatapp.ui.theme.Surface_Card
 import java.text.SimpleDateFormat
@@ -76,8 +80,7 @@ fun MessageItem(
     otherUser: User,
     isEditing: Boolean,
     status: MessageStatus,
-    onDelete: (Message) -> Unit,
-    onEditMessage: (Message) -> Unit,
+    onOpenTopMenu: (Message) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
     val currentUserColor = remember {
@@ -95,10 +98,16 @@ fun MessageItem(
     val horizontalArrangement =
         remember { if (isCurrentUser) Arrangement.End else Arrangement.Start }
     val screenWidth = LocalConfiguration.current.screenWidthDp
+    val selectedColorMessage by animateColorAsState(
+        targetValue = if (isEditing) Surface_Card else PrimaryBackground,
+        animationSpec = tween(durationMillis = 100)
+    )
+
 
     Row(
         modifier = modifier
             .fillMaxWidth()
+            .background(selectedColorMessage)
             .padding(vertical = 8.dp),
         horizontalArrangement = horizontalArrangement
     ) {
@@ -113,42 +122,11 @@ fun MessageItem(
                 .background(backgroundColor)
                 .combinedClickable(
                     onClick = {},
-                    onLongClick = { if (isCurrentUser) expanded = true }
+                    onLongClick = { if (isCurrentUser) onOpenTopMenu(message) }
                 )
                 .padding(start = 10.dp, top = 10.dp, end = 10.dp, bottom = 6.dp)
                 .animateContentSize(animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy)),
         ) {
-            AnimatedVisibility(
-                visible = expanded
-            ) {
-                DropdownMenu(
-                    modifier = Modifier.background(DarkGray_2),
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false }
-                ) {
-                    ToolTipMenu(
-                        onDelete = {
-                            onDelete(message)
-                            expanded = false
-                        },
-                        onEditMessage = {
-                            onEditMessage(message)
-                            expanded = false
-                        }
-                    )
-                }
-            }
-
-            AnimatedVisibility(visible = isEditing) {
-                Icon(
-                    modifier = Modifier
-                        .align(Alignment.Start)
-                        .size(12.dp),
-                    imageVector = Icons.Default.Create,
-                    contentDescription = null,
-                    tint = ChatText
-                )
-            }
             Text(
                 text = message.text,
                 fontSize = 14.sp,
@@ -178,7 +156,6 @@ fun MessageItem(
                                 tint = Mark_Message
                             )
                         }
-
                         MessageStatus.READ -> {
                             Image(
                                 modifier = Modifier.size(12.dp),
@@ -186,7 +163,6 @@ fun MessageItem(
                                 contentDescription = null,
                             )
                         }
-
                         else -> {}
                     }
                 }
