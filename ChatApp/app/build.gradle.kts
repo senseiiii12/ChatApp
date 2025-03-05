@@ -123,7 +123,7 @@ dependencies {
     // WorkManager (Фоновая работа)
     implementation("androidx.work:work-runtime-ktx:2.8.0")
 
-
+    implementation ("com.google.accompanist:accompanist-navigation-animation:0.32.0")
 
 }
 

@@ -116,7 +116,7 @@ fun HomePage(
 
         if (usersState.value.isLoading) {
             Spacer(modifier = Modifier.height(16.dp))
-            repeat(6) {
+            repeat(10) {
                 UserListItemShimmerEffect()
                 Spacer(modifier = Modifier.height(8.dp))
             }

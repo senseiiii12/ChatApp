@@ -5,6 +5,13 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
@@ -38,6 +45,7 @@ import com.chatapp.chatapp.presentation.screens.Notification.NotificationScreen
 import com.chatapp.chatapp.presentation.screens.SearchUsers.SearchUsersScreen
 import com.chatapp.chatapp.ui.theme.ChatAppTheme
 import com.chatapp.chatapp.ui.theme.PrimaryBackground
+import com.google.accompanist.navigation.animation.AnimatedNavHost
 import com.google.firebase.auth.FirebaseAuth
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -53,6 +61,8 @@ class MainActivity : ComponentActivity() {
     val usersViewModel by viewModels<UsersViewModel>()
 
     var currentUserId: String? = null
+
+    @OptIn(ExperimentalAnimationApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -73,31 +83,46 @@ class MainActivity : ComponentActivity() {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                 ) {
-                    NavHost(navController = navController, startDestination = startDestination) {
+                    NavHost(
+                        navController = navController,
+                        startDestination = startDestination,
+                        enterTransition = {
+                            fadeIn(
+                                initialAlpha = 1f,
+                                animationSpec = tween(500, easing = FastOutSlowInEasing))
+                        },
+                        exitTransition = {
+                            fadeOut(
+                                targetAlpha = 1f,
+                                animationSpec = tween(500, easing = FastOutSlowInEasing))
+                        }
+                    ) {
                         composable(route = Route.MainEntrance.route) {
                             MainEntrance(navController = navController)
                         }
                         composable(route = Route.HomePage.route) {
                             HomePage(navController = navController)
-                            Log.d("Recomposition", "HomePage enter")
                         }
                         composable(route = Route.Notification.route) {
                             NotificationScreen(navController = navController)
-                            Log.d("Recomposition", "NotificationScreen enter")
                         }
                         composable(route = Route.SearchUsers.route) {
                             SearchUsersScreen(navController = navController)
                         }
                         composable(route = "chat/{otherUserJson}/{currentUserJson}") { backStackEntry ->
-                            val otherUserJson = backStackEntry.arguments?.getString("otherUserJson") ?: ""
-                            val currentUserJson = backStackEntry.arguments?.getString("currentUserJson") ?: ""
+                            val otherUserJson =
+                                backStackEntry.arguments?.getString("otherUserJson") ?: ""
+                            val currentUserJson =
+                                backStackEntry.arguments?.getString("currentUserJson") ?: ""
                             val chatViewModel: ChatViewModel = hiltViewModel()
-                            val (chatId,otherUser,currentUser) = remember(otherUserJson, currentUserJson) {
-                                chatViewModel.generateChatId(otherUserJson,currentUserJson)
+                            val (chatId, otherUser, currentUser) = remember(
+                                otherUserJson,
+                                currentUserJson
+                            ) {
+                                chatViewModel.generateChatId(otherUserJson, currentUserJson)
                             }
-                            Log.d("Recomposition", "ChatScreen enter")
                             ChatScreen(
-                                chatId = chatId ,
+                                chatId = chatId,
                                 currentUser = currentUser,
                                 otherUser = otherUser,
                                 navController = navController,

@@ -67,25 +67,27 @@ fun UserListItem(
     onClick: () -> Unit
 ) {
     val timeManager = TimeManager()
-    val lastMessageText = if (currentUserId == lastMessage?.userId) "You: ${lastMessage.text}" else "${lastMessage?.text}"
+    val lastMessageText = if (currentUserId == lastMessage?.userId) "You: ${lastMessage.text}" else "${lastMessage?.text ?: ""}"
     val lastMessageColor = if (lastMessage?.status?.name.equals("READ")) ChatText else Color.White
 
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .shadow(8.dp, RoundedCornerShape(22.dp))
-            .clip(RoundedCornerShape(22.dp))
+            .shadow(4.dp, RoundedCornerShape(8.dp))
+            .clip(RoundedCornerShape(8.dp))
             .background(Surface_Card)
             .clickable { onClick() }
-            .height(90.dp)
-            .padding(10.dp)
+            .height(60.dp)
+            .padding(10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
     ) {
         Box {
             user.avatar?.let {
                 AsyncImage(
                     modifier = Modifier
                         .clip(CircleShape)
-                        .size(70.dp),
+                        .size(30.dp),
                     model = ImageRequest.Builder(LocalContext.current)
                         .data(user.avatar)
                         .crossfade(true)
@@ -99,7 +101,7 @@ fun UserListItem(
                 modifier = Modifier
                     .clip(CircleShape)
                     .background(Bg_Default_Avatar)
-                    .size(70.dp),
+                    .size(30.dp),
                 painter = painterResource(id = R.drawable.defaulf_user_avatar),
                 contentScale = ContentScale.Crop,
                 contentDescription = null,
@@ -108,11 +110,10 @@ fun UserListItem(
             if (isOnline) {
                 Box(
                     modifier = Modifier
-                        .padding(top = 5.dp, end = 5.dp)
                         .border(1.dp, PrimaryBackground, CircleShape)
                         .align(Alignment.TopEnd)
                         .clip(CircleShape)
-                        .size(10.dp)
+                        .size(8.dp)
                         .background(Online)
                 )
             }
@@ -125,7 +126,8 @@ fun UserListItem(
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     text = user.name,
@@ -135,9 +137,9 @@ fun UserListItem(
                 )
                 Text(
                     text = timeManager.getTimeSinceLastMessage(lastMessage),
-                    fontSize = 10.sp,
-                    fontFamily = FontFamily(Font(R.font.gilroy_semibold)),
-                    color = PrimaryPurple
+                    fontSize = 8.sp,
+                    fontFamily = FontFamily(Font(R.font.gilroy_medium)),
+                    color = ChatText
                 )
             }
             Row(
@@ -149,7 +151,7 @@ fun UserListItem(
                         .weight(1f)
                         .padding(end = 24.dp),
                     text = lastMessageText,
-                    fontSize = 14.sp,
+                    fontSize = 12.sp,
                     fontFamily = FontFamily(Font(R.font.gilroy_medium)),
                     color = lastMessageColor,
                     maxLines = 1,
@@ -160,10 +162,9 @@ fun UserListItem(
                     Box(
                         modifier = Modifier
                             .clip(CircleShape)
-                            .heightIn(min = 16.dp, max = 18.dp)
+                            .heightIn(min = 16.dp, max = 16.dp)
                             .widthIn(min = 16.dp, max = 40.dp)
-                            .background(PrimaryPurple)
-                            .padding(3.dp),
+                            .background(PrimaryPurple),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
@@ -203,6 +204,14 @@ fun UserListItem(
 @Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun UserListItemPreview() {
+    val testMessage: Message? = Message(
+        userId = "123",
+        text = "Привет",
+        timestamp = 1L,
+        messageId = "2222",
+        status = MessageStatus.READ
+    )
+
     ChatAppTheme {
         UserListItem(
             currentUserId = "123",
@@ -214,8 +223,8 @@ private fun UserListItemPreview() {
                 lastSeen = Date(0)
             ),
             onClick = {},
-            lastMessage = null,
-            isOnline = false,
+            lastMessage = testMessage,
+            isOnline = true,
             newMessageCount = 1
         )
     }
