@@ -55,9 +55,9 @@ import java.util.Date
 @Composable
 fun ChatTopBar(
     otherUser: User,
-    navController: NavController,
     stateTopMenuMessage: Boolean,
     countSelectedMessage: Int,
+    onBack: () -> Unit,
     onCloseMenu: () -> Unit,
     onDeleteMessage: () -> Unit,
     onEditMessage: () -> Unit,
@@ -93,7 +93,7 @@ fun ChatTopBar(
         navigationIcon = {
             AnimatedContent(targetState = stateTopMenuMessage) { stateTopMenuMessage ->
                 if (!stateTopMenuMessage){
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(onClick = onBack) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Back",

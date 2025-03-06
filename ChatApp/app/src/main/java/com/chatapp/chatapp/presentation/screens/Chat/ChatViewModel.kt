@@ -1,11 +1,15 @@
 package com.chatapp.chatapp.presentation.screens.Chat
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.content.Context.CLIPBOARD_SERVICE
+import android.widget.Toast
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.window.isPopupLayout
+import androidx.core.content.ContextCompat.getSystemService
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chatapp.chatapp.domain.MessageRepository
@@ -81,6 +85,33 @@ class ChatViewModel @Inject constructor(
     }
     fun stateTopMenuMessage(value: Boolean) {
         _topMenuState.update { it.copy(isOpenTopMenu = value) }
+    }
+
+    fun copySelectedMessage(context: Context,selectedMessages: List<Message>): String{
+        if (selectedMessages.isNotEmpty()) {
+            val copiedText = selectedMessages.joinToString("\n") { it.text }
+            val clipboardManager = context.getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
+            val clipData = ClipData.newPlainText("Copied Messages",copiedText )
+            clipboardManager.setPrimaryClip(clipData)
+            resetStateTopMenu()
+            return copiedText
+        }
+        return ""
+    }
+    fun deleteMessage(chatId: String, selectedMessages: List<Message>) {
+        viewModelScope.launch {
+            messageRepository.deleteMessage(chatId, selectedMessages)
+            resetStateTopMenu()
+        }
+    }
+    fun resetStateTopMenu(){
+        _topMenuState.update {
+            it.copy(
+                listSelectedMessages = emptyList(),
+                countSelectedMessage = 0,
+                isOpenTopMenu = false
+            )
+        }
     }
     ////////////////////////////////////////////////////////////
 
@@ -221,18 +252,7 @@ class ChatViewModel @Inject constructor(
 
 
 
-    fun deleteMessage(chatId: String, selectedMessages: List<Message>) {
-        viewModelScope.launch {
-            messageRepository.deleteMessage(chatId, selectedMessages)
-            _topMenuState.update {
-                it.copy(
-                    listSelectedMessages = emptyList(),
-                    countSelectedMessage = 0,
-                    isOpenTopMenu = false
-                )
-            }
-        }
-    }
+
 
     fun onSaveEditMessage(chatId: String, messageId: String, newMessageText: String) {
         viewModelScope.launch {

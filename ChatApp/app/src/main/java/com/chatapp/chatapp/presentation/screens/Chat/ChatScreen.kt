@@ -42,10 +42,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.chatapp.chatapp.domain.models.MessageStatus
 import com.chatapp.chatapp.domain.models.User
@@ -59,6 +58,8 @@ import com.chatapp.chatapp.ui.theme.ChatText
 import com.chatapp.chatapp.ui.theme.Outline_Card
 import com.chatapp.chatapp.ui.theme.PrimaryBackground
 import com.chatapp.chatapp.ui.theme.Surface_Card
+import com.chatapp.chatapp.util.CustomToast.ToastHost
+import com.chatapp.chatapp.util.CustomToast.ToastState
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.CoroutineScope
@@ -71,14 +72,14 @@ fun ChatScreen(
     currentUser: User,
     otherUser: User,
     navController: NavController,
+    chatViewModel: ChatViewModel
 ) {
     val systemUiController = rememberSystemUiController()
     systemUiController.setSystemBarsColor(Surface_Card)
-    val clipboardManager = LocalClipboardManager.current
 
+    val context = LocalContext.current
+    val toastState = remember { ToastState() }
 
-
-    val chatViewModel: ChatViewModel = hiltViewModel()
     val listState = rememberLazyListState()
 
     val currentUserId = remember { FirebaseAuth.getInstance().currentUser?.uid ?: "" }
@@ -100,15 +101,23 @@ fun ChatScreen(
             ChatTopBar(
                 otherUser = otherUser,
                 stateTopMenuMessage = topMenuState.isOpenTopMenu,
-                navController = navController,
                 countSelectedMessage = topMenuState.countSelectedMessage,
+                onBack = { navController.popBackStack() },
                 onCloseMenu = {
                     chatViewModel.stateTopMenuMessage(false)
                     chatViewModel.clearSelectedMessages()
                 },
-                onDeleteMessage = { chatViewModel.deleteMessage(chatId,topMenuState.listSelectedMessages)},
+                onDeleteMessage = {
+                    chatViewModel.deleteMessage(
+                        chatId,
+                        topMenuState.listSelectedMessages
+                    )
+                },
                 onEditMessage = {},
-                onCopyMessage = {}
+                onCopyMessage = {
+                    val copiedMessage = chatViewModel.copySelectedMessage(context, topMenuState.listSelectedMessages)
+                    toastState.showToast("Copy: $copiedMessage")
+                }
             )
         },
         bottomBar = {
@@ -138,6 +147,7 @@ fun ChatScreen(
         }
     ) { paddingValues ->
         MessageList(
+            chatViewModel = chatViewModel,
             currentUser = currentUser,
             currentUserId = currentUserId,
             otherUser = otherUser,
@@ -146,12 +156,14 @@ fun ChatScreen(
             listState = listState,
             topMenuState = topMenuState
         )
+        ToastHost(toastState)
     }
 }
 
 
 @Composable
 fun MessageList(
+    chatViewModel: ChatViewModel,
     currentUser: User,
     currentUserId: String,
     otherUser: User,
@@ -161,7 +173,6 @@ fun MessageList(
     topMenuState: TopMenuState
 ) {
 
-    val chatViewModel: ChatViewModel = hiltViewModel()
     val chatItems by chatViewModel.chatItems.collectAsState()
     val unreadMessagesCount by chatViewModel.unreadMessagesCount.collectAsState()
     val scope = rememberCoroutineScope()

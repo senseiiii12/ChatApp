@@ -126,6 +126,7 @@ class MainActivity : ComponentActivity() {
                                 currentUser = currentUser,
                                 otherUser = otherUser,
                                 navController = navController,
+                                chatViewModel = chatViewModel
                             )
                         }
                     }
