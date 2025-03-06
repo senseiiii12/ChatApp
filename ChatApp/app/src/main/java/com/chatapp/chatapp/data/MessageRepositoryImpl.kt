@@ -130,15 +130,20 @@ class MessageRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun deleteMessage(chatId: String, messageId: String) {
+    override suspend fun deleteMessage(chatId: String, selectedMessages: List<Message>) {
         try {
-            chatCollection.document(chatId)
-                .collection("messages")
-                .document(messageId)
-                .delete()
-                .await()
+            firestore.runTransaction { transaction ->
+                selectedMessages.forEach { message ->
+                    val messageRef = chatCollection
+                        .document(chatId)
+                        .collection("messages")
+                        .document(message.messageId)
+                    transaction.delete(messageRef)
+                }
+                null
+            }.await()
         } catch (e: Exception) {
-            Log.e("ChatViewModel", "Failed to delete message: $messageId", e)
+            Log.e("ChatViewModel", "Failed to delete messages", e)
         }
     }
 

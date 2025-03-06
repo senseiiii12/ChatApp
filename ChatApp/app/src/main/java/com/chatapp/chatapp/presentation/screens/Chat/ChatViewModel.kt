@@ -12,6 +12,7 @@ import com.chatapp.chatapp.domain.models.Message
 import com.chatapp.chatapp.domain.models.MessageStatus
 import com.chatapp.chatapp.domain.models.User
 import com.chatapp.chatapp.presentation.screens.Chat.details.ChatItem
+import com.chatapp.chatapp.presentation.screens.Chat.details.TopMenuState
 import com.google.firebase.auth.FirebaseAuth
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -57,25 +58,33 @@ class ChatViewModel @Inject constructor(
 
 
     ////////////////////РЕДАКТИРОВАНИЕ СООБЩЕНИЙ////////////////////
-    private val listSelectedMessages = mutableStateListOf<Message>()
+    private val _topMenuState = MutableStateFlow(TopMenuState())
+    val topMenuState = _topMenuState.asStateFlow()
+
+
+
+    private val _listSelectedMessages = mutableStateListOf<Message>()
+    val listSelectedMessages = _listSelectedMessages
+
     private val _countSelectedMessage = MutableStateFlow(0)
     val countSelectedMessage = _countSelectedMessage.asStateFlow()
+
     var isOpenTopMenuMessage by mutableStateOf(false)
     fun addSelectedMessage(message: Message) {
-        if (message !in listSelectedMessages) {
-            listSelectedMessages.add(message)
-            _countSelectedMessage.value = listSelectedMessages.size
+        if (message !in _listSelectedMessages) {
+            _listSelectedMessages.add(message)
+            _countSelectedMessage.value = _listSelectedMessages.size
         }
     }
     fun removeSelectedMessage(message: Message) {
-        listSelectedMessages.remove(message)
-        _countSelectedMessage.value = listSelectedMessages.size
+        _listSelectedMessages.remove(message)
+        _countSelectedMessage.value = _listSelectedMessages.size
     }
     fun isSelectedMessage(message: Message): Boolean {
-        return message in listSelectedMessages
+        return message in _listSelectedMessages
     }
     fun clearSelectedMessage(){
-        listSelectedMessages.clear()
+        _listSelectedMessages.clear()
     }
     fun stateTopMenuMessage(value: Boolean) {
         this.isOpenTopMenuMessage = value
@@ -212,7 +221,6 @@ class ChatViewModel @Inject constructor(
                 chatItems.add(ChatItem.DateSeparatorItem(messageDate))
                 lastMessageDate = messageDate
             }
-
             chatItems.add(ChatItem.MessageItem(message))
         }
         return chatItems.reversed()
@@ -220,12 +228,12 @@ class ChatViewModel @Inject constructor(
 
 
 
-
-
-
-    fun deleteMessage(chatId: String, messageId: String) {
+    fun deleteMessage(chatId: String, selectedMessages: List<Message>) {
         viewModelScope.launch {
-            messageRepository.deleteMessage(chatId, messageId)
+            messageRepository.deleteMessage(chatId, selectedMessages)
+            _listSelectedMessages.clear()
+            _countSelectedMessage.value = _listSelectedMessages.size
+            isOpenTopMenuMessage = false
         }
     }
 

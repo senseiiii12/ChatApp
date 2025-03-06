@@ -11,6 +11,6 @@ interface MessageRepository {
     suspend fun markMessageAsRead(chatId: String, messageId: String)
     fun listenForMessages(chatId: String, onMessagesChanged: (List<Message>, List<Message>, List<String>) -> Unit)
     suspend fun listenForMessagesInChats(chatIds: List<String>): Flow<Map<String, List<Message>>>
-    suspend fun deleteMessage(chatId: String, messageId: String)
+    suspend fun deleteMessage(chatId: String, selectedMessages: List<Message>)
     suspend fun onSaveEditMessage(chatId: String, messageId: String, newMessageText: String)
 }

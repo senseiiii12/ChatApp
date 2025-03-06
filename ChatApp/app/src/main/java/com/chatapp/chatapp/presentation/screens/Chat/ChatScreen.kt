@@ -84,7 +84,7 @@ fun ChatScreen(
 
     val stateTopMenuMessage by remember { derivedStateOf { chatViewModel.isOpenTopMenuMessage } }
     val countSelectedMessage by chatViewModel.countSelectedMessage.collectAsState()
-
+    val listSelectedMessages = chatViewModel.listSelectedMessages
 
 
 
@@ -104,7 +104,7 @@ fun ChatScreen(
                     chatViewModel.stateTopMenuMessage(false)
                     chatViewModel.clearSelectedMessage()
                 },
-                onDeleteMessage = {},
+                onDeleteMessage = { chatViewModel.deleteMessage(chatId,listSelectedMessages)},
                 onEditMessage = {},
                 onCopyMessage = {}
             )
