@@ -2,11 +2,7 @@ package com.chatapp.chatapp.presentation.screens.Chat.details
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -18,13 +14,12 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.toFontFamily
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.chatapp.chatapp.R
 import com.chatapp.chatapp.ui.theme.ChatAppTheme
 
 @Composable
-fun EditMessageTopMenu(
+fun TopMenuSelectedMessage(
     countSelectedMessage: Int,
     onDeleteMessage: () -> Unit,
     onEditMessage: () -> Unit,
@@ -80,7 +75,7 @@ fun EditMessageTopMenu(
 @Composable
 private fun EditMessageTopMenuPreview() {
     ChatAppTheme {
-        EditMessageTopMenu(
+        TopMenuSelectedMessage(
             countSelectedMessage = 6,
             onEditMessage = {},
             onDeleteMessage = {},

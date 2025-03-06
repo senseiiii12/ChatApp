@@ -42,6 +42,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -53,6 +54,7 @@ import com.chatapp.chatapp.presentation.screens.Chat.details.ChatItem
 import com.chatapp.chatapp.presentation.screens.Chat.details.ChatTopBar
 import com.chatapp.chatapp.presentation.screens.Chat.details.DateSeparator
 import com.chatapp.chatapp.presentation.screens.Chat.details.MessageItem
+import com.chatapp.chatapp.presentation.screens.Chat.details.TopMenuState
 import com.chatapp.chatapp.ui.theme.ChatText
 import com.chatapp.chatapp.ui.theme.Outline_Card
 import com.chatapp.chatapp.ui.theme.PrimaryBackground
@@ -74,6 +76,8 @@ fun ChatScreen(
     systemUiController.setSystemBarsColor(Surface_Card)
     val clipboardManager = LocalClipboardManager.current
 
+
+
     val chatViewModel: ChatViewModel = hiltViewModel()
     val listState = rememberLazyListState()
 
@@ -82,9 +86,7 @@ fun ChatScreen(
     val inputMessage by remember { derivedStateOf { chatViewModel.inputMessage } }
     val newMessageText by remember { derivedStateOf { chatViewModel.newMessageText } }
 
-    val stateTopMenuMessage by remember { derivedStateOf { chatViewModel.isOpenTopMenuMessage } }
-    val countSelectedMessage by chatViewModel.countSelectedMessage.collectAsState()
-    val listSelectedMessages = chatViewModel.listSelectedMessages
+    val topMenuState by chatViewModel.topMenuState.collectAsState()
 
 
 
@@ -97,14 +99,14 @@ fun ChatScreen(
         topBar = {
             ChatTopBar(
                 otherUser = otherUser,
-                stateTopMenuMessage = stateTopMenuMessage,
+                stateTopMenuMessage = topMenuState.isOpenTopMenu,
                 navController = navController,
-                countSelectedMessage = countSelectedMessage,
+                countSelectedMessage = topMenuState.countSelectedMessage,
                 onCloseMenu = {
                     chatViewModel.stateTopMenuMessage(false)
-                    chatViewModel.clearSelectedMessage()
+                    chatViewModel.clearSelectedMessages()
                 },
-                onDeleteMessage = { chatViewModel.deleteMessage(chatId,listSelectedMessages)},
+                onDeleteMessage = { chatViewModel.deleteMessage(chatId,topMenuState.listSelectedMessages)},
                 onEditMessage = {},
                 onCopyMessage = {}
             )
@@ -141,7 +143,8 @@ fun ChatScreen(
             otherUser = otherUser,
             chatId = chatId,
             paddingValues = paddingValues,
-            listState = listState
+            listState = listState,
+            topMenuState = topMenuState
         )
     }
 }
@@ -154,7 +157,8 @@ fun MessageList(
     otherUser: User,
     chatId: String,
     paddingValues: PaddingValues,
-    listState: LazyListState
+    listState: LazyListState,
+    topMenuState: TopMenuState
 ) {
 
     val chatViewModel: ChatViewModel = hiltViewModel()
@@ -171,7 +175,7 @@ fun MessageList(
             state = listState,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 16.dp),
+                .padding(horizontal = 0.dp),
             reverseLayout = true,
             verticalArrangement = Arrangement.Bottom
         ) {
@@ -203,27 +207,12 @@ fun MessageList(
                             isCurrentUser = isCurrentUser,
                             currentUser = currentUser,
                             otherUser = otherUser,
-                            isEditing = chatViewModel.isSelectedMessage(item.message),
+                            isEditing = topMenuState.listSelectedMessages.contains(item.message),
                             status = item.message.status,
                             onOpenTopMenu = { currentMessage ->
-                                if (chatViewModel.isSelectedMessage(item.message)) {
-                                    chatViewModel.removeSelectedMessage(item.message)
-                                } else {
-                                    chatViewModel.addSelectedMessage(item.message)
-                                }
-
-                                if (chatViewModel.countSelectedMessage.value == 0) {
-                                    chatViewModel.stateTopMenuMessage(false)
-                                } else {
-                                    chatViewModel.stateTopMenuMessage(true)
-                                }
+                                chatViewModel.toggleMessageSelection(currentMessage)
                             }
 
-//                            onDelete =  { currentMessage ->
-//                                if (isCurrentUser) {
-//                                    chatViewModel.deleteMessage(chatId, currentMessage.messageId)
-//                                }
-//                            },
 //                            onEditMessage = { currentMessage ->
 //                                chatViewModel.initEditMessageState(
 //                                    isEditing = true,

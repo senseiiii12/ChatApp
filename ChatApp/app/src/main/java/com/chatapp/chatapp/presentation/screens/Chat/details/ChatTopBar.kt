@@ -1,8 +1,6 @@
 package com.chatapp.chatapp.presentation.screens.Chat.details
 
-import android.util.Log
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -43,7 +41,6 @@ import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.chatapp.chatapp.R
 import com.chatapp.chatapp.domain.models.User
-import com.chatapp.chatapp.presentation.screens.Chat.ChatViewModel
 import com.chatapp.chatapp.presentation.screens.HomePage.UsersViewModel
 import com.chatapp.chatapp.ui.theme.Bg_Default_Avatar
 import com.chatapp.chatapp.ui.theme.ChatText
@@ -51,11 +48,7 @@ import com.chatapp.chatapp.ui.theme.DarkGray_1
 import com.chatapp.chatapp.ui.theme.Online
 import com.chatapp.chatapp.ui.theme.Surface_Card
 import com.chatapp.chatapp.util.TimeManager
-import okhttp3.internal.http2.Header
-import java.text.SimpleDateFormat
 import java.util.Date
-import java.util.Locale
-import java.util.TimeZone
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -88,7 +81,7 @@ fun ChatTopBar(
                         usersViewModel = usersViewModel
                     )
                 }else{
-                    EditMessageTopMenu(
+                    TopMenuSelectedMessage(
                         countSelectedMessage = countSelectedMessage,
                         onDeleteMessage = onDeleteMessage,
                         onEditMessage = onEditMessage,

@@ -5,6 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.window.isPopupLayout
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chatapp.chatapp.domain.MessageRepository
@@ -61,33 +62,25 @@ class ChatViewModel @Inject constructor(
     private val _topMenuState = MutableStateFlow(TopMenuState())
     val topMenuState = _topMenuState.asStateFlow()
 
-
-
-    private val _listSelectedMessages = mutableStateListOf<Message>()
-    val listSelectedMessages = _listSelectedMessages
-
-    private val _countSelectedMessage = MutableStateFlow(0)
-    val countSelectedMessage = _countSelectedMessage.asStateFlow()
-
-    var isOpenTopMenuMessage by mutableStateOf(false)
-    fun addSelectedMessage(message: Message) {
-        if (message !in _listSelectedMessages) {
-            _listSelectedMessages.add(message)
-            _countSelectedMessage.value = _listSelectedMessages.size
+    fun toggleMessageSelection(message: Message) {
+        _topMenuState.update { currentState ->
+            val newList = if (message in currentState.listSelectedMessages) {
+                currentState.listSelectedMessages - message
+            } else {
+                currentState.listSelectedMessages + message
+            }
+            currentState.copy(
+                listSelectedMessages = newList,
+                countSelectedMessage = newList.size,
+                isOpenTopMenu = newList.isNotEmpty()
+            )
         }
     }
-    fun removeSelectedMessage(message: Message) {
-        _listSelectedMessages.remove(message)
-        _countSelectedMessage.value = _listSelectedMessages.size
-    }
-    fun isSelectedMessage(message: Message): Boolean {
-        return message in _listSelectedMessages
-    }
-    fun clearSelectedMessage(){
-        _listSelectedMessages.clear()
+    fun clearSelectedMessages() {
+        _topMenuState.update { it.copy(listSelectedMessages = emptyList(), countSelectedMessage = 0) }
     }
     fun stateTopMenuMessage(value: Boolean) {
-        this.isOpenTopMenuMessage = value
+        _topMenuState.update { it.copy(isOpenTopMenu = value) }
     }
     ////////////////////////////////////////////////////////////
 
@@ -231,9 +224,13 @@ class ChatViewModel @Inject constructor(
     fun deleteMessage(chatId: String, selectedMessages: List<Message>) {
         viewModelScope.launch {
             messageRepository.deleteMessage(chatId, selectedMessages)
-            _listSelectedMessages.clear()
-            _countSelectedMessage.value = _listSelectedMessages.size
-            isOpenTopMenuMessage = false
+            _topMenuState.update {
+                it.copy(
+                    listSelectedMessages = emptyList(),
+                    countSelectedMessage = 0,
+                    isOpenTopMenu = false
+                )
+            }
         }
     }
 

@@ -82,7 +82,7 @@ fun MessageItem(
     status: MessageStatus,
     onOpenTopMenu: (Message) -> Unit,
 ) {
-    var expanded by remember { mutableStateOf(false) }
+
     val currentUserColor = remember {
         Brush.linearGradient(
             listOf(
@@ -95,8 +95,7 @@ fun MessageItem(
         Brush.linearGradient(listOf(Surface_Card.copy(alpha = 0.8f), Surface_Card))
     }
     val backgroundColor = remember { if (isCurrentUser) currentUserColor else otherUserColor }
-    val horizontalArrangement =
-        remember { if (isCurrentUser) Arrangement.End else Arrangement.Start }
+    val horizontalArrangement = remember { if (isCurrentUser) Arrangement.End else Arrangement.Start }
     val screenWidth = LocalConfiguration.current.screenWidthDp
     val selectedColorMessage by animateColorAsState(
         targetValue = if (isEditing) Surface_Card else PrimaryBackground,
@@ -108,7 +107,7 @@ fun MessageItem(
         modifier = modifier
             .fillMaxWidth()
             .background(selectedColorMessage)
-            .padding(vertical = 8.dp),
+            .padding(vertical = 4.dp),
         horizontalArrangement = horizontalArrangement
     ) {
         if (!isCurrentUser) {
