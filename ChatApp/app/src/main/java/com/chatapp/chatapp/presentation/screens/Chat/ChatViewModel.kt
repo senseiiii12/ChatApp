@@ -57,9 +57,7 @@ class ChatViewModel @Inject constructor(
     private val _messageCounts = MutableStateFlow<Map<String, Int>>(emptyMap())
     val messageCounts = _messageCounts.asStateFlow()
 
-    private val unreadMessages = mutableListOf<Message>()
-    private val _unreadMessagesCount = MutableStateFlow(0)
-    val unreadMessagesCount = _unreadMessagesCount.asStateFlow()
+
 
 
     ////////////////////РЕДАКТИРОВАНИЕ СООБЩЕНИЙ////////////////////
@@ -117,7 +115,7 @@ class ChatViewModel @Inject constructor(
 
 
 
-
+    ////////////////////СООБЩЕНИЯ////////////////////
     var inputMessage by mutableStateOf("")
         private set
     var isEditing by mutableStateOf(false)
@@ -127,7 +125,60 @@ class ChatViewModel @Inject constructor(
     var newMessageText by mutableStateOf("")
         private set
 
+    fun updateChatIds(chatIds: List<String>) {
+        _chatIds.value = chatIds
+    }
+    fun updateInputMessageText(newText: String) {
+        inputMessage = newText
+    }
+    fun updateNewMessageText(newText: String) {
+        newMessageText = newText
+    }
+    fun initEditMessageState(isEditing: Boolean, newMessageText: String, editingMessageId: String) {
+        this.isEditing = isEditing
+        this.newMessageText = newMessageText
+        this.editingMessageId = editingMessageId
+    }
+    fun resetEditMode() {
+        isEditing = false
+        editingMessageId = ""
+        newMessageText = ""
+        resetStateTopMenu()
+    }
+    fun resetInputMessage() {
+        inputMessage = ""
+    }
+    fun sendMessage(chatId: String, currentUserId: String, message: String) {
+        viewModelScope.launch {
+            messageRepository.sendMessage(chatId, currentUserId, message)
+        }
+    }
+    fun markMessageAsRead(chatId: String, messageId: String) {
+        viewModelScope.launch {
+            messageRepository.markMessageAsRead(chatId, messageId)
+        }
+    }
+    fun onSaveEditMessage(chatId: String, messageId: String, newMessageText: String) {
+        viewModelScope.launch {
+            messageRepository.onSaveEditMessage(chatId, messageId, newMessageText)
+        }
+    }
+    ////////////////////////////////////////////////////////////
 
+    ////////////////////НЕПРОЧИТАНЫЕ СООБЩЕНИЯ ВНЕ ОБЛАСТИ ПРОСМОТРА////////////////////
+    private val unreadMessages = mutableListOf<Message>()
+    private val _unreadMessagesCount = MutableStateFlow(0)
+    val unreadMessagesCount = _unreadMessagesCount.asStateFlow()
+    fun resetUnreadMessagesCount() {
+        unreadMessages.clear()
+        _unreadMessagesCount.value = unreadMessages.size
+    }
+
+    fun deleteUnreadMessageToScroll(currentMessage: Message){
+        unreadMessages.remove(currentMessage)
+        _unreadMessagesCount.value = unreadMessages.size
+    }
+    ////////////////////////////////////////////////////////////
 
 
     fun generateChatId(otehrUserJson: String, currentUserJson: String): Triple<String, User, User> {
@@ -153,48 +204,6 @@ class ChatViewModel @Inject constructor(
             messages.count { it.status == MessageStatus.DELIVERED }
         }
     }
-
-    fun updateChatIds(chatIds: List<String>) {
-        _chatIds.value = chatIds
-    }
-
-    fun updateInputMessageText(newText: String) {
-        inputMessage = newText
-    }
-
-    fun updateNewMessageText(newText: String) {
-        newMessageText = newText
-    }
-
-    fun initEditMessageState(isEditing: Boolean, newMessageText: String, editingMessageId: String) {
-        this.isEditing = isEditing
-        this.newMessageText = newMessageText
-        this.editingMessageId = editingMessageId
-    }
-
-
-    fun resetEditMode() {
-        isEditing = false
-        editingMessageId = ""
-        newMessageText = ""
-    }
-
-    fun resetInputMessage() {
-        inputMessage = ""
-    }
-
-    fun sendMessage(chatId: String, currentUserId: String, message: String) {
-        viewModelScope.launch {
-            messageRepository.sendMessage(chatId, currentUserId, message)
-        }
-    }
-
-    fun markMessageAsRead(chatId: String, messageId: String) {
-        viewModelScope.launch {
-            messageRepository.markMessageAsRead(chatId, messageId)
-        }
-    }
-
 
     fun listenForMessagesInChat(chatId: String, listState: LazyListState) {
         messageRepository.listenForMessages(chatId) { newMessages, updatedMessages, removedMessagesIds ->
@@ -224,15 +233,7 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    fun resetUnreadMessagesCount() {
-        unreadMessages.clear()
-        _unreadMessagesCount.value = unreadMessages.size
-    }
 
-    fun deleteUnreadMessageToScroll(currentMessage: Message){
-        unreadMessages.remove(currentMessage)
-        _unreadMessagesCount.value = unreadMessages.size
-    }
 
     fun generateChatItems(messages: List<Message>): List<ChatItem> {
         val chatItems = mutableListOf<ChatItem>()
@@ -254,9 +255,5 @@ class ChatViewModel @Inject constructor(
 
 
 
-    fun onSaveEditMessage(chatId: String, messageId: String, newMessageText: String) {
-        viewModelScope.launch {
-            messageRepository.onSaveEditMessage(chatId, messageId, newMessageText)
-        }
-    }
+
 }

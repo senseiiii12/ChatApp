@@ -35,7 +35,6 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
@@ -55,7 +54,7 @@ import java.util.Date
 @Composable
 fun ChatTopBar(
     otherUser: User,
-    stateTopMenuMessage: Boolean,
+    stateTopMenu: TopMenuState,
     countSelectedMessage: Int,
     onBack: () -> Unit,
     onCloseMenu: () -> Unit,
@@ -74,7 +73,7 @@ fun ChatTopBar(
             containerColor = Surface_Card
         ),
         title = {
-            AnimatedContent(targetState = stateTopMenuMessage ) { stateTopMenuMessage ->
+            AnimatedContent(targetState = stateTopMenu.isOpenTopMenu) { stateTopMenuMessage ->
                 if (!stateTopMenuMessage){
                     ChatHeader(
                         otherUser = otherUser,
@@ -82,6 +81,7 @@ fun ChatTopBar(
                     )
                 }else{
                     TopMenuSelectedMessage(
+                        stateTopMenu = stateTopMenu,
                         countSelectedMessage = countSelectedMessage,
                         onDeleteMessage = onDeleteMessage,
                         onEditMessage = onEditMessage,
@@ -91,7 +91,7 @@ fun ChatTopBar(
             }
         },
         navigationIcon = {
-            AnimatedContent(targetState = stateTopMenuMessage) { stateTopMenuMessage ->
+            AnimatedContent(targetState = stateTopMenu.isOpenTopMenu) { stateTopMenuMessage ->
                 if (!stateTopMenuMessage){
                     IconButton(onClick = onBack) {
                         Icon(

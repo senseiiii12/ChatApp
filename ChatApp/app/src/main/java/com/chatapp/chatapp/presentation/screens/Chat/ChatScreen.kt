@@ -41,7 +41,6 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -83,6 +82,7 @@ fun ChatScreen(
     val listState = rememberLazyListState()
 
     val currentUserId = remember { FirebaseAuth.getInstance().currentUser?.uid ?: "" }
+
     val isEditing by remember { derivedStateOf { chatViewModel.isEditing } }
     val inputMessage by remember { derivedStateOf { chatViewModel.inputMessage } }
     val newMessageText by remember { derivedStateOf { chatViewModel.newMessageText } }
@@ -100,7 +100,7 @@ fun ChatScreen(
         topBar = {
             ChatTopBar(
                 otherUser = otherUser,
-                stateTopMenuMessage = topMenuState.isOpenTopMenu,
+                stateTopMenu = topMenuState,
                 countSelectedMessage = topMenuState.countSelectedMessage,
                 onBack = { navController.popBackStack() },
                 onCloseMenu = {
@@ -113,9 +113,18 @@ fun ChatScreen(
                         topMenuState.listSelectedMessages
                     )
                 },
-                onEditMessage = {},
+                onEditMessage = {
+                    chatViewModel.initEditMessageState(
+                        true,
+                        topMenuState.listSelectedMessages.first().text,
+                        topMenuState.listSelectedMessages.first().messageId
+                    )
+                },
                 onCopyMessage = {
-                    val copiedMessage = chatViewModel.copySelectedMessage(context, topMenuState.listSelectedMessages)
+                    val copiedMessage = chatViewModel.copySelectedMessage(
+                        context,
+                        topMenuState.listSelectedMessages
+                    )
                     toastState.showToast("Copy: $copiedMessage")
                 }
             )

@@ -1,5 +1,7 @@
 package com.chatapp.chatapp.presentation.screens.Chat.details
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -20,6 +22,7 @@ import com.chatapp.chatapp.ui.theme.ChatAppTheme
 
 @Composable
 fun TopMenuSelectedMessage(
+    stateTopMenu: TopMenuState,
     countSelectedMessage: Int,
     onDeleteMessage: () -> Unit,
     onEditMessage: () -> Unit,
@@ -45,12 +48,19 @@ fun TopMenuSelectedMessage(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
-            IconButton(onClick = onEditMessage) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_edit_message),
-                    contentDescription = null,
-                    tint = Color.White
-                )
+            AnimatedContent(
+                targetState = stateTopMenu.countSelectedMessage > 1,
+                contentAlignment = Alignment.Center
+            ) {isVisible->
+                if (!isVisible){
+                    IconButton(onClick = onEditMessage) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_edit_message),
+                            contentDescription = null,
+                            tint = Color.White
+                        )
+                    }
+                }
             }
             IconButton(onClick = onDeleteMessage) {
                 Icon(
@@ -71,15 +81,15 @@ fun TopMenuSelectedMessage(
 }
 
 
-@Preview
-@Composable
-private fun EditMessageTopMenuPreview() {
-    ChatAppTheme {
-        TopMenuSelectedMessage(
-            countSelectedMessage = 6,
-            onEditMessage = {},
-            onDeleteMessage = {},
-            onCopyMessage = {}
-        )
-    }
-}
+//@Preview
+//@Composable
+//private fun EditMessageTopMenuPreview() {
+//    ChatAppTheme {
+//        TopMenuSelectedMessage(
+//            countSelectedMessage = 6,
+//            onEditMessage = {},
+//            onDeleteMessage = {},
+//            onCopyMessage = {}
+//        )
+//    }
+//}
