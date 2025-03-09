@@ -1,5 +1,6 @@
 package com.chatapp.chatapp.presentation.screens.Chat
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animateIntAsState
@@ -93,6 +94,9 @@ fun ChatScreen(
 
     LaunchedEffect(Unit) {
         chatViewModel.listenForMessagesInChat(chatId, listState)
+    }
+    BackHandler(topMenuState.isOpenTopMenu) {
+        chatViewModel.resetStateTopMenu()
     }
 
     Scaffold(

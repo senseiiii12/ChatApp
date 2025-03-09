@@ -204,24 +204,16 @@ class ChatViewModel @Inject constructor(
 
     fun listenForMessagesInChat(chatId: String, listState: LazyListState) {
         messageRepository.listenForMessages(chatId) { newMessages, updatedMessages, removedMessagesIds ->
-            _messages.update { currentMessages ->
-                val updatedList = currentMessages.filterNot { message ->
-                    removedMessagesIds.contains(message.messageId)
-                }.toMutableList()
-
-                updatedMessages.forEach { updatedMessage ->
-                    val index = updatedList.indexOfFirst { it.messageId == updatedMessage.messageId }
-                    if (index != -1) {
-                        updatedList[index] = updatedMessage
-                    }
+            _chatItems.update { currentChatItems ->
+                val messageItems = currentChatItems.filterIsInstance<ChatItem.MessageItem>().toMutableList()
+                messageItems.removeAll { it.message.messageId in removedMessagesIds }
+                val updatedMessagesMap = updatedMessages.associateBy { it.messageId }
+                messageItems.replaceAll { chatItem ->
+                    updatedMessagesMap[chatItem.message.messageId]?.let { ChatItem.MessageItem(it) } ?: chatItem
                 }
-
-                updatedList.addAll(0, newMessages)
-
-                val itemsWithSeparators = generateChatItems(updatedList)
-                _chatItems.value = itemsWithSeparators
-
-                updatedList
+                messageItems.addAll(0,newMessages.map { ChatItem.MessageItem(it) })
+                val sortedMessages = messageItems.map { it.message }
+                generateChatItems(sortedMessages)
             }
             if (listState.firstVisibleItemIndex > 1) {
                 unreadMessages.addAll(newMessages)
@@ -229,6 +221,8 @@ class ChatViewModel @Inject constructor(
             }
         }
     }
+
+
 
     /**
      * Генерация ChatId и ChatItem

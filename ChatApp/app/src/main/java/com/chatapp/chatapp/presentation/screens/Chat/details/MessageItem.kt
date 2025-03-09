@@ -9,6 +9,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -63,6 +64,7 @@ import com.chatapp.chatapp.ui.theme.Bg_Default_Avatar
 import com.chatapp.chatapp.ui.theme.ChatText
 import com.chatapp.chatapp.ui.theme.DarkGray_2
 import com.chatapp.chatapp.ui.theme.Mark_Message
+import com.chatapp.chatapp.ui.theme.Online
 import com.chatapp.chatapp.ui.theme.PrimaryBackground
 import com.chatapp.chatapp.ui.theme.PrimaryPurple
 import com.chatapp.chatapp.ui.theme.Surface_Card
@@ -103,15 +105,35 @@ fun MessageItem(
     )
 
 
+
     Row(
         modifier = modifier
             .fillMaxWidth()
             .background(selectedColorMessage)
             .padding(vertical = 4.dp),
-        horizontalArrangement = horizontalArrangement
+        horizontalArrangement = horizontalArrangement,
+        verticalAlignment = Alignment.CenterVertically
     ) {
         if (!isCurrentUser) {
             UserAvatar(otherUser.avatar)
+        }
+        if (isCurrentUser && isEditing){
+            Spacer(modifier = Modifier.width(10.dp))
+            Box(
+                modifier = Modifier
+                    .size(20.dp)
+                    .clip(CircleShape)
+                    .border(1.dp, Online, CircleShape),
+                contentAlignment = Alignment.Center
+            ){
+                Icon(
+                    modifier = Modifier.size(12.dp),
+                    imageVector = Icons.Default.Check,
+                    contentDescription = null,
+                    tint = Online
+                )
+            }
+            Spacer(modifier = Modifier.weight(1f))
         }
         Column(
             modifier = Modifier
@@ -214,7 +236,9 @@ fun ToolTipMenu(
     onEditMessage: () -> Unit
 ) {
     Column(
-        modifier = Modifier.width(IntrinsicSize.Max).padding(horizontal = 4.dp)
+        modifier = Modifier
+            .width(IntrinsicSize.Max)
+            .padding(horizontal = 4.dp)
     ) {
         Row(
             modifier = Modifier
