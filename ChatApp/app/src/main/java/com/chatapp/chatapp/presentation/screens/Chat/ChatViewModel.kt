@@ -4,12 +4,10 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Context.CLIPBOARD_SERVICE
-import android.widget.Toast
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.core.content.ContextCompat.getSystemService
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chatapp.chatapp.domain.MessageRepository
@@ -17,7 +15,7 @@ import com.chatapp.chatapp.domain.models.Message
 import com.chatapp.chatapp.domain.models.MessageStatus
 import com.chatapp.chatapp.domain.models.User
 import com.chatapp.chatapp.presentation.screens.Chat.details.ChatItem
-import com.chatapp.chatapp.presentation.screens.Chat.details.TopMenuState
+import com.chatapp.chatapp.presentation.screens.Chat.details.topbar.TopMenuState
 import com.google.firebase.auth.FirebaseAuth
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -43,24 +41,9 @@ class ChatViewModel @Inject constructor(
 ) : ViewModel() {
 
 
-    private val _messages = MutableStateFlow<List<Message>>(emptyList())
-    val messages = _messages.asStateFlow()
-
-    private val _chatItems = MutableStateFlow<List<ChatItem>>(emptyList())
-    val chatItems = _chatItems.asStateFlow()
-
-    private val _chatIds = MutableStateFlow<List<String>>(emptyList())
-
-    private val _latestMessages = MutableStateFlow<Map<String, Message>>(emptyMap())
-    val latestMessages = _latestMessages.asStateFlow()
-
-    private val _messageCounts = MutableStateFlow<Map<String, Int>>(emptyMap())
-    val messageCounts = _messageCounts.asStateFlow()
-
-
-
-
-    ////////////////////РЕДАКТИРОВАНИЕ СООБЩЕНИЙ////////////////////
+    /**
+     * Редактирование выделенных сообщений в чате
+     */
     private val _topMenuState = MutableStateFlow(TopMenuState())
     val topMenuState = _topMenuState.asStateFlow()
 
@@ -111,11 +94,12 @@ class ChatViewModel @Inject constructor(
             )
         }
     }
-    ////////////////////////////////////////////////////////////
 
 
 
-    ////////////////////СООБЩЕНИЯ////////////////////
+    /**
+     * Состояние InputField в чате и методы для сообщений
+     */
     var inputMessage by mutableStateOf("")
         private set
     var isEditing by mutableStateOf(false)
@@ -125,9 +109,6 @@ class ChatViewModel @Inject constructor(
     var newMessageText by mutableStateOf("")
         private set
 
-    fun updateChatIds(chatIds: List<String>) {
-        _chatIds.value = chatIds
-    }
     fun updateInputMessageText(newText: String) {
         inputMessage = newText
     }
@@ -163,9 +144,11 @@ class ChatViewModel @Inject constructor(
             messageRepository.onSaveEditMessage(chatId, messageId, newMessageText)
         }
     }
-    ////////////////////////////////////////////////////////////
 
-    ////////////////////НЕПРОЧИТАНЫЕ СООБЩЕНИЯ ВНЕ ОБЛАСТИ ПРОСМОТРА////////////////////
+
+    /**
+     * Отслеживание колличества непрочитанных сообщений, вне зоне просмотра этих сообщений
+     */
     private val unreadMessages = mutableListOf<Message>()
     private val _unreadMessagesCount = MutableStateFlow(0)
     val unreadMessagesCount = _unreadMessagesCount.asStateFlow()
@@ -178,16 +161,30 @@ class ChatViewModel @Inject constructor(
         unreadMessages.remove(currentMessage)
         _unreadMessagesCount.value = unreadMessages.size
     }
-    ////////////////////////////////////////////////////////////
 
 
-    fun generateChatId(otehrUserJson: String, currentUserJson: String): Triple<String, User, User> {
-        val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
-        val userType = object : TypeToken<User>() {}.type
-        val otherUser: User = Gson().fromJson(otehrUserJson, userType)
-        val currentUser: User = Gson().fromJson(currentUserJson, userType)
-        val chatId = if (currentUserId < otherUser.userId) "$currentUserId-${otherUser.userId}" else "${otherUser.userId}-$currentUserId"
-        return Triple(chatId, otherUser, currentUser)
+
+    /**
+     * Слушатели для получение сообщений для всех пользователей [startListeningToChats].
+     * Cлушатель для получений сообщений в текущем чате [listenForMessagesInChat].
+     * Поиск последних сообщений и их колличество [processChatMessages].
+     */
+    private val _messages = MutableStateFlow<List<Message>>(emptyList())
+    val messages = _messages.asStateFlow()
+
+    private val _chatItems = MutableStateFlow<List<ChatItem>>(emptyList())
+    val chatItems = _chatItems.asStateFlow()
+
+    private val _latestMessages = MutableStateFlow<Map<String, Message>>(emptyMap())
+    val latestMessages = _latestMessages.asStateFlow()
+
+    private val _messageCounts = MutableStateFlow<Map<String, Int>>(emptyMap())
+    val messageCounts = _messageCounts.asStateFlow()
+
+    private val _chatIds = MutableStateFlow<List<String>>(emptyList())
+
+    fun updateChatIds(chatIds: List<String>) {
+        _chatIds.value = chatIds
     }
 
     fun startListeningToChats() {
@@ -233,8 +230,17 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-
-
+    /**
+     * Генерация ChatId и ChatItem
+     */
+    fun generateChatId(otehrUserJson: String, currentUserJson: String): Triple<String, User, User> {
+        val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+        val userType = object : TypeToken<User>() {}.type
+        val otherUser: User = Gson().fromJson(otehrUserJson, userType)
+        val currentUser: User = Gson().fromJson(currentUserJson, userType)
+        val chatId = if (currentUserId < otherUser.userId) "$currentUserId-${otherUser.userId}" else "${otherUser.userId}-$currentUserId"
+        return Triple(chatId, otherUser, currentUser)
+    }
     fun generateChatItems(messages: List<Message>): List<ChatItem> {
         val chatItems = mutableListOf<ChatItem>()
         var lastMessageDate: String? = null
@@ -250,10 +256,4 @@ class ChatViewModel @Inject constructor(
         }
         return chatItems.reversed()
     }
-
-
-
-
-
-
 }

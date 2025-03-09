@@ -74,21 +74,14 @@ fun HomePage(
         }
     }
 
-
-
-
-
     LaunchedEffect(Unit) {
         usersViewModel.getUsers()
         chatViewModel.startListeningToChats()
-        Log.d("Recomposition", "getUsers")
     }
 
     LaunchedEffect(filteredUsers) {
         chatViewModel.updateChatIds(chatIds)
-        Log.d("Recomposition", "filteredUsers")
     }
-
 
     Column(
         modifier = Modifier

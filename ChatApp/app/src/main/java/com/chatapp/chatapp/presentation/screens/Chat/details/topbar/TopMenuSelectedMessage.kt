@@ -1,7 +1,6 @@
-package com.chatapp.chatapp.presentation.screens.Chat.details
+package com.chatapp.chatapp.presentation.screens.Chat.details.topbar
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,10 +14,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.toFontFamily
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
 import com.chatapp.chatapp.R
-import com.chatapp.chatapp.ui.theme.ChatAppTheme
 
 @Composable
 fun TopMenuSelectedMessage(

@@ -1,4 +1,4 @@
-package com.chatapp.chatapp.presentation.screens.Chat.details
+package com.chatapp.chatapp.presentation.screens.Chat.details.topbar
 
 import com.chatapp.chatapp.domain.models.Message
 

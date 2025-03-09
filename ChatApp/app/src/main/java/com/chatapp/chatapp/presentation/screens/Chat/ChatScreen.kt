@@ -49,10 +49,10 @@ import com.chatapp.chatapp.domain.models.MessageStatus
 import com.chatapp.chatapp.domain.models.User
 import com.chatapp.chatapp.presentation.screens.Chat.details.ChatInputField
 import com.chatapp.chatapp.presentation.screens.Chat.details.ChatItem
-import com.chatapp.chatapp.presentation.screens.Chat.details.ChatTopBar
-import com.chatapp.chatapp.presentation.screens.Chat.details.DateSeparator
+import com.chatapp.chatapp.presentation.screens.Chat.details.topbar.ChatTopBar
+import com.chatapp.chatapp.presentation.screens.Chat.details.MessageDateSeparatorItem
 import com.chatapp.chatapp.presentation.screens.Chat.details.MessageItem
-import com.chatapp.chatapp.presentation.screens.Chat.details.TopMenuState
+import com.chatapp.chatapp.presentation.screens.Chat.details.topbar.TopMenuState
 import com.chatapp.chatapp.ui.theme.ChatText
 import com.chatapp.chatapp.ui.theme.Outline_Card
 import com.chatapp.chatapp.ui.theme.PrimaryBackground
@@ -232,19 +232,10 @@ fun MessageList(
                             onOpenTopMenu = { currentMessage ->
                                 chatViewModel.toggleMessageSelection(currentMessage)
                             }
-
-//                            onEditMessage = { currentMessage ->
-//                                chatViewModel.initEditMessageState(
-//                                    isEditing = true,
-//                                    newMessageText = currentMessage.text,
-//                                    editingMessageId = currentMessage.messageId
-//                                )
-//                            }
                         )
                     }
-
                     is ChatItem.DateSeparatorItem -> {
-                        DateSeparator(date = item.date)
+                        MessageDateSeparatorItem(date = item.date)
                     }
                 }
             }
