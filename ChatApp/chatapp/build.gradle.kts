@@ -12,6 +12,7 @@ android {
     namespace = "com.chatapp.chatapp"
     compileSdk = 34
 
+
     defaultConfig {
         applicationId = "com.chatapp.chatapp"
         minSdk = 26

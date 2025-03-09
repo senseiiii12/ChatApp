@@ -79,9 +79,7 @@ fun ChatScreen(
 
     val context = LocalContext.current
     val toastState = remember { ToastState() }
-
     val listState = rememberLazyListState()
-
     val currentUserId = remember { FirebaseAuth.getInstance().currentUser?.uid ?: "" }
 
     val isEditing by remember { derivedStateOf { chatViewModel.isEditing } }
@@ -89,14 +87,15 @@ fun ChatScreen(
     val newMessageText by remember { derivedStateOf { chatViewModel.newMessageText } }
 
     val topMenuState by chatViewModel.topMenuState.collectAsState()
-
+    val currentEditMessage = topMenuState.listSelectedMessages.firstOrNull()?.text ?: ""
 
 
     LaunchedEffect(Unit) {
         chatViewModel.listenForMessagesInChat(chatId, listState)
     }
-    BackHandler(topMenuState.isOpenTopMenu) {
+    BackHandler(topMenuState.isOpenTopMenu || isEditing) {
         chatViewModel.resetStateTopMenu()
+        chatViewModel.resetEditMode()
     }
 
     Scaffold(
@@ -105,7 +104,6 @@ fun ChatScreen(
             ChatTopBar(
                 otherUser = otherUser,
                 stateTopMenu = topMenuState,
-                countSelectedMessage = topMenuState.countSelectedMessage,
                 onBack = { navController.popBackStack() },
                 onCloseMenu = {
                     chatViewModel.stateTopMenuMessage(false)
@@ -123,6 +121,7 @@ fun ChatScreen(
                         topMenuState.listSelectedMessages.first().text,
                         topMenuState.listSelectedMessages.first().messageId
                     )
+                    chatViewModel.stateTopMenuMessage(false)
                 },
                 onCopyMessage = {
                     val copiedMessage = chatViewModel.copySelectedMessage(
@@ -138,6 +137,7 @@ fun ChatScreen(
                 inputMessage = inputMessage,
                 newMessageText = newMessageText,
                 isEditing = isEditing,
+                currentEditMessage = currentEditMessage,
                 onInputMessageChange = chatViewModel::updateInputMessageText,
                 onNewMessageChange = chatViewModel::updateNewMessageText,
                 onSendMessage = {
@@ -238,6 +238,7 @@ fun MessageList(
                             }
                         )
                     }
+
                     is ChatItem.DateSeparatorItem -> {
                         MessageDateSeparatorItem(date = item.date)
                     }

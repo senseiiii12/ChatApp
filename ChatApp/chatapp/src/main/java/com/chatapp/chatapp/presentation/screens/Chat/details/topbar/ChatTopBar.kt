@@ -55,7 +55,6 @@ import java.util.Date
 fun ChatTopBar(
     otherUser: User,
     stateTopMenu: TopMenuState,
-    countSelectedMessage: Int,
     onBack: () -> Unit,
     onCloseMenu: () -> Unit,
     onDeleteMessage: () -> Unit,
@@ -82,7 +81,6 @@ fun ChatTopBar(
                 }else{
                     TopMenuSelectedMessage(
                         stateTopMenu = stateTopMenu,
-                        countSelectedMessage = countSelectedMessage,
                         onDeleteMessage = onDeleteMessage,
                         onEditMessage = onEditMessage,
                         onCopyMessage = onCopyMessage

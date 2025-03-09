@@ -21,5 +21,5 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "ChatApp"
-include(":app")
+include(":chatapp")
  

@@ -20,7 +20,6 @@ import com.chatapp.chatapp.R
 @Composable
 fun TopMenuSelectedMessage(
     stateTopMenu: TopMenuState,
-    countSelectedMessage: Int,
     onDeleteMessage: () -> Unit,
     onEditMessage: () -> Unit,
     onCopyMessage: () -> Unit,
@@ -35,7 +34,7 @@ fun TopMenuSelectedMessage(
             horizontalArrangement = Arrangement.Center
         ) {
             Text(
-                text = countSelectedMessage.toString(),
+                text = stateTopMenu.countSelectedMessage.toString(),
                 color = Color.White,
                 fontSize = 16.sp,
                 fontFamily = Font(R.font.gilroy_semibold).toFontFamily()
