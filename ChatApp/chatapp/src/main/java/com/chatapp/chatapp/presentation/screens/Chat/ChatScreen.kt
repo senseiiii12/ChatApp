@@ -38,6 +38,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -188,9 +189,7 @@ fun MessageList(
     val scope = rememberCoroutineScope()
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(paddingValues)
+        modifier = Modifier.fillMaxSize().padding(paddingValues)
     ) {
         LazyColumn(
             state = listState,
@@ -209,18 +208,23 @@ fun MessageList(
                 when (item) {
                     is ChatItem.MessageItem -> {
                         val isCurrentUser = item.message.userId == currentUserId
-                        MessageItem(
-                            modifier = Modifier
-                                .animateContentSize()
-                                .onGloballyPositioned { layoutCoordinates ->
-                                    if (!isCurrentUser && item.message.status != MessageStatus.READ) {
-                                        val viewportBounds = listState.layoutInfo.viewportEndOffset
-                                        if (layoutCoordinates.positionInParent().y < viewportBounds) {
-                                            chatViewModel.markMessageAsRead(chatId, item.message.messageId)
-                                            chatViewModel.deleteUnreadMessageToScroll(item.message)
+                        LaunchedEffect(listState) {
+                            snapshotFlow { listState.layoutInfo.visibleItemsInfo }
+                                .collect { visibleItems ->
+                                    visibleItems.forEach { visibleItem ->
+                                        val visibleChatItem = chatItems.value.getOrNull(visibleItem.index)
+                                        if (visibleChatItem is ChatItem.MessageItem &&
+                                            !isCurrentUser &&
+                                            visibleChatItem.message.status != MessageStatus.READ
+                                        ) {
+                                            chatViewModel.markMessageAsRead(chatId, visibleChatItem.message.messageId)
+                                            chatViewModel.deleteUnreadMessageToScroll(visibleChatItem.message)
                                         }
                                     }
-                                },
+                                }
+                        }
+                        MessageItem(
+                            modifier = Modifier.animateContentSize(),
                             message = item.message,
                             isCurrentUser = isCurrentUser,
                             currentUser = currentUser,
@@ -232,7 +236,6 @@ fun MessageList(
                             }
                         )
                     }
-
                     is ChatItem.DateSeparatorItem -> {
                         MessageDateSeparatorItem(date = item.date)
                     }
@@ -254,6 +257,8 @@ fun MessageList(
         )
     }
 }
+
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

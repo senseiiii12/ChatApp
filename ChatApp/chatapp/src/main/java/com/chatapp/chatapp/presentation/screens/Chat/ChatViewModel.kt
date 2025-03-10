@@ -153,9 +153,14 @@ class ChatViewModel @Inject constructor(
     fun resetDefaultInputMessage() {
         _chatInputFieldState.value = _chatInputFieldState.value.copy(defaultInputMessage = "")
     }
-    fun sendMessage(chatId: String, currentUserId: String, message: String) {
+    private fun sendMessage(chatId: String, currentUserId: String, message: String) {
         viewModelScope.launch {
             messageRepository.sendMessage(chatId, currentUserId, message)
+        }
+    }
+    private fun onSaveEditMessage(chatId: String, messageId: String, newMessageText: String) {
+        viewModelScope.launch {
+            messageRepository.onSaveEditMessage(chatId, messageId, newMessageText)
         }
     }
     fun deleteMessage(chatId: String, selectedMessages: List<Message>) {
@@ -169,11 +174,7 @@ class ChatViewModel @Inject constructor(
             messageRepository.markMessageAsRead(chatId, messageId)
         }
     }
-    fun onSaveEditMessage(chatId: String, messageId: String, newMessageText: String) {
-        viewModelScope.launch {
-            messageRepository.onSaveEditMessage(chatId, messageId, newMessageText)
-        }
-    }
+
 
 
     /**
@@ -186,10 +187,6 @@ class ChatViewModel @Inject constructor(
         unreadMessages.clear()
         _unreadMessagesCount.value = unreadMessages.size
     }
-    fun addUnreadMessage(message: Message){
-        unreadMessages.add(message)
-    }
-
     fun deleteUnreadMessageToScroll(currentMessage: Message){
         unreadMessages.remove(currentMessage)
         _unreadMessagesCount.value = unreadMessages.size
