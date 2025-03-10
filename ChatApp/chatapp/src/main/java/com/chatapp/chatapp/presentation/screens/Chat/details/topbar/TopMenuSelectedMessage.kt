@@ -8,6 +8,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -19,11 +20,13 @@ import com.chatapp.chatapp.R
 
 @Composable
 fun TopMenuSelectedMessage(
-    stateTopMenu: TopMenuState,
+    stateTopMenu: State<TopMenuState>,
     onDeleteMessage: () -> Unit,
     onEditMessage: () -> Unit,
     onCopyMessage: () -> Unit,
-    ) {
+) {
+    val topMenuState = stateTopMenu.value
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -34,7 +37,7 @@ fun TopMenuSelectedMessage(
             horizontalArrangement = Arrangement.Center
         ) {
             Text(
-                text = stateTopMenu.countSelectedMessage.toString(),
+                text = topMenuState.countSelectedMessage.toString(),
                 color = Color.White,
                 fontSize = 16.sp,
                 fontFamily = Font(R.font.gilroy_semibold).toFontFamily()
@@ -45,10 +48,10 @@ fun TopMenuSelectedMessage(
             horizontalArrangement = Arrangement.Center
         ) {
             AnimatedContent(
-                targetState = stateTopMenu.countSelectedMessage > 1,
+                targetState = topMenuState.countSelectedMessage > 1,
                 contentAlignment = Alignment.Center
-            ) {isVisible->
-                if (!isVisible){
+            ) { isVisible ->
+                if (!isVisible) {
                     IconButton(onClick = onEditMessage) {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_edit_message),

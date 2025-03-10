@@ -99,12 +99,7 @@ fun MessageItem(
     val backgroundColor = remember { if (isCurrentUser) currentUserColor else otherUserColor }
     val horizontalArrangement = remember { if (isCurrentUser) Arrangement.End else Arrangement.Start }
     val screenWidth = LocalConfiguration.current.screenWidthDp
-    val selectedColorMessage by animateColorAsState(
-        targetValue = if (isEditing) Surface_Card else PrimaryBackground,
-        animationSpec = tween(durationMillis = 100)
-    )
-
-
+    val selectedColorMessage = if (isEditing) Surface_Card else PrimaryBackground
 
     Row(
         modifier = modifier

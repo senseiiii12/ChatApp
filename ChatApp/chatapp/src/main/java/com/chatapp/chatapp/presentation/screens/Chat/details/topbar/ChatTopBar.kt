@@ -20,9 +20,11 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -39,6 +41,7 @@ import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.chatapp.chatapp.R
+import com.chatapp.chatapp.domain.models.Message
 import com.chatapp.chatapp.domain.models.User
 import com.chatapp.chatapp.presentation.screens.HomePage.UsersViewModel
 import com.chatapp.chatapp.ui.theme.Bg_Default_Avatar
@@ -54,16 +57,17 @@ import java.util.Date
 @Composable
 fun ChatTopBar(
     otherUser: User,
-    stateTopMenu: TopMenuState,
+    stateTopMenu: State<TopMenuState>,
     onBack: () -> Unit,
     onCloseMenu: () -> Unit,
-    onDeleteMessage: () -> Unit,
-    onEditMessage: () -> Unit,
-    onCopyMessage: () -> Unit,
+    onDeleteMessage: (List<Message>) -> Unit,
+    onEditMessage: (String, Message?) -> Unit,
+    onCopyMessage: (List<Message>) -> Unit,
     usersViewModel: UsersViewModel = hiltViewModel()
 ) {
 
-    LaunchedEffect (Unit){
+    val topMenuState = stateTopMenu.value
+    LaunchedEffect(Unit) {
         usersViewModel.listenForOtherUserStatus(otherUser.userId)
     }
 
@@ -72,25 +76,34 @@ fun ChatTopBar(
             containerColor = Surface_Card
         ),
         title = {
-            AnimatedContent(targetState = stateTopMenu.isOpenTopMenu) { stateTopMenuMessage ->
-                if (!stateTopMenuMessage){
+            AnimatedContent(targetState = topMenuState.isOpenTopMenu) { stateTopMenuMessage ->
+                if (!stateTopMenuMessage) {
                     ChatHeader(
                         otherUser = otherUser,
                         usersViewModel = usersViewModel
                     )
-                }else{
+                } else {
                     TopMenuSelectedMessage(
                         stateTopMenu = stateTopMenu,
-                        onDeleteMessage = onDeleteMessage,
-                        onEditMessage = onEditMessage,
-                        onCopyMessage = onCopyMessage
+                        onDeleteMessage = {
+                            onDeleteMessage(topMenuState.listSelectedMessages)
+                        },
+                        onEditMessage = {
+                            onEditMessage(
+                                topMenuState.listSelectedMessages.first().text,
+                                topMenuState.listSelectedMessages.first()
+                            )
+                        } ,
+                        onCopyMessage = {
+                            onCopyMessage(topMenuState.listSelectedMessages)
+                        }
                     )
                 }
             }
         },
         navigationIcon = {
-            AnimatedContent(targetState = stateTopMenu.isOpenTopMenu) { stateTopMenuMessage ->
-                if (!stateTopMenuMessage){
+            AnimatedContent(targetState = topMenuState.isOpenTopMenu) { stateTopMenuMessage ->
+                if (!stateTopMenuMessage) {
                     IconButton(onClick = onBack) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
@@ -98,7 +111,7 @@ fun ChatTopBar(
                             tint = Color.White
                         )
                     }
-                }else{
+                } else {
                     IconButton(onClick = onCloseMenu) {
                         Icon(
                             imageVector = Icons.Default.Close,
@@ -119,8 +132,8 @@ fun OnlineStatus(
 ) {
 
     val isOnline by usersViewModel.userStatuses.collectAsState()
-    val onlineStatus =   isOnline[otherUser.userId]?.first ?: false
-    val lastSeenStatus =  isOnline[otherUser.userId]?.second ?: Date(0)
+    val onlineStatus = isOnline[otherUser.userId]?.first ?: false
+    val lastSeenStatus = isOnline[otherUser.userId]?.second ?: Date(0)
     val timeManager = remember { TimeManager() }
 
     AnimatedContent(targetState = onlineStatus) { isOnline ->
@@ -160,7 +173,7 @@ fun ChatHeader(
     otherUser: User,
     usersViewModel: UsersViewModel
 ) {
-    Row (verticalAlignment = Alignment.CenterVertically) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
         otherUser.avatar?.let {
             AsyncImage(
                 modifier = Modifier

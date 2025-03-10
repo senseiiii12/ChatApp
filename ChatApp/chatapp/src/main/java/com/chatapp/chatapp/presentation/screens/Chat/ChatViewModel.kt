@@ -15,6 +15,8 @@ import com.chatapp.chatapp.domain.models.Message
 import com.chatapp.chatapp.domain.models.MessageStatus
 import com.chatapp.chatapp.domain.models.User
 import com.chatapp.chatapp.presentation.screens.Chat.details.ChatItem
+import com.chatapp.chatapp.presentation.screens.Chat.details.inputField.ChatInputFieldState
+import com.chatapp.chatapp.presentation.screens.Chat.details.inputField.SendState
 import com.chatapp.chatapp.presentation.screens.Chat.details.topbar.TopMenuState
 import com.google.firebase.auth.FirebaseAuth
 import com.google.gson.Gson
@@ -79,12 +81,6 @@ class ChatViewModel @Inject constructor(
         }
         return ""
     }
-    fun deleteMessage(chatId: String, selectedMessages: List<Message>) {
-        viewModelScope.launch {
-            messageRepository.deleteMessage(chatId, selectedMessages)
-            resetStateTopMenu()
-        }
-    }
     fun resetStateTopMenu(){
         _topMenuState.update {
             it.copy(
@@ -100,38 +96,72 @@ class ChatViewModel @Inject constructor(
     /**
      * Состояние InputField в чате и методы для сообщений
      */
-    var inputMessage by mutableStateOf("")
-        private set
-    var isEditing by mutableStateOf(false)
-        private set
-    var editingMessageId by mutableStateOf("")
-        private set
-    var newMessageText by mutableStateOf("")
-        private set
 
-    fun updateInputMessageText(newText: String) {
-        inputMessage = newText
+    private val _chatInputFieldState = MutableStateFlow(ChatInputFieldState())
+    val chatInputFieldState = _chatInputFieldState.asStateFlow()
+
+    fun updateDefaultInputMessage(newText: String) {
+        _chatInputFieldState.value = _chatInputFieldState.value.copy(defaultInputMessage = newText)
     }
-    fun updateNewMessageText(newText: String) {
-        newMessageText = newText
+    fun updateEditingInputMessage(newText: String) {
+        _chatInputFieldState.value = _chatInputFieldState.value.copy(editingInputMessage = newText)
     }
-    fun initEditMessageState(isEditing: Boolean, newMessageText: String, editingMessageId: String) {
-        this.isEditing = isEditing
-        this.newMessageText = newMessageText
-        this.editingMessageId = editingMessageId
+    fun initEditMessageState(isEditing: Boolean, newMessageText: String, editingMessage: Message?) {
+        _chatInputFieldState.value = _chatInputFieldState.value.copy(
+            isEditingMessage = isEditing,
+            editingInputMessage = newMessageText,
+            editingMessage = editingMessage
+        )
     }
+
     fun resetEditMode() {
-        isEditing = false
-        editingMessageId = ""
-        newMessageText = ""
+        _chatInputFieldState.value = _chatInputFieldState.value.copy(
+            isEditingMessage = false,
+            editingInputMessage = "",
+            editingMessage = null
+        )
         resetStateTopMenu()
     }
-    fun resetInputMessage() {
-        inputMessage = ""
+    fun handleSendMessage(
+        currentChatId: String,
+        currentUserId: String,
+        sendState: SendState
+    ) {
+        when (sendState) {
+            is SendState.SendEditMessage -> {
+                if (chatInputFieldState.value.editingInputMessage.isNotEmpty()) {
+                    onSaveEditMessage(
+                        chatId = currentChatId,
+                        messageId = chatInputFieldState.value.editingMessage?.messageId ?: "",
+                        newMessageText = chatInputFieldState.value.editingInputMessage
+                    )
+                    resetEditMode()
+                }
+            }
+            is SendState.SendDefaultMessage -> {
+                if (chatInputFieldState.value.defaultInputMessage.isNotEmpty()) {
+                    sendMessage(
+                        chatId = currentChatId,
+                        currentUserId = currentUserId,
+                        message = chatInputFieldState.value.defaultInputMessage
+                    )
+                    resetDefaultInputMessage()
+                }
+            }
+        }
+    }
+    fun resetDefaultInputMessage() {
+        _chatInputFieldState.value = _chatInputFieldState.value.copy(defaultInputMessage = "")
     }
     fun sendMessage(chatId: String, currentUserId: String, message: String) {
         viewModelScope.launch {
             messageRepository.sendMessage(chatId, currentUserId, message)
+        }
+    }
+    fun deleteMessage(chatId: String, selectedMessages: List<Message>) {
+        viewModelScope.launch {
+            messageRepository.deleteMessage(chatId, selectedMessages)
+            resetStateTopMenu()
         }
     }
     fun markMessageAsRead(chatId: String, messageId: String) {
@@ -149,12 +179,15 @@ class ChatViewModel @Inject constructor(
     /**
      * Отслеживание колличества непрочитанных сообщений, вне зоне просмотра этих сообщений
      */
-    private val unreadMessages = mutableListOf<Message>()
+    val unreadMessages = mutableListOf<Message>()
     private val _unreadMessagesCount = MutableStateFlow(0)
     val unreadMessagesCount = _unreadMessagesCount.asStateFlow()
     fun resetUnreadMessagesCount() {
         unreadMessages.clear()
         _unreadMessagesCount.value = unreadMessages.size
+    }
+    fun addUnreadMessage(message: Message){
+        unreadMessages.add(message)
     }
 
     fun deleteUnreadMessageToScroll(currentMessage: Message){

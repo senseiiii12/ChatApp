@@ -2,6 +2,7 @@ package com.chatapp.chatapp.presentation.screens.Chat
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
@@ -30,9 +31,11 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -48,15 +51,18 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.chatapp.chatapp.domain.models.MessageStatus
 import com.chatapp.chatapp.domain.models.User
-import com.chatapp.chatapp.presentation.screens.Chat.details.ChatInputField
+import com.chatapp.chatapp.presentation.screens.Chat.details.inputField.ChatInputField
 import com.chatapp.chatapp.presentation.screens.Chat.details.ChatItem
 import com.chatapp.chatapp.presentation.screens.Chat.details.topbar.ChatTopBar
 import com.chatapp.chatapp.presentation.screens.Chat.details.MessageDateSeparatorItem
 import com.chatapp.chatapp.presentation.screens.Chat.details.MessageItem
+import com.chatapp.chatapp.presentation.screens.Chat.details.inputField.ChatInputFieldState
+import com.chatapp.chatapp.presentation.screens.Chat.details.inputField.CurrentEditMessageRow
 import com.chatapp.chatapp.presentation.screens.Chat.details.topbar.TopMenuState
 import com.chatapp.chatapp.ui.theme.ChatText
 import com.chatapp.chatapp.ui.theme.Outline_Card
 import com.chatapp.chatapp.ui.theme.PrimaryBackground
+import com.chatapp.chatapp.ui.theme.PrimaryPurple
 import com.chatapp.chatapp.ui.theme.Surface_Card
 import com.chatapp.chatapp.util.CustomToast.ToastHost
 import com.chatapp.chatapp.util.CustomToast.ToastState
@@ -82,21 +88,20 @@ fun ChatScreen(
     val listState = rememberLazyListState()
     val currentUserId = remember { FirebaseAuth.getInstance().currentUser?.uid ?: "" }
 
-    val isEditing by remember { derivedStateOf { chatViewModel.isEditing } }
-    val inputMessage by remember { derivedStateOf { chatViewModel.inputMessage } }
-    val newMessageText by remember { derivedStateOf { chatViewModel.newMessageText } }
-
-    val topMenuState by chatViewModel.topMenuState.collectAsState()
-    val currentEditMessage = topMenuState.listSelectedMessages.firstOrNull()?.text ?: ""
-
+    val chatInputFieldState = chatViewModel.chatInputFieldState.collectAsState()
+    val topMenuState = chatViewModel.topMenuState.collectAsState()
 
     LaunchedEffect(Unit) {
         chatViewModel.listenForMessagesInChat(chatId, listState)
     }
-    BackHandler(topMenuState.isOpenTopMenu || isEditing) {
-        chatViewModel.resetStateTopMenu()
-        chatViewModel.resetEditMode()
-    }
+
+    MyBackHandler(
+        topMenuState = topMenuState,
+        chatInputFieldState = chatInputFieldState,
+        onDisableTopMenu = chatViewModel::resetStateTopMenu,
+        onDisableEditMode = chatViewModel::resetEditMode
+    )
+
 
     Scaffold(
         containerColor = PrimaryBackground,
@@ -109,51 +114,30 @@ fun ChatScreen(
                     chatViewModel.stateTopMenuMessage(false)
                     chatViewModel.clearSelectedMessages()
                 },
-                onDeleteMessage = {
-                    chatViewModel.deleteMessage(
-                        chatId,
-                        topMenuState.listSelectedMessages
-                    )
+                onDeleteMessage = { messageList ->
+                    chatViewModel.deleteMessage(chatId, messageList)
                 },
-                onEditMessage = {
-                    chatViewModel.initEditMessageState(
-                        true,
-                        topMenuState.listSelectedMessages.first().text,
-                        topMenuState.listSelectedMessages.first().messageId
-                    )
+                onEditMessage = { newMessage, currentMessage ->
+                    chatViewModel.initEditMessageState(true, newMessage, currentMessage)
                     chatViewModel.stateTopMenuMessage(false)
                 },
-                onCopyMessage = {
-                    val copiedMessage = chatViewModel.copySelectedMessage(
-                        context,
-                        topMenuState.listSelectedMessages
-                    )
+                onCopyMessage = { messageList ->
+                    val copiedMessage = chatViewModel.copySelectedMessage(context, messageList)
                     toastState.showToast("Copy: $copiedMessage")
                 }
             )
         },
         bottomBar = {
             ChatInputField(
-                inputMessage = inputMessage,
-                newMessageText = newMessageText,
-                isEditing = isEditing,
-                currentEditMessage = currentEditMessage,
-                onInputMessageChange = chatViewModel::updateInputMessageText,
-                onNewMessageChange = chatViewModel::updateNewMessageText,
-                onSendMessage = {
-                    if (isEditing && newMessageText.isNotEmpty()) {
-                        chatViewModel.onSaveEditMessage(
-                            chatId,
-                            chatViewModel.editingMessageId,
-                            newMessageText
-                        )
-                        chatViewModel.resetEditMode()
-                    } else {
-                        if (inputMessage.isNotEmpty()) {
-                            chatViewModel.sendMessage(chatId, currentUserId, inputMessage)
-                            chatViewModel.resetInputMessage()
-                        }
-                    }
+                state = chatInputFieldState,
+                onInputMessageChange = chatViewModel::updateDefaultInputMessage,
+                onNewMessageChange = chatViewModel::updateEditingInputMessage,
+                onSendMessage = { state ->
+                    chatViewModel.handleSendMessage(
+                        currentChatId = chatId,
+                        currentUserId = currentUserId,
+                        sendState = state
+                    )
                 },
                 onCancelEdit = chatViewModel::resetEditMode
             )
@@ -173,6 +157,19 @@ fun ChatScreen(
     }
 }
 
+@Composable
+fun MyBackHandler(
+    topMenuState: State<TopMenuState>,
+    chatInputFieldState: State<ChatInputFieldState>,
+    onDisableTopMenu: () -> Unit,
+    onDisableEditMode: () -> Unit,
+) {
+    BackHandler(enabled = topMenuState.value.isOpenTopMenu || chatInputFieldState.value.isEditingMessage) {
+        if (topMenuState.value.isOpenTopMenu) onDisableTopMenu()
+        else if (chatInputFieldState.value.isEditingMessage) onDisableEditMode()
+    }
+}
+
 
 @Composable
 fun MessageList(
@@ -183,10 +180,10 @@ fun MessageList(
     chatId: String,
     paddingValues: PaddingValues,
     listState: LazyListState,
-    topMenuState: TopMenuState
+    topMenuState: State<TopMenuState>
 ) {
 
-    val chatItems by chatViewModel.chatItems.collectAsState()
+    val chatItems = chatViewModel.chatItems.collectAsState()
     val unreadMessagesCount by chatViewModel.unreadMessagesCount.collectAsState()
     val scope = rememberCoroutineScope()
 
@@ -203,7 +200,7 @@ fun MessageList(
             reverseLayout = true,
             verticalArrangement = Arrangement.Bottom
         ) {
-            itemsIndexed(chatItems, key = { _, item ->
+            itemsIndexed(chatItems.value, key = { _, item ->
                 when (item) {
                     is ChatItem.MessageItem -> item.message.messageId
                     is ChatItem.DateSeparatorItem -> item.date
@@ -214,15 +211,12 @@ fun MessageList(
                         val isCurrentUser = item.message.userId == currentUserId
                         MessageItem(
                             modifier = Modifier
-                                .animateItem()
+                                .animateContentSize()
                                 .onGloballyPositioned { layoutCoordinates ->
                                     if (!isCurrentUser && item.message.status != MessageStatus.READ) {
                                         val viewportBounds = listState.layoutInfo.viewportEndOffset
                                         if (layoutCoordinates.positionInParent().y < viewportBounds) {
-                                            chatViewModel.markMessageAsRead(
-                                                chatId,
-                                                item.message.messageId
-                                            )
+                                            chatViewModel.markMessageAsRead(chatId, item.message.messageId)
                                             chatViewModel.deleteUnreadMessageToScroll(item.message)
                                         }
                                     }
@@ -231,7 +225,7 @@ fun MessageList(
                             isCurrentUser = isCurrentUser,
                             currentUser = currentUser,
                             otherUser = otherUser,
-                            isEditing = topMenuState.listSelectedMessages.contains(item.message),
+                            isEditing = topMenuState.value.listSelectedMessages.contains(item.message),
                             status = item.message.status,
                             onOpenTopMenu = { currentMessage ->
                                 chatViewModel.toggleMessageSelection(currentMessage)
@@ -247,7 +241,7 @@ fun MessageList(
         }
 
         ScrollToEndList(
-            chatItems = chatItems,
+            chatItems = chatItems.value,
             listState = listState
         )
 
@@ -312,7 +306,7 @@ fun FAB(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .offset(x = (-4).dp, y = (-4).dp),
-                    containerColor = Color.Red
+                    containerColor = PrimaryPurple
                 ) {
                     Text(
                         text = animatedUnreadCount.toString(),
@@ -335,7 +329,6 @@ fun ScrollToEndList(
     }
     if (!isVisibleFab) {
         LaunchedEffect(chatItems.size) {
-//            delay(100)
             if (chatItems.isNotEmpty()) {
                 listState.animateScrollToItem(0)
             }
