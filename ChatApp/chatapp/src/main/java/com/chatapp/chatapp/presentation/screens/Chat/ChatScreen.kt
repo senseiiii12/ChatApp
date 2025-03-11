@@ -208,23 +208,19 @@ fun MessageList(
                 when (item) {
                     is ChatItem.MessageItem -> {
                         val isCurrentUser = item.message.userId == currentUserId
-                        LaunchedEffect(listState) {
-                            snapshotFlow { listState.layoutInfo.visibleItemsInfo }
-                                .collect { visibleItems ->
-                                    visibleItems.forEach { visibleItem ->
-                                        val visibleChatItem = chatItems.value.getOrNull(visibleItem.index)
-                                        if (visibleChatItem is ChatItem.MessageItem &&
-                                            !isCurrentUser &&
-                                            visibleChatItem.message.status != MessageStatus.READ
-                                        ) {
-                                            chatViewModel.markMessageAsRead(chatId, visibleChatItem.message.messageId)
-                                            chatViewModel.deleteUnreadMessageToScroll(visibleChatItem.message)
+
+                        MessageItem(
+                            modifier = Modifier
+                                .animateContentSize()
+                                .onGloballyPositioned { layoutCoordinates ->
+                                    if (!isCurrentUser && item.message.status != MessageStatus.READ) {
+                                        val viewportBounds = listState.layoutInfo.viewportEndOffset
+                                        if (layoutCoordinates.positionInParent().y < viewportBounds) {
+                                            chatViewModel.markMessageAsRead(chatId, item.message.messageId)
+                                            chatViewModel.deleteUnreadMessageToScroll(item.message)
                                         }
                                     }
-                                }
-                        }
-                        MessageItem(
-                            modifier = Modifier.animateContentSize(),
+                                },
                             message = item.message,
                             isCurrentUser = isCurrentUser,
                             currentUser = currentUser,
