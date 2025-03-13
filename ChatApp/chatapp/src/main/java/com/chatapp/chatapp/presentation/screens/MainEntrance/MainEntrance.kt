@@ -79,5 +79,4 @@ fun MainEntrance(
             }
         }
     }
-
 }

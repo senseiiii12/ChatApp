@@ -35,10 +35,8 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -58,7 +56,6 @@ import com.chatapp.chatapp.presentation.screens.Chat.details.topbar.ChatTopBar
 import com.chatapp.chatapp.presentation.screens.Chat.details.MessageDateSeparatorItem
 import com.chatapp.chatapp.presentation.screens.Chat.details.MessageItem
 import com.chatapp.chatapp.presentation.screens.Chat.details.inputField.ChatInputFieldState
-import com.chatapp.chatapp.presentation.screens.Chat.details.inputField.CurrentEditMessageRow
 import com.chatapp.chatapp.presentation.screens.Chat.details.topbar.TopMenuState
 import com.chatapp.chatapp.ui.theme.ChatText
 import com.chatapp.chatapp.ui.theme.Outline_Card
@@ -193,9 +190,7 @@ fun MessageList(
     ) {
         LazyColumn(
             state = listState,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 0.dp),
+            modifier = Modifier.fillMaxSize(),
             reverseLayout = true,
             verticalArrangement = Arrangement.Bottom
         ) {
@@ -208,7 +203,6 @@ fun MessageList(
                 when (item) {
                     is ChatItem.MessageItem -> {
                         val isCurrentUser = item.message.userId == currentUserId
-
                         MessageItem(
                             modifier = Modifier
                                 .animateContentSize()

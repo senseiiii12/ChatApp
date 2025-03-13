@@ -90,7 +90,7 @@ fun MessageItem(
     val horizontalArrangement =
         remember { if (isCurrentUser) Arrangement.End else Arrangement.Start }
     val screenWidth = LocalConfiguration.current.screenWidthDp
-    val selectedColorMessage = if (isEditing) Surface_Card else PrimaryBackground
+    val selectedColorMessage = remember{ if (isEditing) Surface_Card else PrimaryBackground }
 
     Row(
         modifier = modifier

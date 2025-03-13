@@ -30,7 +30,7 @@ val Bg_Default_Avatar = Color(0xFF272626)
 val ChatText = Color(0xFFC8C8C8)
 
 val Success = Color(0xFF93CCAA)
-val Error = Color(0xFFC74770)
+val Error = Color(0xFFE53955)
 val Waiting = Color(0xFFD4F55E)
 
 val Online = Color(0xFF00FF85)

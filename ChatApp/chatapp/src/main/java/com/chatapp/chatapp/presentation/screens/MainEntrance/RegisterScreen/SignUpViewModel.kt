@@ -24,7 +24,7 @@ class SignUpViewModel @Inject constructor(
     val singUpState = _signUpState.receiveAsFlow()
 
     private val _showBottomSheet = MutableStateFlow(false)
-    val showBottomSheet: StateFlow<Boolean> get() = _showBottomSheet
+    val showBottomSheet: StateFlow<Boolean> = _showBottomSheet
 
     fun showSheet() {
         _showBottomSheet.value = true
@@ -34,33 +34,36 @@ class SignUpViewModel @Inject constructor(
         _showBottomSheet.value = false
     }
 
-    fun registerUser(avatar: String?, name: String,email: String, password: String) = viewModelScope.launch {
-        authRepository.registerUser(email, password).collect { result ->
-            when (result) {
-                is Resource.Success -> {
-                    _signUpState.send(
-                        SignUpState(
-                            isSuccess = "Success Registration",
-                            isLoading = false
+    fun registerUser(avatar: String?, name: String, email: String, password: String) =
+        viewModelScope.launch {
+            authRepository.registerUser(email, password).collect { result ->
+                when (result) {
+                    is Resource.Success -> {
+                        _signUpState.send(
+                            SignUpState(
+                                isSuccess = "Success Registration",
+                                isLoading = false
+                            )
                         )
-                    )
-                    val user = mapOf(
-                        "userId" to authRepository.getCurrentUserUID(),
-                        "avatar" to avatar,
-                        "name" to name,
-                        "email" to email,
-                        "password" to password,
-                        "lastSeen" to FieldValue.serverTimestamp()
-                    )
-                    usersRepository.saveUserToDatabase(user)
-                }
-                is Resource.Loading -> {
-                    _signUpState.send(SignUpState(isLoading = true))
-                }
-                is Resource.Error -> {
-                    _signUpState.send(SignUpState(isError = result.message))
+                        val user = mapOf(
+                            "userId" to authRepository.getCurrentUserUID(),
+                            "avatar" to avatar,
+                            "name" to name,
+                            "email" to email,
+                            "password" to password,
+                            "lastSeen" to FieldValue.serverTimestamp()
+                        )
+                        usersRepository.saveUserToDatabase(user)
+                    }
+
+                    is Resource.Loading -> {
+                        _signUpState.send(SignUpState(isLoading = true))
+                    }
+
+                    is Resource.Error -> {
+                        _signUpState.send(SignUpState(isError = result.message, isLoading = false))
+                    }
                 }
             }
         }
-    }
 }

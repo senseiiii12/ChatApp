@@ -132,8 +132,6 @@ fun HomePage(
             Text(text = "${currentUser?.name}")
         }
     }
-
-
 }
 
 

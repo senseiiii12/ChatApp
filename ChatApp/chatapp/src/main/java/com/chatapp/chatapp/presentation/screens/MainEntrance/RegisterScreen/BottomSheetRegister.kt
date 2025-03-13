@@ -32,7 +32,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,11 +48,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.buildpc.firstcompose.EnterScreen.components.ButtonEnter
 import com.buildpc.firstcompose.EnterScreen.components.EditField
 import com.chatapp.chatapp.R
-import com.chatapp.chatapp.presentation.ValidateViewModel
+import com.chatapp.chatapp.presentation.screens.MainEntrance.Validator.ValidateViewModel
 import com.chatapp.chatapp.presentation.screens.MainEntrance.RegisterScreen.ImageAvatar.ImageAvatar
 import com.chatapp.chatapp.presentation.screens.MainEntrance.RegisterScreen.ImageAvatar.ImageAvatarViewModel
 import com.chatapp.chatapp.ui.theme.Success
-import com.chatapp.chatapp.util.ErrorMessage
+import com.chatapp.chatapp.presentation.screens.MainEntrance.Validator.ErrorMessage
 import kotlinx.coroutines.launch
 
 
@@ -69,12 +68,14 @@ fun BottomSheetRegister(
     val viewModelImageAvatar: ImageAvatarViewModel = viewModel()
     val imageUri by viewModelImageAvatar.imageUri.collectAsState()
     val state = viewModel.singUpState.collectAsState(initial = null)
-    var name by remember { mutableStateOf("") }
+
+    var name = remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
     val scope = rememberCoroutineScope()
 
+    val stateRegisterValidate = validateViewModel.validationRegisterState.collectAsState()
 
 
     Column(
@@ -96,18 +97,18 @@ fun BottomSheetRegister(
             color = Color.White
         )
         Spacer(modifier = Modifier.height(10.dp))
-        Box{
+        Box {
             EditField(
                 placeholder = "Name",
                 iconStart = Icons.Default.Person,
                 keyboardType = KeyboardType.Text,
                 visualTransformation = VisualTransformation.None,
-                onValueChange = { name = it },
-                value = name
+                onValueChange = { name.value = it },
+                value = name.value
             )
             ValidateCheck(
                 modifier = Modifier.align(Alignment.CenterEnd),
-                isSuccess = name.isNotEmpty()
+                isSuccess = name.value.isNotEmpty()
             )
         }
         Spacer(modifier = Modifier.height(20.dp))
@@ -125,13 +126,10 @@ fun BottomSheetRegister(
             )
             ValidateCheck(
                 modifier = Modifier.align(Alignment.CenterEnd),
-                isSuccess = validateViewModel.errorEmailRegister.value.isEmpty() && email.isNotEmpty()
+                isSuccess = stateRegisterValidate.value.errorEmailRegister.isEmpty() && email.isNotEmpty()
             )
         }
-        ErrorMessage(
-            modifier = Modifier.align(Alignment.Start),
-            message = validateViewModel.errorEmailRegister.value
-        )
+        ErrorMessage(state = stateRegisterValidate) { it.errorEmailRegister }
         Spacer(modifier = Modifier.height(20.dp))
         Box {
             EditField(
@@ -147,25 +145,24 @@ fun BottomSheetRegister(
             )
             ValidateCheck(
                 modifier = Modifier.align(Alignment.CenterEnd),
-                isSuccess = validateViewModel.errorPasswordRegister.value.isEmpty() && password.isNotEmpty()
+                isSuccess = stateRegisterValidate.value.errorPasswordRegister.isEmpty() && password.isNotEmpty()
             )
         }
-        ErrorMessage(
-            modifier = Modifier.align(Alignment.Start),
-            message = validateViewModel.errorPasswordRegister.value
-        )
+        ErrorMessage(state = stateRegisterValidate) { it.errorPasswordRegister }
         Spacer(modifier = Modifier.height(40.dp))
         ButtonEnter(
             text = "SignUp",
             OnClick = {
-                if (validateViewModel.validateRegisterFields() && name.isNotEmpty()){
-                    if (imageUri != null){
-                        viewModelImageAvatar.uploadImageToFirebase(imageUri!!){ downloadUrl ->
-                            viewModel.registerUser(downloadUrl,name,email,password)
+                if (stateRegisterValidate.value.errorEmailRegister.isEmpty() &&
+                    stateRegisterValidate.value.errorPasswordRegister.isEmpty() &&
+                    name.value.isNotEmpty()
+                ) {
+                    if (imageUri != null) {
+                        viewModelImageAvatar.uploadImageToFirebase(imageUri!!) { downloadUrl ->
+                            viewModel.registerUser(downloadUrl, name.value, email, password)
                         }
-                    }else viewModel.registerUser(null,name,email,password)
+                    } else viewModel.registerUser(null, name.value, email, password)
                 }
-
             },
         )
         Spacer(modifier = Modifier.height(50.dp))

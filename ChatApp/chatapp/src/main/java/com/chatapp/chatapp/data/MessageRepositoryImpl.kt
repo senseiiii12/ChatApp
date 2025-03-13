@@ -5,6 +5,7 @@ import com.chatapp.chatapp.domain.MessageRepository
 import com.chatapp.chatapp.domain.models.Message
 import com.chatapp.chatapp.domain.models.MessageStatus
 import com.google.firebase.firestore.DocumentChange
+import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenSource
@@ -69,64 +70,50 @@ class MessageRepositoryImpl @Inject constructor(
             .collection("messages")
             .orderBy("timestamp", Query.Direction.DESCENDING)
             .addSnapshotListener(options) { snapshot, e ->
-                if (e != null || snapshot == null) {
-                    return@addSnapshotListener
-                }
-                val newMessages = mutableListOf<Message>()
-                val updatedMessages = mutableListOf<Message>()
-                val removedMessagesIds = mutableListOf<String>()
+                if (e != null || snapshot == null) return@addSnapshotListener
 
-                for (docChange in snapshot.documentChanges) {
-                    val document = docChange.document
-                    val message = Message(
-                        userId = document.getString("userId") ?: "",
-                        text = document.getString("text") ?: "",
-                        timestamp = document.getTimestamp("timestamp")?.toDate()?.time ?: 0L,
-                        messageId = document.getString("messageId") ?: "",
-                        status = MessageStatus.valueOf(document.getString("status") ?: MessageStatus.SENT.name)
-                    )
+                val newMessages = snapshot.documentChanges
+                    .filter { it.type == DocumentChange.Type.ADDED }
+                    .map { it.document.toMessage() }
 
-                    when (docChange.type) {
-                        DocumentChange.Type.ADDED -> newMessages.add(message)
-                        DocumentChange.Type.MODIFIED -> updatedMessages.add(message)
-                        DocumentChange.Type.REMOVED -> removedMessagesIds.add(message.messageId)
-                    }
-                }
+                val updatedMessages = snapshot.documentChanges
+                    .filter { it.type == DocumentChange.Type.MODIFIED }
+                    .map { it.document.toMessage() }
+
+                val removedMessagesIds = snapshot.documentChanges
+                    .filter { it.type == DocumentChange.Type.REMOVED }
+                    .map { it.document.getString("messageId") ?: "" }
+
                 onMessagesChanged(newMessages, updatedMessages, removedMessagesIds)
             }
+    }
+    private fun DocumentSnapshot.toMessage(): Message {
+        return Message(
+            userId = getString("userId") ?: "",
+            text = getString("text") ?: "",
+            timestamp = getTimestamp("timestamp")?.toDate()?.time ?: 0L,
+            messageId = getString("messageId") ?: "",
+            status = MessageStatus.valueOf(getString("status") ?: MessageStatus.SENT.name)
+        )
     }
 
     override suspend fun listenForMessagesInChats(chatIds: List<String>): Flow<Map<String, List<Message>>> {
         return callbackFlow {
-            val currentMessages = mutableMapOf<String, List<Message>>()
+            val currentMessages = mutableMapOf<String, List<Message>>().withDefault { emptyList() }
 
             val listeners = chatIds.map { chatId ->
                 chatCollection.document(chatId)
                     .collection("messages")
                     .orderBy("timestamp", Query.Direction.DESCENDING)
                     .limit(20)
-                    .addSnapshotListener(options) { snapshot, e ->
-                        if (e != null || snapshot == null) {
-                            return@addSnapshotListener
-                        }
-                        val messagesList = snapshot.documents.map { document ->
-                            Message(
-                                userId = document.getString("userId") ?: "",
-                                text = document.getString("text") ?: "",
-                                timestamp = document.getTimestamp("timestamp")?.toDate()?.time ?: 0L,
-                                messageId = document.getString("messageId") ?: "",
-                                status = MessageStatus.valueOf(document.getString("status") ?: MessageStatus.SENT.name)
-                            )
-                        }
-                        currentMessages[chatId] = messagesList
+                    .addSnapshotListener { snapshot, e ->
+                        if (e != null || snapshot == null) return@addSnapshotListener
+                        val messages = snapshot.documents.map { it.toMessage() }
+                        currentMessages[chatId] = messages
                         trySend(currentMessages.toMap())
                     }
             }
-            awaitClose {
-                listeners.forEach { listener ->
-                    listener.remove()
-                }
-            }
+            awaitClose { listeners.forEach { it.remove() } }
         }
     }
 

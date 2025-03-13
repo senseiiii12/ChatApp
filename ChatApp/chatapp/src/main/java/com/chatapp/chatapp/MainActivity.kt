@@ -145,14 +145,5 @@ class MainActivity : ComponentActivity() {
         currentUserId?.let { usersViewModel.updateUserStatus(it, false) }
     }
 
-//    override fun onDestroy() {
-//        super.onDestroy()
-//        currentUserId?.let { usersViewModel.updateUserStatus(it, false){} }
-//    }
-//
-//    override fun onPause() {
-//        super.onPause()
-//        currentUserId?.let { usersViewModel.updateUserStatus(it, false){} }
-//    }
 }
 

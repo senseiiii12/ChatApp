@@ -13,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -31,11 +32,10 @@ import androidx.compose.ui.window.Dialog
 import com.buildpc.firstcompose.EnterScreen.components.ButtonEnter
 import com.buildpc.firstcompose.EnterScreen.components.EditField
 import com.chatapp.chatapp.R
-import com.chatapp.chatapp.presentation.ValidateViewModel
+import com.chatapp.chatapp.presentation.screens.MainEntrance.Validator.ValidateViewModel
 import com.chatapp.chatapp.ui.theme.PrimaryBackground
-import com.chatapp.chatapp.util.ErrorMessage
+import com.chatapp.chatapp.presentation.screens.MainEntrance.Validator.ErrorMessage
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.chatapp.chatapp.ui.theme.DarkGray_1
 import com.chatapp.chatapp.ui.theme.DarkGray_2
 
 
@@ -47,6 +47,8 @@ fun DialogForgotPassword(
 ) {
     var forgotEmail by rememberSaveable { mutableStateOf("") }
     var submit by rememberSaveable { mutableStateOf(false) }
+
+    val stateForgotPasswordValidate = validateViewModel.validationForgotPasswordState.collectAsState()
 
     Dialog(
         onDismissRequest = onDismiss
@@ -111,16 +113,13 @@ fun DialogForgotPassword(
                             },
                             value = forgotEmail
                         )
-                        ErrorMessage(
-                            modifier = Modifier.align(Alignment.Start),
-                            message = validateViewModel.errorForgotEmail.value
-                        )
+                        ErrorMessage(state = stateForgotPasswordValidate) { it.errorForgotEmail }
                         Spacer(modifier = Modifier.height(16.dp))
                         ButtonEnter(
                             background = DarkGray_2,
                             text = "Reset password",
                             OnClick = {
-                                if (validateViewModel.errorForgotEmail.value.isEmpty() && forgotEmail.isNotEmpty()){
+                                if (stateForgotPasswordValidate.value.errorForgotEmail.isEmpty() && forgotEmail.isNotEmpty()){
                                     viewModel.forgotPassword(forgotEmail)
                                     submit = !submit
                                 }

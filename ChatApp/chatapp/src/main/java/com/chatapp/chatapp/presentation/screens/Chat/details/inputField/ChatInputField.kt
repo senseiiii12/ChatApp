@@ -4,7 +4,6 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
@@ -35,12 +34,10 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.toFontFamily
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.chatapp.chatapp.R
 import com.chatapp.chatapp.domain.models.Message
-import com.chatapp.chatapp.ui.theme.ChatAppTheme
 import com.chatapp.chatapp.ui.theme.ChatText
 import com.chatapp.chatapp.ui.theme.DarkGray_1
 import com.chatapp.chatapp.ui.theme.Outline_1
@@ -74,14 +71,12 @@ fun ChatInputField(
 
 
     Column(modifier = Modifier.fillMaxWidth()) {
-
         AnimatedVisibility(visible = fieldState.isEditingMessage) {
-            CurrentEditMessageRow(
+            CurrentEditMessagePanel(
                 currentEditMessage = fieldState.editingMessage,
                 onCancelEdit = onCancelEdit
             )
         }
-
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -137,7 +132,7 @@ fun ChatInputField(
 }
 
 @Composable
-fun CurrentEditMessageRow(
+fun CurrentEditMessagePanel(
     currentEditMessage: Message?,
     onCancelEdit: () -> Unit
 ) {

@@ -5,13 +5,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
@@ -22,11 +21,9 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.chatapp.chatapp.R
-import com.chatapp.chatapp.ui.theme.ChatAppTheme
 import com.chatapp.chatapp.ui.theme.ChatText
 import com.chatapp.chatapp.ui.theme.DarkGray_2
 import com.chatapp.chatapp.ui.theme.Outline_1
@@ -39,9 +36,8 @@ fun EditField(
     keyboardType: KeyboardType,
     visualTransformation: VisualTransformation,
     onValueChange:(String) -> Unit,
-    value: String
+    value: String,
 ) {
-
 
     TextField(
         modifier = Modifier
@@ -85,20 +81,19 @@ fun EditField(
             keyboardType = keyboardType
         )
     )
-
 }
-
-@Preview(showBackground = true, backgroundColor = 0xFF000000)
-@Composable
-private fun EditFieldPreview() {
-    ChatAppTheme {
-        EditField(
-            placeholder = "Username or Email",
-            iconStart = Icons.Default.Person,
-            visualTransformation = VisualTransformation.None,
-            keyboardType = KeyboardType.Text,
-            onValueChange = {},
-            value = ""
-        )
-    }
-}
+//
+//@Preview(showBackground = true, backgroundColor = 0xFF000000)
+//@Composable
+//private fun EditFieldPreview() {
+//    ChatAppTheme {
+//        EditField(
+//            placeholder = "Username or Email",
+//            iconStart = Icons.Default.Person,
+//            visualTransformation = VisualTransformation.None,
+//            keyboardType = KeyboardType.Text,
+//            onValueChange = {},
+//            value = ""
+//        )
+//    }
+//}

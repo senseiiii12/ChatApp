@@ -73,8 +73,8 @@ fun UserListItem(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .shadow(4.dp, RoundedCornerShape(8.dp))
-            .clip(RoundedCornerShape(8.dp))
+            .shadow(4.dp, RoundedCornerShape(0.dp))
+            .clip(RoundedCornerShape(0.dp))
             .background(Surface_Card)
             .clickable { onClick() }
             .height(60.dp)

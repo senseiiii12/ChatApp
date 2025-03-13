@@ -19,7 +19,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -35,6 +37,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.buildpc.firstcompose.EnterScreen.components.ButtonContinueWith
@@ -42,13 +45,15 @@ import com.buildpc.firstcompose.EnterScreen.components.ButtonEnter
 import com.buildpc.firstcompose.EnterScreen.components.EditField
 import com.buildpc.firstcompose.EnterScreen.components.SpacerOr
 import com.chatapp.chatapp.R
-import com.chatapp.chatapp.presentation.ValidateViewModel
+import com.chatapp.chatapp.presentation.screens.MainEntrance.Validator.ValidateViewModel
 import com.chatapp.chatapp.presentation.navigation.Route
 import com.chatapp.chatapp.presentation.screens.HomePage.UsersViewModel
 import com.chatapp.chatapp.ui.theme.PrimaryBackground
 import com.chatapp.chatapp.ui.theme.PrimaryPurple
 import com.chatapp.chatapp.ui.theme.Surface_1
-import com.chatapp.chatapp.util.ErrorMessage
+import com.chatapp.chatapp.presentation.screens.MainEntrance.Validator.ErrorMessage
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 @Composable
@@ -59,15 +64,18 @@ fun LoginScreen(
     validateViewModel: ValidateViewModel = viewModel(),
     usersViewModel: UsersViewModel = hiltViewModel()
 ) {
-
     val scope = rememberCoroutineScope()
-    val context = LocalContext.current
-    var email by rememberSaveable { mutableStateOf("") }
-    var password by rememberSaveable { mutableStateOf("") }
     var isShownDialog by rememberSaveable { mutableStateOf(false) }
+    val stateLoginValidate = validateViewModel.validationLoginState.collectAsState()
+    val stateLogin = viewModel.signInState.collectAsState()
 
-    val state = viewModel.singInState.collectAsState(initial = null)
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
 
+    LaunchedEffect(email) {
+        delay(300)
+        validateViewModel.validateEmailLogin(email)
+    }
 
     Row(
         modifier = Modifier
@@ -89,7 +97,6 @@ fun LoginScreen(
                 color = Color.White,
                 fontFamily = FontFamily(Font(R.font.gilroy_semibold))
             )
-
             Spacer(modifier = Modifier.height(40.dp))
             ButtonContinueWith(
                 text = "Continue with Google",
@@ -103,30 +110,31 @@ fun LoginScreen(
             Spacer(modifier = Modifier.height(20.dp))
             SpacerOr()
             Spacer(modifier = Modifier.height(20.dp))
-            EditField(
-                placeholder = "Email",
-                iconStart = Icons.Default.Email,
-                visualTransformation = VisualTransformation.None,
-                keyboardType = KeyboardType.Email,
-                onValueChange = {
-                    email = it
-                    validateViewModel.validateEmail(email)
-                },
-                value = email
-            )
-            ErrorMessage(
-                modifier = Modifier.align(Alignment.Start),
-                message = validateViewModel.errorEmail.value
-            )
+            key("Email") {
+                EditField(
+                    placeholder = "Email",
+                    iconStart = Icons.Default.Email,
+                    visualTransformation = VisualTransformation.None,
+                    keyboardType = KeyboardType.Email,
+                    onValueChange = {
+                        email = it
+//                        validateViewModel.validateEmailLogin(email)
+                    },
+                    value = email
+                )
+            }
+            ErrorMessage(state = stateLoginValidate) { it.errorEmailLogin }
             Spacer(modifier = Modifier.height(20.dp))
-            EditField(
-                placeholder = "Password",
-                iconStart = Icons.Default.Lock,
-                visualTransformation = PasswordVisualTransformation(),
-                keyboardType = KeyboardType.Password,
-                onValueChange = { password = it },
-                value = password
-            )
+            key("Password") {
+                EditField(
+                    placeholder = "Password",
+                    iconStart = Icons.Default.Lock,
+                    visualTransformation = PasswordVisualTransformation(),
+                    keyboardType = KeyboardType.Password,
+                    onValueChange = { password = it },
+                    value = password
+                )
+            }
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -134,8 +142,9 @@ fun LoginScreen(
                 horizontalArrangement = Arrangement.End
             ) {
                 Text(
-                    modifier = Modifier.clickable {
-                        isShownDialog = !isShownDialog
+                    modifier = Modifier
+                        .clickable {
+                            isShownDialog = !isShownDialog
                     },
                     text = "Forgot Password?",
                     color = PrimaryPurple,
@@ -144,19 +153,22 @@ fun LoginScreen(
                 )
             }
             Spacer(modifier = Modifier.height(20.dp))
-            ButtonEnter(
-                text = "Sign in",
-                OnClick = {
-                    if (validateViewModel.errorEmail.value.isEmpty()){
+            val onSignInClick = remember {
+                {
+                    if (stateLoginValidate.value.errorEmailLogin.isEmpty()) {
                         scope.launch {
-                            viewModel.loginUser(email, password){
+                            viewModel.loginUser(email, password) {
                                 viewModel.getCurrentUserUID()?.let {
-                                    usersViewModel.updateUserStatus(it,true)
+                                    usersViewModel.updateUserStatus(it, true)
                                 }
                             }
                         }
                     }
                 }
+            }
+            ButtonEnter(
+                text = "Sign in",
+                OnClick = onSignInClick
             )
             Spacer(modifier = Modifier.height(40.dp))
             Text(
@@ -174,7 +186,6 @@ fun LoginScreen(
                 OnClick = OnClickShowRegister
             )
             Spacer(modifier = Modifier.weight(0.1f))
-
         }
         Spacer(modifier = Modifier.width(20.dp))
     }
@@ -186,24 +197,24 @@ fun LoginScreen(
     }
 
 
-
-    LaunchedEffect(key1 = state.value?.isSuccess) {
+    LaunchedEffect(key1 = stateLogin.value.isSuccess) {
         scope.launch {
-            if (state.value?.isSuccess?.isNotEmpty() == true) {
-                val success = state.value?.isSuccess
+            if (stateLogin.value.isSuccess?.isNotEmpty() == true) {
+                val success = stateLogin.value.isSuccess
                 navigateToHomeScreen(navController)
             }
         }
     }
-    LaunchedEffect(key1 = state.value?.isError) {
+    LaunchedEffect(key1 = stateLogin.value.isError) {
         scope.launch {
-            if (state.value?.isError?.isNotEmpty() == true) {
-                val error = state.value?.isError
+            if (stateLogin.value.isError?.isNotEmpty() == true) {
+                val error = stateLogin.value.isError
 
             }
         }
     }
 }
+
 fun navigateToHomeScreen(navController: NavController) {
     navController.navigate(Route.HomePage.route) {
         popUpTo(navController.graph.startDestinationId) {
