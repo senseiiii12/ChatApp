@@ -45,7 +45,7 @@ fun UserList(
 
     Column {
         LazyColumn(
-            contentPadding = PaddingValues(start = 0.dp, top = 8.dp, end = 0.dp),
+            contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp),
         ) {
             items(filteredUsers, key = { user -> user.userId }) { user ->
                 val chatId = generateChatId(firebaseCurrentUserId, user.userId)
