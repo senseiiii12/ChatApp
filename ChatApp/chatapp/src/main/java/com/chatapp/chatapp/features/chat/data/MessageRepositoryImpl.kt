@@ -37,12 +37,19 @@ class MessageRepositoryImpl @Inject constructor(
             "status" to MessageStatus.DELIVERED.name,
             "timestamp" to FieldValue.serverTimestamp()
         )
+        val participantsMap = mutableMapOf(
+            "participants" to chatId.split("-"),
+            "chatId" to chatId
+        )
+
         try {
+
             chatCollection.document(chatId)
                 .collection("messages")
                 .document(messageId)
                 .set(messageMap)
                 .await()
+            chatCollection.document(chatId).set(participantsMap).await()
 
         }catch (e:Exception){
             Log.e("ChatViewModel", "Send message: $messageId", e)

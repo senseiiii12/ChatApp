@@ -56,7 +56,7 @@ import java.util.Date
 
 
 @Composable
-fun UserListItem(
+fun ChatRoomItem(
     modifier: Modifier = Modifier,
     currentUserId: String,
     user: User,
@@ -212,7 +212,7 @@ private fun UserListItemPreview() {
     )
 
     ChatAppTheme {
-        UserListItem(
+        ChatRoomItem(
             currentUserId = "123",
             user = User(
                 userId = "123",

@@ -1,6 +1,7 @@
 package com.chatapp.chatapp.features.chat_rooms.presentation
 
 import android.net.Uri
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -20,8 +21,9 @@ import com.chatapp.chatapp.features.navigation.Route
 import com.chatapp.chatapp.features.chat.presentation.ChatViewModel
 import com.chatapp.chatapp.features.chat_rooms.presentation.details.SearchTextField
 import com.chatapp.chatapp.features.chat_rooms.presentation.details.TopBarHome
-import com.chatapp.chatapp.features.chat_rooms.presentation.details.UserList
+import com.chatapp.chatapp.features.chat_rooms.presentation.details.ChatRoomsList
 import com.chatapp.chatapp.features.chat_rooms.presentation.details.UserListItemShimmerEffect
+import com.chatapp.chatapp.features.chat_rooms.presentation.new_state.ChatRoomsViewModel
 import com.chatapp.chatapp.ui.theme.PrimaryBackground
 import com.chatapp.chatapp.util.NetworkConnection.NetworkConnectionIndicator
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
@@ -35,13 +37,16 @@ fun ChatRoomsScreen(
 ) {
     val usersViewModel: UsersViewModel = hiltViewModel()
     val chatViewModel: ChatViewModel = hiltViewModel()
+    val chatRoomsViewModel: ChatRoomsViewModel = hiltViewModel()
+    val stateChatRooms = chatRoomsViewModel.chatRoomsState.collectAsState()
+
     val systemUiController = rememberSystemUiController()
     systemUiController.setSystemBarsColor(PrimaryBackground)
     val currentUserId = remember { FirebaseAuth.getInstance().currentUser?.uid ?: "" }
 
     val usersState = usersViewModel.users.collectAsState()
-    val filteredUsers =  usersState.value.isSuccess.filter { it.userId != currentUserId }
-    val currentUser =  usersState.value.isSuccess.find { it.userId == currentUserId }
+    val filteredUsers = usersState.value.isSuccess.filter { it.userId != currentUserId }
+    val currentUser = usersState.value.isSuccess.find { it.userId == currentUserId }
 
     val chatIds = remember(filteredUsers) {
         filteredUsers.map { user ->
@@ -49,6 +54,11 @@ fun ChatRoomsScreen(
             if (currentUserId < otherUserId) "$currentUserId-$otherUserId" else "$otherUserId-$currentUserId"
         }
     }
+
+    LaunchedEffect(Unit) {
+        chatRoomsViewModel.getUserChatRooms(currentUserId)
+    }
+    Log.d("participants", stateChatRooms.value.toString())
 
     LaunchedEffect(Unit) {
         usersViewModel.getUsers()
@@ -90,7 +100,7 @@ fun ChatRoomsScreen(
                 Spacer(modifier = Modifier.height(8.dp))
             }
         }
-        UserList(
+        ChatRoomsList(
             filteredUsers = filteredUsers,
             onUserClick = { user ->
                 val otherUserJson = Gson().toJson(user)

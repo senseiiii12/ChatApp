@@ -15,12 +15,13 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.chatapp.chatapp.features.auth.domain.User
 import com.chatapp.chatapp.features.chat.presentation.ChatViewModel
 import com.chatapp.chatapp.features.chat_rooms.presentation.UsersViewModel
+import com.chatapp.chatapp.features.chat_rooms.presentation.new_state.ChatRoomsViewModel
 import com.chatapp.chatapp.ui.theme.PrimaryBackground
 import com.google.firebase.auth.FirebaseAuth
 
 
 @Composable
-fun UserList(
+fun ChatRoomsList(
     filteredUsers: List<User>,
     onUserClick: (User) -> Unit,
     chatViewModel: ChatViewModel = hiltViewModel(),
@@ -32,6 +33,8 @@ fun UserList(
     val messageCounts by chatViewModel.messageCounts.collectAsState()
     val isOnline by usersViewModel.userStatuses.collectAsState()
 
+    val chatRoomsViewModel: ChatRoomsViewModel = hiltViewModel()
+    val stateChatRooms = chatRoomsViewModel.chatRoomsState.collectAsState()
 
     Column {
         LazyColumn(
@@ -40,7 +43,7 @@ fun UserList(
             items(filteredUsers, key = { user -> user.userId }) { user ->
                 val chatId = generateChatId(firebaseCurrentUserId, user.userId)
                 if (latestMessages[chatId]?.text != ""){
-                    UserListItem(
+                    ChatRoomItem(
                         modifier = Modifier.animateItem(),
                         currentUserId = firebaseCurrentUserId,
                         user = user,
