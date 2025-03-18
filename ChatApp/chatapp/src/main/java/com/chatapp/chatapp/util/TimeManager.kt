@@ -1,6 +1,6 @@
 package com.chatapp.chatapp.util
 
-import com.chatapp.chatapp.domain.models.Message
+import com.chatapp.chatapp.features.chat.domain.Message
 import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.LocalDate

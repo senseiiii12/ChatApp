@@ -2,7 +2,7 @@ package com.chatapp.chatapp
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.chatapp.chatapp.presentation.navigation.Route
+import com.chatapp.chatapp.features.navigation.Route
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay

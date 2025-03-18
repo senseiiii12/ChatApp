@@ -1,14 +1,14 @@
 package com.chatapp.chatapp.di
 
 import android.content.Context
-import com.chatapp.chatapp.domain.AuthRepository
-import com.chatapp.chatapp.data.AuthRepositoryImpl
-import com.chatapp.chatapp.data.FriendRequestRepositoryImpl
-import com.chatapp.chatapp.data.UsersRepositoryImpl
-import com.chatapp.chatapp.domain.MessageRepository
-import com.chatapp.chatapp.data.MessageRepositoryImpl
-import com.chatapp.chatapp.domain.FriendRequestRepository
-import com.chatapp.chatapp.domain.UsersRepository
+import com.chatapp.chatapp.features.auth.domain.AuthRepository
+import com.chatapp.chatapp.features.auth.data.AuthRepositoryImpl
+import com.chatapp.chatapp.features.search_user.data.FriendRequestRepositoryImpl
+import com.chatapp.chatapp.features.chat_rooms.data.UsersRepositoryImpl
+import com.chatapp.chatapp.features.chat.domain.MessageRepository
+import com.chatapp.chatapp.features.chat.data.MessageRepositoryImpl
+import com.chatapp.chatapp.features.search_user.domain.FriendRequestRepository
+import com.chatapp.chatapp.features.chat_rooms.domain.UsersRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import dagger.Module
