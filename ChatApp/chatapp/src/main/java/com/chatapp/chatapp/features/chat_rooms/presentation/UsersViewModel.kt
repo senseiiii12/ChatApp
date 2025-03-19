@@ -30,6 +30,7 @@ class UsersViewModel @Inject constructor(
     init {
         Log.d("ViewModel", "init UsersViewModel")
     }
+
     fun getUsers() {
         if (usersLoaded) return
         viewModelScope.launch {

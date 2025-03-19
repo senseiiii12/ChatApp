@@ -36,7 +36,7 @@ fun ChatRoomsScreen(
     navController: NavController,
 ) {
     val usersViewModel: UsersViewModel = hiltViewModel()
-    val chatViewModel: ChatViewModel = hiltViewModel()
+
     val chatRoomsViewModel: ChatRoomsViewModel = hiltViewModel()
     val stateChatRooms = chatRoomsViewModel.chatRoomsState.collectAsState()
 
@@ -45,29 +45,16 @@ fun ChatRoomsScreen(
     val currentUserId = remember { FirebaseAuth.getInstance().currentUser?.uid ?: "" }
 
     val usersState = usersViewModel.users.collectAsState()
-    val filteredUsers = usersState.value.isSuccess.filter { it.userId != currentUserId }
     val currentUser = usersState.value.isSuccess.find { it.userId == currentUserId }
 
-    val chatIds = remember(filteredUsers) {
-        filteredUsers.map { user ->
-            val otherUserId = user.userId
-            if (currentUserId < otherUserId) "$currentUserId-$otherUserId" else "$otherUserId-$currentUserId"
-        }
-    }
-
-    LaunchedEffect(Unit) {
-        chatRoomsViewModel.getUserChatRooms(currentUserId)
-    }
-    Log.d("participants", stateChatRooms.value.toString())
 
     LaunchedEffect(Unit) {
         usersViewModel.getUsers()
-        chatViewModel.startListeningToChats()
+    }
+    LaunchedEffect(Unit) {
+        chatRoomsViewModel.loadChatRooms(currentUserId)
     }
 
-    LaunchedEffect(filteredUsers) {
-        chatViewModel.updateChatIds(chatIds)
-    }
 
     Column(
         modifier = Modifier
@@ -80,16 +67,16 @@ fun ChatRoomsScreen(
                 navController.navigate(Route.Notification.route)
             }
         )
-        Spacer(modifier = Modifier.height(16.dp))
-        SearchTextField(
-            enabled = false,
-            value = "",
-            onValueChange = {},
-            onSeachFieldClick = {
-                navController.navigate(Route.SearchUsers.route)
-            }
-        )
-        Spacer(modifier = Modifier.height(16.dp))
+//        Spacer(modifier = Modifier.height(16.dp))
+//        SearchTextField(
+//            enabled = false,
+//            value = "",
+//            onValueChange = {},
+//            onSeachFieldClick = {
+//                navController.navigate(Route.SearchUsers.route)
+//            }
+//        )
+//        Spacer(modifier = Modifier.height(16.dp))
 
         NetworkConnectionIndicator()
 
@@ -101,7 +88,7 @@ fun ChatRoomsScreen(
             }
         }
         ChatRoomsList(
-            filteredUsers = filteredUsers,
+            stateChatRooms = stateChatRooms.value,
             onUserClick = { user ->
                 val otherUserJson = Gson().toJson(user)
                 val currentUserJson = Gson().toJson(currentUser)

@@ -15,6 +15,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.chatapp.chatapp.features.auth.domain.User
 import com.chatapp.chatapp.features.chat.presentation.ChatViewModel
 import com.chatapp.chatapp.features.chat_rooms.presentation.UsersViewModel
+import com.chatapp.chatapp.features.chat_rooms.presentation.new_state.ChatRoomsState
 import com.chatapp.chatapp.features.chat_rooms.presentation.new_state.ChatRoomsViewModel
 import com.chatapp.chatapp.ui.theme.PrimaryBackground
 import com.google.firebase.auth.FirebaseAuth
@@ -22,38 +23,27 @@ import com.google.firebase.auth.FirebaseAuth
 
 @Composable
 fun ChatRoomsList(
-    filteredUsers: List<User>,
+    stateChatRooms: List<ChatRoomsState>,
     onUserClick: (User) -> Unit,
-    chatViewModel: ChatViewModel = hiltViewModel(),
     usersViewModel: UsersViewModel = hiltViewModel()
 ) {
 
     val firebaseCurrentUserId = remember { FirebaseAuth.getInstance().currentUser?.uid ?: "" }
-    val latestMessages by chatViewModel.latestMessages.collectAsState()
-    val messageCounts by chatViewModel.messageCounts.collectAsState()
     val isOnline by usersViewModel.userStatuses.collectAsState()
-
-    val chatRoomsViewModel: ChatRoomsViewModel = hiltViewModel()
-    val stateChatRooms = chatRoomsViewModel.chatRoomsState.collectAsState()
 
     Column {
         LazyColumn(
-            contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp),
+            contentPadding = PaddingValues(start = 0.dp, top = 8.dp, end = 0.dp),
         ) {
-            items(filteredUsers, key = { user -> user.userId }) { user ->
-                val chatId = generateChatId(firebaseCurrentUserId, user.userId)
-                if (latestMessages[chatId]?.text != ""){
-                    ChatRoomItem(
-                        modifier = Modifier.animateItem(),
-                        currentUserId = firebaseCurrentUserId,
-                        user = user,
-                        lastMessage = latestMessages[chatId],
-                        newMessageCount = messageCounts[chatId] ?: 0,
-                        isOnline = isOnline[user.userId]?.first ?: false,
-                        onClick = { onUserClick(user) }
-                    )
-                    Divider(color = PrimaryBackground)
-                }
+            items(stateChatRooms, key = { chatRoom -> chatRoom.chatId }) { chatRoom ->
+                ChatRoomItem(
+                    modifier = Modifier.animateItem(),
+                    currentUserId = firebaseCurrentUserId,
+                    state = chatRoom,
+                    isOnline = isOnline[chatRoom.otherUser.userId]?.first ?: false,
+                    onClick = { onUserClick(chatRoom.otherUser) }
+                )
+                Divider(color = PrimaryBackground)
             }
         }
     }

@@ -190,7 +190,6 @@ class ChatViewModel @Inject constructor(
     }
 
 
-
     /**
      * Слушатели для получение сообщений для всех пользователей [startListeningToChats].
      * Cлушатель для получений сообщений в текущем чате [listenForMessagesInChat].
@@ -202,35 +201,9 @@ class ChatViewModel @Inject constructor(
     private val _chatItems = MutableStateFlow<List<ChatItem>>(emptyList())
     val chatItems = _chatItems.asStateFlow()
 
-    private val _latestMessages = MutableStateFlow<Map<String, Message>>(emptyMap())
-    val latestMessages = _latestMessages.asStateFlow()
-
-    private val _messageCounts = MutableStateFlow<Map<String, Int>>(emptyMap())
-    val messageCounts = _messageCounts.asStateFlow()
-
-    private val _chatIds = MutableStateFlow<List<String>>(emptyList())
-
-    fun updateChatIds(chatIds: List<String>) {
-        _chatIds.value = chatIds
-    }
-
-    fun startListeningToChats() {
-        _chatIds.flatMapLatest { chatIds -> messageRepository.listenForMessagesInChats(chatIds) }
-            .onEach { chatMessagesMap -> processChatMessages(chatMessagesMap) }
-            .launchIn(viewModelScope)
-    }
-
-    private fun processChatMessages(chatMessagesMap: Map<String, List<Message>>) {
-        _latestMessages.value = chatMessagesMap.mapValues { (_, messages) ->
-            messages.maxByOrNull { it.timestamp } ?: Message()
-        }
-        _messageCounts.value = chatMessagesMap.mapValues { (_, messages) ->
-            messages.count { it.status == MessageStatus.DELIVERED }
-        }
-    }
 
     fun listenForMessagesInChat(chatId: String, listState: LazyListState) {
-        messageRepository.listenForMessages(chatId) { newMessages, updatedMessages, removedMessagesIds ->
+        messageRepository.listenMessagesInCurrentChat(chatId) { newMessages, updatedMessages, removedMessagesIds ->
             _chatItems.update { currentChatItems ->
                 val messageItems = currentChatItems.filterIsInstance<ChatItem.MessageItem>().toMutableList()
                 messageItems.removeAll { it.message.messageId in removedMessagesIds }
@@ -248,9 +221,6 @@ class ChatViewModel @Inject constructor(
             }
         }
     }
-
-
-
     /**
      * Генерация ChatId и ChatItem
      */

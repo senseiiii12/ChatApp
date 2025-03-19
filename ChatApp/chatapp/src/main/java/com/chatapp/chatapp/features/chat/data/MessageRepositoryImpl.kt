@@ -41,16 +41,13 @@ class MessageRepositoryImpl @Inject constructor(
             "participants" to chatId.split("-"),
             "chatId" to chatId
         )
-
         try {
-
             chatCollection.document(chatId)
                 .collection("messages")
                 .document(messageId)
                 .set(messageMap)
                 .await()
             chatCollection.document(chatId).set(participantsMap).await()
-
         }catch (e:Exception){
             Log.e("ChatViewModel", "Send message: $messageId", e)
         }
@@ -70,8 +67,7 @@ class MessageRepositoryImpl @Inject constructor(
         }
     }
 
-
-    override fun listenForMessages(chatId: String, onMessagesChanged: (List<Message>, List<Message>, List<String>) -> Unit) {
+    override fun listenMessagesInCurrentChat(chatId: String, onMessagesChanged: (List<Message>, List<Message>, List<String>) -> Unit) {
         chatCollection.document(chatId)
             .collection("messages")
             .orderBy("timestamp", Query.Direction.DESCENDING)
@@ -103,25 +99,7 @@ class MessageRepositoryImpl @Inject constructor(
         )
     }
 
-    override suspend fun listenForMessagesInChats(chatIds: List<String>): Flow<Map<String, List<Message>>> {
-        return callbackFlow {
-            val currentMessages = mutableMapOf<String, List<Message>>().withDefault { emptyList() }
 
-            val listeners = chatIds.map { chatId ->
-                chatCollection.document(chatId)
-                    .collection("messages")
-                    .orderBy("timestamp", Query.Direction.DESCENDING)
-                    .limit(20)
-                    .addSnapshotListener { snapshot, e ->
-                        if (e != null || snapshot == null) return@addSnapshotListener
-                        val messages = snapshot.documents.map { it.toMessage() }
-                        currentMessages[chatId] = messages
-                        trySend(currentMessages.toMap())
-                    }
-            }
-            awaitClose { listeners.forEach { it.remove() } }
-        }
-    }
 
     override suspend fun deleteMessage(chatId: String, selectedMessages: List<Message>) {
         try {

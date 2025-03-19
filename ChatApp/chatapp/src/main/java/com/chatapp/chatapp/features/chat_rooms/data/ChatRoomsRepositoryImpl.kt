@@ -1,6 +1,7 @@
 package com.chatapp.chatapp.features.chat_rooms.data
 
 import android.util.Log
+import androidx.lifecycle.viewModelScope
 import com.chatapp.chatapp.features.auth.domain.User
 import com.chatapp.chatapp.features.chat.domain.Message
 import com.chatapp.chatapp.features.chat.domain.MessageStatus
@@ -13,9 +14,14 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.Source
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.tasks.await
 import java.util.Date
 import javax.inject.Inject
@@ -24,17 +30,57 @@ class ChatRoomsRepositoryImpl @Inject constructor(
     private val firebaseFirestore: FirebaseFirestore,
 ) : ChatRoomsRepository {
 
-    override suspend fun getChatRoomsId(currentUserId: String): Flow<List<ChatRoomsState>> {
+    val chatCollection = firebaseFirestore.collection("chats")
+
+    override suspend fun listenForMessagesInChats(chatIds: List<String>): Flow<Map<String, List<Message>>> {
+        return callbackFlow {
+            val currentMessages = mutableMapOf<String, List<Message>>().withDefault { emptyList() }
+            chatIds.forEach { chatId ->
+                val snapshot = chatCollection.document(chatId)
+                    .collection("messages")
+                    .orderBy("timestamp", Query.Direction.DESCENDING)
+                    .limit(20)
+                    .get()
+                    .await()
+                val messages = snapshot.documents.map { it.toMessage() }
+                currentMessages[chatId] = messages
+            }
+            trySend(currentMessages.toMap())
+            val listeners = chatIds.map { chatId ->
+                chatCollection.document(chatId)
+                    .collection("messages")
+                    .orderBy("timestamp", Query.Direction.DESCENDING)
+                    .limit(20)
+                    .addSnapshotListener { snapshot, e ->
+                        if (e != null || snapshot == null) return@addSnapshotListener
+                        val messages = snapshot.documents.map { it.toMessage() }
+                        currentMessages[chatId] = messages
+                        trySend(currentMessages.toMap())
+                    }
+            }
+            awaitClose { listeners.forEach { it.remove() } }
+        }.flowOn(Dispatchers.IO)
+    }
+
+    private fun DocumentSnapshot.toMessage(): Message {
+        return Message(
+            userId = getString("userId") ?: "",
+            text = getString("text") ?: "",
+            timestamp = getTimestamp("timestamp")?.toDate()?.time ?: 0L,
+            messageId = getString("messageId") ?: "",
+            status = MessageStatus.valueOf(getString("status") ?: MessageStatus.SENT.name)
+        )
+    }
+
+    override suspend fun getAllChatRoomsId(currentUserId: String): Flow<List<String>> {
         return flow {
             try {
-                val result = firebaseFirestore.collection("chats").get().await()
-                val chatRoomsList = result.mapNotNull { document ->
-                    val chatRoomId = document.getString("chatId")
-                    if (chatRoomId?.contains(currentUserId) == true) {
-                        ChatRoomsState(chatId = chatRoomId)
-                    } else null
-                }
-                emit(chatRoomsList)
+                val result = firebaseFirestore.collection("chats")
+                    .whereArrayContains("participants", currentUserId)
+                    .get()
+                    .await()
+                val chatIds = result.map { it.id }
+                emit(chatIds)
             } catch (e: Exception) {
                 emit(emptyList())
                 Log.d("getChatRoomsId", e.message.toString())
@@ -42,61 +88,46 @@ class ChatRoomsRepositoryImpl @Inject constructor(
         }
     }
 
+
     override suspend fun getUserChatRooms(userId: String): Flow<List<ChatRoomsState>> {
-        Log.d("ChatDebug", "getUserChatRooms вызван для userId: $userId")
         return flow {
             try {
-                Log.d("ChatDebug", "Начало получения чатов")
                 val chatRooms = fetchUserChats(userId)
-                Log.d("ChatDebug", "Чаты получены: ${chatRooms.size}")
                 emit(chatRooms)
             } catch (e: Exception) {
-                Log.e("ChatDebug", "Ошибка в getUserChatRooms: ${e.message}", e)
                 emit(emptyList())
             }
         }.flowOn(Dispatchers.IO)
     }
 
-    // 1. Получение всех чатов пользователя
     private suspend fun fetchUserChats(userId: String): List<ChatRoomsState> {
-        Log.d("ChatDebug", "fetchUserChats для $userId")
         val chatsSnapshot = firebaseFirestore.collection("chats")
             .whereArrayContains("participants", userId)
             .get()
             .await()
 
         if (chatsSnapshot.isEmpty) {
-            Log.w("ChatDebug", "Чатов для $userId не найдено")
             return emptyList()
         }
 
         return chatsSnapshot.documents.mapNotNull { chatDoc ->
-            Log.d("ChatDebug", "Обработка чата ${chatDoc.id}")
             buildChatRoomState(chatDoc, userId)
         }
     }
 
-    // 2. Построение объекта ChatRoomsState для одного чата
     private suspend fun buildChatRoomState(chatDoc: DocumentSnapshot, currentUserId: String): ChatRoomsState? {
         return try {
             val participants = chatDoc.get("participants") as? List<String> ?: emptyList()
-            Log.d("ChatDebug", "Участники чата ${chatDoc.id}: $participants")
-
-            val otherUserId = participants.firstOrNull { it != currentUserId } ?: run {
-                Log.w("ChatDebug", "Другой пользователь не найден в ${chatDoc.id}")
-                return null
-            }
+            val otherUserId = participants.firstOrNull { it != currentUserId } ?: return null
 
             val otherUser = fetchUserData(otherUserId) ?: return null
-            val lastMessage = fetchLastMessage(chatDoc.reference)
-            val unreadCount = fetchUnreadCount(chatDoc.reference, otherUserId)
 
             ChatRoomsState(
                 chatId = chatDoc.id,
                 otherUser = otherUser,
                 isOnline = otherUser.online,
-                lastMessage = lastMessage,
-                unreadMessageCount = unreadCount
+                lastMessage = Message(),
+                unreadMessageCount = 0
             )
         } catch (e: Exception) {
             Log.e("ChatDebug", "Ошибка в buildChatRoomState для ${chatDoc.id}: ${e.message}", e)
@@ -104,9 +135,7 @@ class ChatRoomsRepositoryImpl @Inject constructor(
         }
     }
 
-    // 3. Получение данных пользователя
     private suspend fun fetchUserData(userId: String): User? {
-        Log.d("ChatDebug", "fetchUserData для $userId")
         return try {
             val userDoc = firebaseFirestore.collection("users")
                 .document(userId)
@@ -114,14 +143,11 @@ class ChatRoomsRepositoryImpl @Inject constructor(
                 .await()
 
             if (!userDoc.exists()) {
-                Log.w("ChatDebug", "Пользователь $userId не существует")
                 return null
             }
-
-            Log.d("ChatDebug", "Данные пользователя $userId: ${userDoc.data}")
             User(
                 userId = userDoc.id,
-                avatar = userDoc.getString("avatar") ?: "",
+                avatar = userDoc.getString("avatar") ,
                 name = userDoc.getString("name") ?: "",
                 email = userDoc.getString("email") ?: "",
                 password = userDoc.getString("password") ?: "",
@@ -134,59 +160,5 @@ class ChatRoomsRepositoryImpl @Inject constructor(
             null
         }
     }
-
-    // 4. Получение последнего сообщения
-    private suspend fun fetchLastMessage(chatRef: DocumentReference): Message {
-        Log.d("ChatDebug", "fetchLastMessage для чата ${chatRef.id}")
-        return try {
-            val messagesSnapshot = chatRef.collection("messages")
-                .orderBy("timestamp", Query.Direction.DESCENDING)
-                .limit(1)
-                .get()
-                .await()
-
-            if (messagesSnapshot.isEmpty) {
-                Log.d("ChatDebug", "Сообщений в чате ${chatRef.id} нет")
-                return Message()
-            }
-
-            val msgDoc = messagesSnapshot.documents[0]
-            Log.d("ChatDebug", "Последнее сообщение: ${msgDoc.data}")
-            Message(
-                userId = msgDoc.getString("userId") ?: "",
-                text = msgDoc.getString("text") ?: "",
-                timestamp = msgDoc.getLong("timestamp") ?: 0L,
-                messageId = msgDoc.id,
-                status = when (msgDoc.getString("status")?.uppercase()) {
-                    "DELIVERED" -> MessageStatus.DELIVERED
-                    "READ" -> MessageStatus.READ
-                    else -> MessageStatus.SENT
-                }
-            )
-        } catch (e: Exception) {
-            Log.e("ChatDebug", "Ошибка в fetchLastMessage для ${chatRef.id}: ${e.message}", e)
-            Message()
-        }
-    }
-
-    // 5. Подсчет непрочитанных сообщений
-    private suspend fun fetchUnreadCount(chatRef: DocumentReference, otherUserId: String): Int {
-        Log.d("ChatDebug", "fetchUnreadCount для чата ${chatRef.id}")
-        return try {
-            val unreadSnapshot = chatRef.collection("messages")
-                .whereEqualTo("userId", otherUserId)
-                .whereNotEqualTo("status", "READ")
-                .get()
-                .await()
-
-            val count = unreadSnapshot.size()
-            Log.d("ChatDebug", "Непрочитанных сообщений: $count")
-            count
-        } catch (e: Exception) {
-            Log.e("ChatDebug", "Ошибка в fetchUnreadCount для ${chatRef.id}: ${e.message}", e)
-            0
-        }
-    }
-
 
 }

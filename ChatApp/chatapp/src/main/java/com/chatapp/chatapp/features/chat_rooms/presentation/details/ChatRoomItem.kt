@@ -43,6 +43,7 @@ import com.chatapp.chatapp.R
 import com.chatapp.chatapp.features.chat.domain.Message
 import com.chatapp.chatapp.features.chat.domain.MessageStatus
 import com.chatapp.chatapp.features.auth.domain.User
+import com.chatapp.chatapp.features.chat_rooms.presentation.new_state.ChatRoomsState
 import com.chatapp.chatapp.ui.theme.Bg_Default_Avatar
 import com.chatapp.chatapp.ui.theme.ChatAppTheme
 import com.chatapp.chatapp.ui.theme.ChatText
@@ -58,13 +59,14 @@ import java.util.Date
 @Composable
 fun ChatRoomItem(
     modifier: Modifier = Modifier,
+    state: ChatRoomsState,
     currentUserId: String,
-    user: User,
-    lastMessage: Message?,
-    newMessageCount: Int,
     isOnline: Boolean,
     onClick: () -> Unit
 ) {
+    val otherUser = state.otherUser
+    val lastMessage = state.lastMessage
+
     val timeManager = TimeManager()
     val lastMessageText = if (currentUserId == lastMessage?.userId) "You: ${lastMessage.text}" else "${lastMessage?.text ?: ""}"
     val lastMessageColor = if (lastMessage?.status?.name.equals("READ")) ChatText else Color.White
@@ -82,13 +84,13 @@ fun ChatRoomItem(
         horizontalArrangement = Arrangement.Center
     ) {
         Box {
-            user.avatar?.let {
+            otherUser.avatar?.let {
                 AsyncImage(
                     modifier = Modifier
                         .clip(CircleShape)
                         .size(30.dp),
                     model = ImageRequest.Builder(LocalContext.current)
-                        .data(user.avatar)
+                        .data(otherUser.avatar)
                         .crossfade(true)
                         .memoryCachePolicy(CachePolicy.ENABLED)
                         .diskCachePolicy(CachePolicy.ENABLED)
@@ -129,7 +131,7 @@ fun ChatRoomItem(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = user.name,
+                    text = otherUser.name,
                     fontSize = 16.sp,
                     fontFamily = FontFamily(Font(R.font.gilroy_bold)),
                     color = ChatText
@@ -157,7 +159,7 @@ fun ChatRoomItem(
                     overflow = TextOverflow.Ellipsis
                 )
 
-                if (newMessageCount > 0 && currentUserId != lastMessage?.userId) {
+                if (state.unreadMessageCount > 0 && currentUserId != lastMessage?.userId) {
                     Box(
                         modifier = Modifier
                             .clip(CircleShape)
@@ -167,7 +169,7 @@ fun ChatRoomItem(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "${newMessageCount}",
+                            text = "${state.unreadMessageCount}",
                             fontSize = 9.sp,
                             fontFamily = FontFamily(Font(R.font.gilroy_bold)),
                             color = Color.White
@@ -211,20 +213,20 @@ private fun UserListItemPreview() {
         status = MessageStatus.READ
     )
 
-    ChatAppTheme {
-        ChatRoomItem(
-            currentUserId = "123",
-            user = User(
-                userId = "123",
-                name = "Alexander",
-                email = "Free Download Check 134 SVG vector file in monocolor and multicolor type for Sketch",
-                password = "123",
-                lastSeen = Date(0)
-            ),
-            onClick = {},
-            lastMessage = testMessage,
-            isOnline = true,
-            newMessageCount = 1
-        )
-    }
+//    ChatAppTheme {
+//        ChatRoomItem(
+//            currentUserId = "123",
+//            user = User(
+//                userId = "123",
+//                name = "Alexander",
+//                email = "Free Download Check 134 SVG vector file in monocolor and multicolor type for Sketch",
+//                password = "123",
+//                lastSeen = Date(0)
+//            ),
+//            onClick = {},
+//            lastMessage = testMessage,
+//            isOnline = true,
+//            newMessageCount = 1
+//        )
+//    }
 }
