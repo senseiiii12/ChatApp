@@ -1,8 +1,8 @@
 package com.chatapp.chatapp.features.chat_rooms.presentation.details
 
+
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,9 +17,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -27,30 +24,26 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.Font
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.chatapp.chatapp.R
+import com.chatapp.chatapp.features.auth.domain.User
 import com.chatapp.chatapp.features.chat.domain.Message
 import com.chatapp.chatapp.features.chat.domain.MessageStatus
-import com.chatapp.chatapp.features.auth.domain.User
 import com.chatapp.chatapp.features.chat_rooms.presentation.new_state.ChatRoomsState
 import com.chatapp.chatapp.ui.theme.Bg_Default_Avatar
 import com.chatapp.chatapp.ui.theme.ChatAppTheme
-import com.chatapp.chatapp.ui.theme.ChatText
-import com.chatapp.chatapp.ui.theme.Mark_Message
+import com.chatapp.chatapp.ui.theme.MyCustomTypography
 import com.chatapp.chatapp.ui.theme.Online
 import com.chatapp.chatapp.ui.theme.PrimaryBackground
-import com.chatapp.chatapp.ui.theme.PrimaryPurple
 import com.chatapp.chatapp.ui.theme.Surface_Card
 import com.chatapp.chatapp.util.TimeManager
 import java.util.Date
@@ -68,18 +61,21 @@ fun ChatRoomItem(
     val lastMessage = state.lastMessage
 
     val timeManager = TimeManager()
-    val lastMessageText = if (currentUserId == lastMessage?.userId) "You: ${lastMessage.text}" else "${lastMessage?.text ?: ""}"
-    val lastMessageColor = if (lastMessage?.status?.name.equals("READ")) ChatText else Color.White
+    val lastMessageText =
+        if (currentUserId == lastMessage?.userId) "You: ${lastMessage.text}" else "${lastMessage?.text ?: ""}"
+    val lastMessageColor = if (lastMessage?.status?.name.equals("READ")) Color.White.copy(alpha = 0.5f) else Color.White.copy(alpha = 0.75f)
+
+
 
     Row(
         modifier = modifier
             .fillMaxWidth()
             .shadow(4.dp, RoundedCornerShape(0.dp))
             .clip(RoundedCornerShape(0.dp))
-            .background(Surface_Card)
+            .background(PrimaryBackground)
             .clickable { onClick() }
-            .height(60.dp)
-            .padding(10.dp),
+            .height(76.dp)
+            .padding(vertical = 8.dp, horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center
     ) {
@@ -88,7 +84,7 @@ fun ChatRoomItem(
                 AsyncImage(
                     modifier = Modifier
                         .clip(CircleShape)
-                        .size(30.dp),
+                        .size(60.dp),
                     model = ImageRequest.Builder(LocalContext.current)
                         .data(otherUser.avatar)
                         .crossfade(true)
@@ -102,7 +98,7 @@ fun ChatRoomItem(
                 modifier = Modifier
                     .clip(CircleShape)
                     .background(Bg_Default_Avatar)
-                    .size(30.dp),
+                    .size(60.dp),
                 painter = painterResource(id = R.drawable.defaulf_user_avatar),
                 contentScale = ContentScale.Crop,
                 contentDescription = null,
@@ -111,10 +107,10 @@ fun ChatRoomItem(
             if (isOnline) {
                 Box(
                     modifier = Modifier
-                        .border(1.dp, PrimaryBackground, CircleShape)
+                        .padding(top = 3.dp, end = 3.dp)
                         .align(Alignment.TopEnd)
                         .clip(CircleShape)
-                        .size(8.dp)
+                        .size(10.dp)
                         .background(Online)
                 )
             }
@@ -122,7 +118,7 @@ fun ChatRoomItem(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(start = 10.dp),
+                .padding(start = 12.dp),
             verticalArrangement = Arrangement.SpaceEvenly
         ) {
             Row(
@@ -132,15 +128,13 @@ fun ChatRoomItem(
             ) {
                 Text(
                     text = otherUser.name,
-                    fontSize = 16.sp,
-                    fontFamily = FontFamily(Font(R.font.gilroy_bold)),
-                    color = ChatText
+                    style = MyCustomTypography.Medium_18,
+                    color = Color.White
                 )
                 Text(
                     text = timeManager.getTimeSinceLastMessage(lastMessage),
-                    fontSize = 8.sp,
-                    fontFamily = FontFamily(Font(R.font.gilroy_medium)),
-                    color = ChatText
+                    style = MyCustomTypography.Normal_10,
+                    color = Color.White.copy(alpha = 0.5f)
                 )
             }
             Row(
@@ -152,8 +146,7 @@ fun ChatRoomItem(
                         .weight(1f)
                         .padding(end = 24.dp),
                     text = lastMessageText,
-                    fontSize = 12.sp,
-                    fontFamily = FontFamily(Font(R.font.gilroy_medium)),
+                    style = MyCustomTypography.Normal_14,
                     color = lastMessageColor,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -165,35 +158,38 @@ fun ChatRoomItem(
                             .clip(CircleShape)
                             .heightIn(min = 16.dp, max = 16.dp)
                             .widthIn(min = 16.dp, max = 40.dp)
-                            .background(PrimaryPurple),
+                            .background(Color.White.copy(alpha = 0.25f))
+                            .padding(horizontal = 4.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = "${state.unreadMessageCount}",
-                            fontSize = 9.sp,
-                            fontFamily = FontFamily(Font(R.font.gilroy_bold)),
+                            style = MyCustomTypography.Normal_8,
                             color = Color.White
                         )
                     }
                 } else {
                     when (lastMessage?.status) {
                         MessageStatus.DELIVERED -> {
-                            Icon(
-                                modifier = Modifier.size(16.dp),
-                                imageVector = Icons.Default.Check,
+                            Image(
+                                modifier = Modifier.size(12.dp),
+                                painter = painterResource(id = R.drawable.ic_message_delivered),
                                 contentDescription = null,
-                                tint = Mark_Message
+                                colorFilter = ColorFilter.tint(Online)
                             )
                         }
+
                         MessageStatus.READ -> {
                             if (currentUserId == lastMessage.userId) {
                                 Image(
-                                    modifier = Modifier.size(16.dp),
-                                    painter = painterResource(id = R.drawable.double_check_icon),
+                                    modifier = Modifier.size(14.dp),
+                                    painter = painterResource(id = R.drawable.ic_message_read),
                                     contentDescription = null,
+                                    colorFilter = ColorFilter.tint(Online)
                                 )
                             }
                         }
+
                         else -> {}
                     }
                 }
@@ -205,28 +201,34 @@ fun ChatRoomItem(
 @Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun UserListItemPreview() {
-    val testMessage: Message? = Message(
+    val testMessage = Message(
         userId = "123",
         text = "Привет",
         timestamp = 1L,
         messageId = "2222",
         status = MessageStatus.READ
     )
+    val testUser = User(
+        userId = "123",
+        name = "Александр Чепига",
+        email = "Free Download Check 134 SVG vector file in monocolor and multicolor type for Sketch",
+        password = "123",
+        lastSeen = Date(0)
+    )
+    val testState = ChatRoomsState(
+        chatId = "123",
+        otherUser = testUser,
+        isOnline = true,
+        lastMessage = testMessage,
+        unreadMessageCount = 10
+    )
 
-//    ChatAppTheme {
-//        ChatRoomItem(
-//            currentUserId = "123",
-//            user = User(
-//                userId = "123",
-//                name = "Alexander",
-//                email = "Free Download Check 134 SVG vector file in monocolor and multicolor type for Sketch",
-//                password = "123",
-//                lastSeen = Date(0)
-//            ),
-//            onClick = {},
-//            lastMessage = testMessage,
-//            isOnline = true,
-//            newMessageCount = 1
-//        )
-//    }
+    ChatAppTheme {
+        ChatRoomItem(
+            currentUserId = "123",
+            state = testState,
+            isOnline = true,
+            onClick = {}
+        )
+    }
 }

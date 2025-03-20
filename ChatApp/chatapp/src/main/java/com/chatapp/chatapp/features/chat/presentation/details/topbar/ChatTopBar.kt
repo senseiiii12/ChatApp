@@ -46,6 +46,7 @@ import com.chatapp.chatapp.features.chat_rooms.presentation.UsersViewModel
 import com.chatapp.chatapp.ui.theme.Bg_Default_Avatar
 import com.chatapp.chatapp.ui.theme.ChatText
 import com.chatapp.chatapp.ui.theme.DarkGray_1
+import com.chatapp.chatapp.ui.theme.MyCustomTypography
 import com.chatapp.chatapp.ui.theme.Online
 import com.chatapp.chatapp.ui.theme.Surface_Card
 import com.chatapp.chatapp.util.TimeManager
@@ -150,18 +151,16 @@ fun OnlineStatus(
                 Text(
                     modifier = Modifier.padding(start = 5.dp),
                     text = "Online",
-                    fontSize = 10.sp,
+                    style = MyCustomTypography.Normal_12,
                     color = Online,
-                    fontFamily = FontFamily(Font(R.font.gilroy_semibold)),
                 )
             }
         } else {
             Text(
                 modifier = Modifier.padding(start = 10.dp),
                 text = timeManager.formatLastSeenDate(lastSeenStatus),
-                fontSize = 12.sp,
-                color = DarkGray_1,
-                fontFamily = FontFamily(Font(R.font.gilroy_semibold)),
+                style = MyCustomTypography.Normal_12,
+                color = Color.White.copy(alpha = 0.5f),
             )
         }
     }
@@ -200,9 +199,8 @@ fun ChatHeader(
             Text(
                 modifier = Modifier.padding(start = 10.dp),
                 text = otherUser.name,
-                fontSize = 20.sp,
-                color = ChatText,
-                fontFamily = FontFamily(Font(R.font.gilroy_bold)),
+                style = MyCustomTypography.Bold_20,
+                color = Color.White,
             )
             OnlineStatus(
                 otherUser = otherUser,

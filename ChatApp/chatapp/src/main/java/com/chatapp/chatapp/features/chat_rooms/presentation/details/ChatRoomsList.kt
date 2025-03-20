@@ -33,7 +33,7 @@ fun ChatRoomsList(
 
     Column {
         LazyColumn(
-            contentPadding = PaddingValues(start = 0.dp, top = 8.dp, end = 0.dp),
+            contentPadding = PaddingValues(start = 0.dp, top = 0.dp, end = 0.dp),
         ) {
             items(stateChatRooms, key = { chatRoom -> chatRoom.chatId }) { chatRoom ->
                 ChatRoomItem(
