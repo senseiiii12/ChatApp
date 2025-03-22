@@ -1,7 +1,6 @@
-package com.chatapp.chatapp.features.search_user.presentation
+package com.chatapp.chatapp.features.search_user.presentation.details
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -18,21 +17,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.Font
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.chatapp.chatapp.R
 import com.chatapp.chatapp.ui.theme.ChatAppTheme
-import com.chatapp.chatapp.ui.theme.ChatText
-import com.chatapp.chatapp.ui.theme.DarkGray_1
-import com.chatapp.chatapp.ui.theme.DarkGray_2
 import com.chatapp.chatapp.ui.theme.MyCustomTypography
-import com.chatapp.chatapp.ui.theme.Outline_1
 import com.chatapp.chatapp.ui.theme.PrimaryBackground
 
 @Composable

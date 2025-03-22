@@ -1,4 +1,6 @@
-package com.chatapp.chatapp.features.search_user.domain
+package com.chatapp.chatapp.core.domain
+
+import com.chatapp.chatapp.core.domain.models.FriendRequestWithUser
 
 interface FriendRequestRepository {
     suspend fun sendFriendRequest(toUserId: String,onResult: (Boolean) -> Unit)

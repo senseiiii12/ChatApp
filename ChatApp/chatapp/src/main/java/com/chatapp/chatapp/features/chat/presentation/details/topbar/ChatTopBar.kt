@@ -39,7 +39,7 @@ import coil.request.ImageRequest
 import com.chatapp.chatapp.R
 import com.chatapp.chatapp.features.chat.domain.Message
 import com.chatapp.chatapp.features.auth.domain.User
-import com.chatapp.chatapp.features.chat_rooms.presentation.UsersViewModel
+import com.chatapp.chatapp.core.presentation.UsersViewModel
 import com.chatapp.chatapp.ui.theme.Bg_Default_Avatar
 import com.chatapp.chatapp.ui.theme.MyCustomTypography
 import com.chatapp.chatapp.ui.theme.Online
@@ -58,13 +58,10 @@ fun ChatTopBar(
     onDeleteMessage: (List<Message>) -> Unit,
     onEditMessage: (String, Message?) -> Unit,
     onCopyMessage: (List<Message>) -> Unit,
-    usersViewModel: UsersViewModel = hiltViewModel()
+    usersViewModel: UsersViewModel
 ) {
 
     val topMenuState = stateTopMenu.value
-    LaunchedEffect(Unit) {
-        usersViewModel.listenForOtherUserStatus(otherUser.userId)
-    }
 
     TopAppBar(
         colors = TopAppBarDefaults.topAppBarColors(

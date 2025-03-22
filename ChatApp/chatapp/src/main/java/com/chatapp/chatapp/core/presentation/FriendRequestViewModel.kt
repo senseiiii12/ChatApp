@@ -1,9 +1,9 @@
-package com.chatapp.chatapp.features.search_user.presentation
+package com.chatapp.chatapp.core.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.chatapp.chatapp.features.search_user.domain.FriendRequestRepository
-import com.chatapp.chatapp.features.search_user.domain.FriendRequestWithUser
+import com.chatapp.chatapp.core.domain.FriendRequestRepository
+import com.chatapp.chatapp.core.domain.models.FriendRequestWithUser
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -15,7 +15,8 @@ class FriendRequestViewModel @Inject constructor(
     private val friendRequestRepository: FriendRequestRepository
 ): ViewModel() {
 
-    private val _friendRequestAndUserInfo = MutableStateFlow<List<FriendRequestWithUser>>(emptyList())
+    private val _friendRequestAndUserInfo =
+        MutableStateFlow<List<FriendRequestWithUser>>(emptyList())
     val friendRequestAndUserInfo = _friendRequestAndUserInfo.asStateFlow()
 
     fun sendFriendRequest(toUserId: String,onResult: (Boolean) -> Unit){

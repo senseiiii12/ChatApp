@@ -1,4 +1,4 @@
-package com.chatapp.chatapp.features.chat_rooms.presentation.new_state
+package com.chatapp.chatapp.features.chat_rooms.presentation
 
 import com.chatapp.chatapp.features.auth.domain.User
 import com.chatapp.chatapp.features.chat.domain.Message

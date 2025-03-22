@@ -48,6 +48,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.chatapp.chatapp.core.presentation.UsersViewModel
 import com.chatapp.chatapp.features.chat.domain.MessageStatus
 import com.chatapp.chatapp.features.auth.domain.User
 import com.chatapp.chatapp.features.chat.presentation.details.ChatItem
@@ -68,6 +69,7 @@ import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import okhttp3.internal.userAgent
 
 
 @Composable
@@ -76,7 +78,8 @@ fun ChatScreen(
     currentUser: User,
     otherUser: User,
     navController: NavController,
-    chatViewModel: ChatViewModel
+    chatViewModel: ChatViewModel,
+    usersViewModel: UsersViewModel
 ) {
     val systemUiController = rememberSystemUiController()
     systemUiController.setSystemBarsColor(SecondaryBackground)
@@ -107,6 +110,7 @@ fun ChatScreen(
             ChatTopBar(
                 otherUser = otherUser,
                 stateTopMenu = topMenuState,
+                usersViewModel = usersViewModel,
                 onBack = { navController.popBackStack() },
                 onCloseMenu = {
                     chatViewModel.stateTopMenuMessage(false)

@@ -46,7 +46,7 @@ import com.chatapp.chatapp.R
 import com.chatapp.chatapp.features.auth.presentation.Validator.ErrorMessage
 import com.chatapp.chatapp.features.auth.presentation.Validator.ValidateViewModel
 import com.chatapp.chatapp.features.navigation.Route
-import com.chatapp.chatapp.features.chat_rooms.presentation.UsersViewModel
+import com.chatapp.chatapp.core.presentation.UsersViewModel
 import com.chatapp.chatapp.ui.theme.MyCustomTypography
 import com.chatapp.chatapp.ui.theme.PrimaryBackground
 import com.chatapp.chatapp.ui.theme.PrimaryPurple

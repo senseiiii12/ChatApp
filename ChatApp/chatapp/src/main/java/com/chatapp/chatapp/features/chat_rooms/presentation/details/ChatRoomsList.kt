@@ -14,9 +14,9 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.chatapp.chatapp.features.auth.domain.User
 import com.chatapp.chatapp.features.chat.presentation.ChatViewModel
-import com.chatapp.chatapp.features.chat_rooms.presentation.UsersViewModel
-import com.chatapp.chatapp.features.chat_rooms.presentation.new_state.ChatRoomsState
-import com.chatapp.chatapp.features.chat_rooms.presentation.new_state.ChatRoomsViewModel
+import com.chatapp.chatapp.core.presentation.UsersViewModel
+import com.chatapp.chatapp.features.chat_rooms.presentation.ChatRoomsState
+import com.chatapp.chatapp.features.chat_rooms.presentation.ChatRoomsViewModel
 import com.chatapp.chatapp.ui.theme.PrimaryBackground
 import com.google.firebase.auth.FirebaseAuth
 
@@ -25,7 +25,7 @@ import com.google.firebase.auth.FirebaseAuth
 fun ChatRoomsList(
     stateChatRooms: List<ChatRoomsState>,
     onUserClick: (User) -> Unit,
-    usersViewModel: UsersViewModel = hiltViewModel()
+    usersViewModel: UsersViewModel,
 ) {
 
     val firebaseCurrentUserId = remember { FirebaseAuth.getInstance().currentUser?.uid ?: "" }

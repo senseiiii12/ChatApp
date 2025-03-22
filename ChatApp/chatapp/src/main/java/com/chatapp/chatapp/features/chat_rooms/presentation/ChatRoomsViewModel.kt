@@ -1,10 +1,11 @@
-package com.chatapp.chatapp.features.chat_rooms.presentation.new_state
+package com.chatapp.chatapp.features.chat_rooms.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chatapp.chatapp.features.chat.domain.Message
 import com.chatapp.chatapp.features.chat.domain.MessageStatus
 import com.chatapp.chatapp.features.chat_rooms.domain.ChatRoomsRepository
+import com.chatapp.chatapp.features.chat_rooms.presentation.ChatRoomsState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -58,7 +59,7 @@ class ChatRoomsViewModel @Inject constructor(
     }
 
 
-    fun loadChatRooms(userId: String) {
+    fun loadChatRooms(userId: String, onSucces:(Boolean) -> Unit) {
         viewModelScope.launch {
             // Загружаем начальные данные о чатах
             chatRoomsRepository.getUserChatRooms(userId)
@@ -72,6 +73,8 @@ class ChatRoomsViewModel @Inject constructor(
                 .collect { chatIds ->
                     _chatIds.value = chatIds
                 }
+        }.invokeOnCompletion {
+            onSucces(true)
         }
     }
 }

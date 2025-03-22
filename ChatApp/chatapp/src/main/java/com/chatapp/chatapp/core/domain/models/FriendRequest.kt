@@ -1,4 +1,4 @@
-package com.chatapp.chatapp.features.search_user.domain
+package com.chatapp.chatapp.core.domain.models
 
 data class FriendRequest(
     val id: String = "",

@@ -1,5 +1,6 @@
 package com.chatapp.chatapp.features.search_user.presentation
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -49,12 +50,15 @@ import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.chatapp.chatapp.R
+import com.chatapp.chatapp.core.presentation.FriendRequestViewModel
 import com.chatapp.chatapp.features.auth.domain.User
+import com.chatapp.chatapp.core.presentation.UsersViewModel
+import com.chatapp.chatapp.features.search_user.presentation.details.TopBarSearchScreen
 import com.chatapp.chatapp.ui.theme.Bg_Default_Avatar
 import com.chatapp.chatapp.ui.theme.ChatText
 import com.chatapp.chatapp.ui.theme.PrimaryBackground
-import com.chatapp.chatapp.ui.theme.Success
 import com.chatapp.chatapp.ui.theme.SecondaryBackground
+import com.chatapp.chatapp.ui.theme.Success
 import com.chatapp.chatapp.util.CustomSnackBar
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
@@ -64,7 +68,8 @@ import kotlinx.coroutines.launch
 fun SearchUsersScreen(
     navController: NavController,
     searchUsersViewModel: SearchUsersViewModel = hiltViewModel(),
-    friendRequestViewModel: FriendRequestViewModel = hiltViewModel()
+    friendRequestViewModel: FriendRequestViewModel = hiltViewModel(),
+    usersViewModel: UsersViewModel
 ) {
 
     val searchUserList by searchUsersViewModel.users.collectAsState()
@@ -73,6 +78,10 @@ fun SearchUsersScreen(
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+
+    val currentUser = usersViewModel.currentUser.value
+    Log.d("SearchUsersScreen", currentUser.userId)
+
 
     Scaffold(
         topBar = {

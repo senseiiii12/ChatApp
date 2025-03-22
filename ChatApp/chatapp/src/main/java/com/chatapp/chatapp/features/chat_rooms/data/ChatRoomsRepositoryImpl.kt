@@ -1,29 +1,22 @@
 package com.chatapp.chatapp.features.chat_rooms.data
 
 import android.util.Log
-import androidx.lifecycle.viewModelScope
 import com.chatapp.chatapp.features.auth.domain.User
 import com.chatapp.chatapp.features.chat.domain.Message
-import com.chatapp.chatapp.features.chat.domain.MessageStatus
 import com.chatapp.chatapp.features.chat_rooms.domain.ChatRoomsRepository
-import com.chatapp.chatapp.features.chat_rooms.presentation.new_state.ChatRoomsState
-import com.chatapp.chatapp.util.Resource
-import com.google.firebase.firestore.DocumentReference
+import com.chatapp.chatapp.features.chat_rooms.presentation.ChatRoomsState
+import com.chatapp.chatapp.util.extension.toMessage
+import com.chatapp.chatapp.util.extension.toUser
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
-import com.google.firebase.firestore.Source
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.tasks.await
-import java.util.Date
 import javax.inject.Inject
 
 class ChatRoomsRepositoryImpl @Inject constructor(
@@ -62,16 +55,6 @@ class ChatRoomsRepositoryImpl @Inject constructor(
         }.flowOn(Dispatchers.IO)
     }
 
-    private fun DocumentSnapshot.toMessage(): Message {
-        return Message(
-            userId = getString("userId") ?: "",
-            text = getString("text") ?: "",
-            timestamp = getTimestamp("timestamp")?.toDate()?.time ?: 0L,
-            messageId = getString("messageId") ?: "",
-            status = MessageStatus.valueOf(getString("status") ?: MessageStatus.SENT.name)
-        )
-    }
-
     override suspend fun getAllChatRoomsId(currentUserId: String): Flow<List<String>> {
         return flow {
             try {
@@ -87,7 +70,6 @@ class ChatRoomsRepositoryImpl @Inject constructor(
             }
         }
     }
-
 
     override suspend fun getUserChatRooms(userId: String): Flow<List<ChatRoomsState>> {
         return flow {
@@ -145,16 +127,7 @@ class ChatRoomsRepositoryImpl @Inject constructor(
             if (!userDoc.exists()) {
                 return null
             }
-            User(
-                userId = userDoc.id,
-                avatar = userDoc.getString("avatar") ,
-                name = userDoc.getString("name") ?: "",
-                email = userDoc.getString("email") ?: "",
-                password = userDoc.getString("password") ?: "",
-                online = userDoc.getBoolean("online") ?: false,
-                lastSeen = userDoc.getTimestamp("lastSeen")?.toDate() ?: Date(),
-                friends = userDoc.get("friends") as? List<String> ?: emptyList()
-            )
+            userDoc.toUser()
         } catch (e: Exception) {
             Log.e("ChatDebug", "Ошибка в fetchUserData для $userId: ${e.message}", e)
             null

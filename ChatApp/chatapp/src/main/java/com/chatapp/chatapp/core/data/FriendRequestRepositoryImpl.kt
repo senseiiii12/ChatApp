@@ -1,10 +1,10 @@
-package com.chatapp.chatapp.features.search_user.data
+package com.chatapp.chatapp.core.data
 
 import android.util.Log
 import com.chatapp.chatapp.features.auth.domain.User
-import com.chatapp.chatapp.features.search_user.domain.FriendRequest
-import com.chatapp.chatapp.features.search_user.domain.FriendRequestRepository
-import com.chatapp.chatapp.features.search_user.domain.FriendRequestWithUser
+import com.chatapp.chatapp.core.domain.FriendRequestRepository
+import com.chatapp.chatapp.core.domain.models.FriendRequest
+import com.chatapp.chatapp.core.domain.models.FriendRequestWithUser
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore

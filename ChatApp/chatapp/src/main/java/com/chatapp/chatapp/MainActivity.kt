@@ -1,6 +1,7 @@
 package com.chatapp.chatapp
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -18,11 +19,13 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.chatapp.chatapp.core.presentation.SplashViewModel
+import com.chatapp.chatapp.core.presentation.UpdateOnlineStatusViewModel
 import com.chatapp.chatapp.features.navigation.Route
 import com.chatapp.chatapp.features.chat.presentation.ChatScreen
 import com.chatapp.chatapp.features.chat.presentation.ChatViewModel
 import com.chatapp.chatapp.features.chat_rooms.presentation.ChatRoomsScreen
-import com.chatapp.chatapp.features.chat_rooms.presentation.UsersViewModel
+import com.chatapp.chatapp.core.presentation.UsersViewModel
 import com.chatapp.chatapp.features.auth.presentation.MainEntrance
 import com.chatapp.chatapp.features.friend_requests.presentation.NotificationScreen
 import com.chatapp.chatapp.features.search_user.presentation.SearchUsersScreen
@@ -34,7 +37,7 @@ import dagger.hilt.android.AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     val splashViewModel by viewModels<SplashViewModel>()
-    val usersViewModel by viewModels<UsersViewModel>()
+    val updateOnlineStatusViewModel by viewModels<UpdateOnlineStatusViewModel>()
 
     var currentUserId: String? = null
 
@@ -43,6 +46,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         currentUserId = FirebaseAuth.getInstance().currentUser?.uid
+        Log.d("currentUserId", currentUserId.toString())
 
         installSplashScreen().apply {
             setKeepOnScreenCondition {
@@ -51,9 +55,9 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            window.statusBarColor = getColor(R.color.PrimaryBackground)
             val navController = rememberNavController()
             val startDestination = splashViewModel.checkUser()
+            val usersViewModel: UsersViewModel = hiltViewModel()
 
             ChatAppTheme {
                 Surface(
@@ -77,13 +81,19 @@ class MainActivity : ComponentActivity() {
                             MainEntrance(navController = navController)
                         }
                         composable(route = Route.HomePage.route) {
-                            ChatRoomsScreen(navController = navController)
+                            ChatRoomsScreen(
+                                navController = navController,
+                                usersViewModel = usersViewModel
+                            )
                         }
                         composable(route = Route.Notification.route) {
                             NotificationScreen(navController = navController)
                         }
                         composable(route = Route.SearchUsers.route) {
-                            SearchUsersScreen(navController = navController)
+                            SearchUsersScreen(
+                                navController = navController,
+                                usersViewModel = usersViewModel
+                            )
                         }
                         composable(route = "chat/{otherUserJson}/{currentUserJson}") { backStackEntry ->
                             val otherUserJson =
@@ -102,7 +112,8 @@ class MainActivity : ComponentActivity() {
                                 currentUser = currentUser,
                                 otherUser = otherUser,
                                 navController = navController,
-                                chatViewModel = chatViewModel
+                                chatViewModel = chatViewModel,
+                                usersViewModel = usersViewModel
                             )
                         }
                     }
@@ -113,12 +124,12 @@ class MainActivity : ComponentActivity() {
 
     override fun onStart() {
         super.onStart()
-        currentUserId?.let { usersViewModel.updateUserOnlineStatus(it, true) }
+        currentUserId?.let { updateOnlineStatusViewModel.updateUserOnlineStatus(it, true) }
     }
 
     override fun onStop() {
         super.onStop()
-        currentUserId?.let { usersViewModel.updateUserOnlineStatus(it, false) }
+        currentUserId?.let { updateOnlineStatusViewModel.updateUserOnlineStatus(it, false) }
     }
 
 }

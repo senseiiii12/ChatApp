@@ -9,6 +9,7 @@ import com.chatapp.chatapp.features.auth.domain.User
 import com.chatapp.chatapp.core.domain.UsersRepository
 import com.chatapp.chatapp.util.Resource
 import com.chatapp.chatapp.util.UpdateStatusWorker
+import com.chatapp.chatapp.util.extension.toUser
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
@@ -73,19 +74,6 @@ class UsersRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             emit(emptyList())
         }
-    }
-
-    private fun DocumentSnapshot.toUser(): User {
-        return User(
-            userId = getString("userId") ?: "",
-            avatar = getString("avatar"),
-            name = getString("name") ?: "",
-            email = getString("email") ?: "",
-            password = getString("password") ?: "",
-            online = getBoolean("online") ?: false,
-            lastSeen = getTimestamp("lastSeen")?.toDate() ?: Date(0),
-            friends = get("friends") as? List<String> ?: emptyList()
-        )
     }
 
     override fun updateUserOnlineStatus(userId: String, isOnline: Boolean) {

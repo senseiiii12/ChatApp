@@ -1,12 +1,10 @@
-package com.chatapp.chatapp.features.chat_rooms.presentation
+package com.chatapp.chatapp.core.presentation
 
-import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chatapp.chatapp.core.domain.UsersRepository
 import com.chatapp.chatapp.features.auth.domain.User
-import com.chatapp.chatapp.util.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -23,10 +21,7 @@ class UsersViewModel @Inject constructor(
     private val _currentUser = mutableStateOf(User())
     val currentUser = _currentUser
 
-    private val _users = MutableStateFlow(UserListState())
-    val users = _users.asStateFlow()
-
-    private val _userStatuses = MutableStateFlow<Map<String, Pair<Boolean,Date>>>(emptyMap())
+    private val _userStatuses = MutableStateFlow<Map<String, Pair<Boolean, Date>>>(emptyMap())
     val userStatuses = _userStatuses.asStateFlow()
 
 

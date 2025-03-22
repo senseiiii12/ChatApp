@@ -38,7 +38,7 @@ import com.chatapp.chatapp.R
 import com.chatapp.chatapp.features.auth.domain.User
 import com.chatapp.chatapp.features.chat.domain.Message
 import com.chatapp.chatapp.features.chat.domain.MessageStatus
-import com.chatapp.chatapp.features.chat_rooms.presentation.new_state.ChatRoomsState
+import com.chatapp.chatapp.features.chat_rooms.presentation.ChatRoomsState
 import com.chatapp.chatapp.ui.theme.Bg_Default_Avatar
 import com.chatapp.chatapp.ui.theme.ChatAppTheme
 import com.chatapp.chatapp.ui.theme.MyCustomTypography

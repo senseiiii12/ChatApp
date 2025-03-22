@@ -53,7 +53,7 @@ import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.chatapp.chatapp.R
 import com.chatapp.chatapp.features.auth.domain.User
-import com.chatapp.chatapp.features.search_user.presentation.FriendRequestViewModel
+import com.chatapp.chatapp.core.presentation.FriendRequestViewModel
 import com.chatapp.chatapp.ui.theme.Bg_Default_Avatar
 import com.chatapp.chatapp.ui.theme.ChatText
 import com.chatapp.chatapp.ui.theme.DarkGray_1
