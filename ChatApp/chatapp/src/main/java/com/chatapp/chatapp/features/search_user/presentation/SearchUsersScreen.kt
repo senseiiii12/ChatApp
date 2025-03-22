@@ -19,17 +19,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -41,7 +36,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -56,13 +50,11 @@ import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.chatapp.chatapp.R
 import com.chatapp.chatapp.features.auth.domain.User
-import com.chatapp.chatapp.features.chat_rooms.presentation.details.SearchTextField
 import com.chatapp.chatapp.ui.theme.Bg_Default_Avatar
 import com.chatapp.chatapp.ui.theme.ChatText
-import com.chatapp.chatapp.ui.theme.DarkGray_1
 import com.chatapp.chatapp.ui.theme.PrimaryBackground
 import com.chatapp.chatapp.ui.theme.Success
-import com.chatapp.chatapp.ui.theme.Surface_Card
+import com.chatapp.chatapp.ui.theme.SecondaryBackground
 import com.chatapp.chatapp.util.CustomSnackBar
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
@@ -84,31 +76,12 @@ fun SearchUsersScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = PrimaryBackground
-                ),
-                title = {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Search users",
-                            fontFamily = FontFamily(Font(R.font.gilroy_bold)),
-                            fontSize = 28.sp,
-                            color = DarkGray_1
-                        )
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Back",
-                            tint = Color.White
-                        )
-                    }
+            TopBarSearchScreen(
+                navController = navController,
+                value = searchText,
+                onValueChange = {
+                    searchText = it
+                    if (searchText.isNotEmpty()) searchUsersViewModel.searchUsers(searchText)
                 }
             )
         },
@@ -126,17 +99,6 @@ fun SearchUsersScreen(
                 .background(PrimaryBackground),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Spacer(modifier = Modifier.height(8.dp))
-            SearchTextField(
-                enabled = true,
-                value = searchText,
-                onValueChange = {
-                    searchText = it
-                    if (searchText.isNotEmpty()) searchUsersViewModel.searchUsers(searchText)
-                },
-                onSeachFieldClick = {}
-            )
-
             LazyColumn(
                 modifier = Modifier.fillMaxWidth(),
                 contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp),
@@ -198,7 +160,7 @@ fun SearchUsersItem(
             .fillMaxWidth()
             .shadow(5.dp, RoundedCornerShape(22.dp))
             .clip(RoundedCornerShape(22.dp))
-            .background(Surface_Card)
+            .background(SecondaryBackground)
             .clickable { }
             .height(50.dp)
             .padding(10.dp),

@@ -37,11 +37,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.Font
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
@@ -51,13 +48,11 @@ import com.chatapp.chatapp.features.chat.domain.MessageStatus
 import com.chatapp.chatapp.features.auth.domain.User
 import com.chatapp.chatapp.ui.theme.Bg_Default_Avatar
 import com.chatapp.chatapp.ui.theme.ChatAppTheme
-import com.chatapp.chatapp.ui.theme.ChatText
-import com.chatapp.chatapp.ui.theme.Mark_Message
 import com.chatapp.chatapp.ui.theme.MyCustomTypography
 import com.chatapp.chatapp.ui.theme.Online
 import com.chatapp.chatapp.ui.theme.PrimaryBackground
 import com.chatapp.chatapp.ui.theme.PrimaryPurple
-import com.chatapp.chatapp.ui.theme.Surface_Card
+import com.chatapp.chatapp.ui.theme.SecondaryBackground
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -84,13 +79,13 @@ fun MessageItem(
         )
     }
     val otherUserColor = remember {
-        Brush.linearGradient(listOf(Surface_Card.copy(alpha = 0.8f), Surface_Card))
+        Brush.linearGradient(listOf(SecondaryBackground.copy(alpha = 0.8f), SecondaryBackground))
     }
     val backgroundColor = remember { if (isCurrentUser) currentUserColor else otherUserColor }
     val horizontalArrangement =
         remember { if (isCurrentUser) Arrangement.End else Arrangement.Start }
     val screenWidth = LocalConfiguration.current.screenWidthDp
-    val selectedColorMessage = remember{ if (isEditing) Surface_Card else PrimaryBackground }
+    val selectedColorMessage = remember{ if (isEditing) SecondaryBackground else PrimaryBackground }
 
     Row(
         modifier = modifier

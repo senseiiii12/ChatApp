@@ -52,6 +52,7 @@ import com.chatapp.chatapp.features.auth.presentation.RegisterScreen.ImageAvatar
 import com.chatapp.chatapp.features.auth.presentation.RegisterScreen.ImageAvatar.ImageAvatarViewModel
 import com.chatapp.chatapp.features.auth.presentation.Validator.ErrorMessage
 import com.chatapp.chatapp.features.auth.presentation.Validator.ValidateViewModel
+import com.chatapp.chatapp.ui.theme.MyCustomTypography
 import com.chatapp.chatapp.ui.theme.Success
 import kotlinx.coroutines.launch
 
@@ -89,14 +90,13 @@ fun BottomSheetRegister(
             viewModel = viewModelImageAvatar,
             imageUri = imageUri
         )
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(16.dp))
         Text(
             text = "Register to ChatApp",
-            fontFamily = FontFamily(Font(R.font.gilroy_medium)),
-            fontSize = 24.sp,
+            style = MyCustomTypography.SemiBold_24,
             color = Color.White
         )
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(16.dp))
         Box {
             EditField(
                 placeholder = "Name",

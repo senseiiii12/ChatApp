@@ -1,0 +1,119 @@
+package com.chatapp.chatapp.core.data
+
+import android.content.Context
+import android.util.Log
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.workDataOf
+import com.chatapp.chatapp.features.auth.domain.User
+import com.chatapp.chatapp.core.domain.UsersRepository
+import com.chatapp.chatapp.util.Resource
+import com.chatapp.chatapp.util.UpdateStatusWorker
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.DocumentSnapshot
+import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Source
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.tasks.await
+import java.util.Date
+import javax.inject.Inject
+
+class UsersRepositoryImpl @Inject constructor(
+    private val firebaseFirestore: FirebaseFirestore,
+    private val firebaseAuth: FirebaseAuth,
+    private val context: Context
+) : UsersRepository {
+
+    override suspend fun getCurrentUser(): Flow<User> {
+        val currentUserId = firebaseAuth.currentUser?.uid ?: ""
+        return flow {
+            Log.d("curerntUser123", currentUserId)
+            val result = firebaseFirestore
+                .collection("users")
+                .document(currentUserId)
+                .get().await()
+            val currentUser = result.toUser()
+            emit(currentUser)
+        }
+    }
+
+    override suspend fun getUsersList(): Flow<Resource<List<User>>> {
+        return flow {
+            emit(Resource.Loading())
+            try {
+                val result = firebaseFirestore.collection("users").get(Source.DEFAULT).await()
+                val usersList = result.documents.map { document ->
+                    document.toUser()
+                }
+                emit(Resource.Success(usersList))
+                Log.d("UserList", usersList.toString())
+            } catch (e: Exception) {
+                emit(Resource.Error(e.message.toString()))
+            }
+        }
+    }
+
+    override suspend fun searchUsers(query: String): Flow<List<User>> = flow {
+        val currentUserId = firebaseAuth.currentUser?.uid ?: ""
+        try {
+            val result = firebaseFirestore
+                .collection("users")
+                .whereNotEqualTo("userId",currentUserId)
+                .get(Source.DEFAULT)
+                .await()
+            val usersList = result.documents.map { document ->
+                document.toUser()
+            }
+            val listFiltered = usersList.filter {
+                it.name.startsWith(query, ignoreCase = true) // Поиск по началу строки
+            }
+            emit(listFiltered)
+        } catch (e: Exception) {
+            emit(emptyList())
+        }
+    }
+
+    private fun DocumentSnapshot.toUser(): User {
+        return User(
+            userId = getString("userId") ?: "",
+            avatar = getString("avatar"),
+            name = getString("name") ?: "",
+            email = getString("email") ?: "",
+            password = getString("password") ?: "",
+            online = getBoolean("online") ?: false,
+            lastSeen = getTimestamp("lastSeen")?.toDate() ?: Date(0),
+            friends = get("friends") as? List<String> ?: emptyList()
+        )
+    }
+
+    override fun updateUserOnlineStatus(userId: String, isOnline: Boolean) {
+        val inputData = workDataOf(
+            "userId" to userId,
+            "isOnline" to isOnline
+        )
+        val workRequest = OneTimeWorkRequestBuilder<UpdateStatusWorker>()
+            .setInputData(inputData)
+            .build()
+        WorkManager.getInstance(context).enqueue(workRequest)
+    }
+
+
+    override fun listenForUserStatusChanges(
+        userId: String,
+        onStatusChanged: (Pair<Boolean, Date>) -> Unit
+    ) {
+        val userRef = firebaseFirestore.collection("users").document(userId)
+
+        userRef.addSnapshotListener { snapshot, e ->
+            if (e != null || snapshot == null || !snapshot.exists()) {
+                return@addSnapshotListener
+            }
+
+            val status = snapshot.getBoolean("online") ?: false
+            val lastSeen = snapshot.getTimestamp("lastSeen")?.toDate() ?: Date(0)
+            onStatusChanged(Pair(status, lastSeen))
+        }
+    }
+}

@@ -3,7 +3,7 @@ package com.chatapp.chatapp.features.auth.presentation.RegisterScreen
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chatapp.chatapp.features.auth.domain.AuthRepository
-import com.chatapp.chatapp.features.chat_rooms.domain.UsersRepository
+import com.chatapp.chatapp.core.domain.UsersRepository
 import com.chatapp.chatapp.util.Resource
 import com.google.firebase.firestore.FieldValue
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -17,7 +17,6 @@ import javax.inject.Inject
 @HiltViewModel
 class SignUpViewModel @Inject constructor(
     private val authRepository: AuthRepository,
-    private val usersRepository: UsersRepository
 ) : ViewModel() {
 
     val _signUpState = Channel<SignUpState>()
@@ -53,7 +52,7 @@ class SignUpViewModel @Inject constructor(
                             "password" to password,
                             "lastSeen" to FieldValue.serverTimestamp()
                         )
-                        usersRepository.saveUserToDatabase(user)
+                        authRepository.saveUserToDatabase(user)
                     }
 
                     is Resource.Loading -> {

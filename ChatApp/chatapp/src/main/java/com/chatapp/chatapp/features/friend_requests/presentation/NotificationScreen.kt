@@ -60,7 +60,7 @@ import com.chatapp.chatapp.ui.theme.DarkGray_1
 import com.chatapp.chatapp.ui.theme.Error
 import com.chatapp.chatapp.ui.theme.PrimaryBackground
 import com.chatapp.chatapp.ui.theme.Success
-import com.chatapp.chatapp.ui.theme.Surface_Card
+import com.chatapp.chatapp.ui.theme.SecondaryBackground
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -157,7 +157,7 @@ fun FriendListUsersItem(
             .fillMaxWidth()
             .shadow(8.dp, RoundedCornerShape(22.dp))
             .clip(RoundedCornerShape(22.dp))
-            .background(Surface_Card)
+            .background(SecondaryBackground)
             .clickable { }
             .height(50.dp)
             .padding(10.dp),

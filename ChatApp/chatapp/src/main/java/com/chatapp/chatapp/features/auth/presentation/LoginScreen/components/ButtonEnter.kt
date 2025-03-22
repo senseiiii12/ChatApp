@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.chatapp.chatapp.R
 import com.chatapp.chatapp.ui.theme.ChatAppTheme
+import com.chatapp.chatapp.ui.theme.MyCustomTypography
 import com.chatapp.chatapp.ui.theme.PrimaryPurple
 
 
@@ -46,8 +47,7 @@ fun ButtonEnter(
         Text(
             text = text,
             color = textColor,
-            fontSize = 14.sp,
-            fontFamily = FontFamily(Font(R.font.gilroy_semibold))
+            style = MyCustomTypography.SemiBold_16
         )
     }
 }
@@ -57,7 +57,7 @@ fun ButtonEnter(
 private fun ButtonEnterPreview() {
     ChatAppTheme {
         ButtonEnter(
-            text = "123",
+            text = "Sign In",
             OnClick = {}
         )
     }

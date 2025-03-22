@@ -37,6 +37,7 @@ import com.chatapp.chatapp.ui.theme.PrimaryBackground
 import com.chatapp.chatapp.features.auth.presentation.Validator.ErrorMessage
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.chatapp.chatapp.ui.theme.DarkGray_2
+import com.chatapp.chatapp.ui.theme.MyCustomTypography
 
 
 @Composable
@@ -69,21 +70,18 @@ fun DialogForgotPassword(
                         Spacer(modifier = Modifier.height(20.dp))
                         Text(
                             text = "An email",
-                            fontSize = 12.sp,
-                            color = Color.White.copy(alpha = 0.7f),
-                            fontFamily = FontFamily(Font(R.font.gilroy_medium))
+                            style = MyCustomTypography.Normal_12,
+                            color = Color.White.copy(alpha = 0.5f),
                         )
                         Text(
                             text = forgotEmail,
-                            fontSize = 14.sp,
-                            color = Color.White,
-                            fontFamily = FontFamily(Font(R.font.gilroy_bold))
+                            style = MyCustomTypography.Bold_14,
+                            color = Color.White
                         )
                         Text(
                             text = "has been sent to reset your password",
-                            fontSize = 12.sp,
-                            color = Color.White.copy(alpha = 0.7f),
-                            fontFamily = FontFamily(Font(R.font.gilroy_medium))
+                            style = MyCustomTypography.Normal_12,
+                            color = Color.White.copy(alpha = 0.5f),
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         ButtonEnter(
@@ -98,9 +96,8 @@ fun DialogForgotPassword(
                         Text(
                             modifier = Modifier.padding(start = 2.dp, bottom = 16.dp),
                             text = "Enter the account's email address",
-                            fontSize = 12.sp,
-                            color = Color.White,
-                            fontFamily = FontFamily(Font(R.font.gilroy_medium))
+                            style = MyCustomTypography.Normal_12,
+                            color = Color.White
                         )
                         EditField(
                             placeholder = "Email",

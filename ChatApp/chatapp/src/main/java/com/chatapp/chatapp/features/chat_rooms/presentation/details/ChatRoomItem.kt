@@ -44,7 +44,6 @@ import com.chatapp.chatapp.ui.theme.ChatAppTheme
 import com.chatapp.chatapp.ui.theme.MyCustomTypography
 import com.chatapp.chatapp.ui.theme.Online
 import com.chatapp.chatapp.ui.theme.PrimaryBackground
-import com.chatapp.chatapp.ui.theme.Surface_Card
 import com.chatapp.chatapp.util.TimeManager
 import java.util.Date
 

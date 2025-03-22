@@ -11,6 +11,7 @@ interface AuthRepository {
     fun getCurrentUserUID(): String?
     fun loginUser(email: String, password: String): Flow<Resource<AuthResult>>
     fun registerUser(email: String, password: String): Flow<Resource<AuthResult>>
+    fun saveUserToDatabase(user: Map<String, Any?>)
     fun signOut()
     suspend fun forgotPassword(email: String)
 

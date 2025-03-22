@@ -9,8 +9,10 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 
 private val DarkColorScheme = darkColorScheme(
     primary = Purple80,
@@ -43,12 +45,21 @@ fun ChatAppTheme(
     content: @Composable () -> Unit
 ) {
 
-
-
+    val systemUiController = rememberSystemUiController()
     val colorScheme = when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+            if (darkTheme) {
+                systemUiController.setSystemBarsColor(
+                    color = PrimaryBackground
+                )
+                dynamicDarkColorScheme(context)
+            } else {
+                systemUiController.setSystemBarsColor(
+                    color = PrimaryBackground
+                )
+                dynamicLightColorScheme(context)
+            }
         }
 
         darkTheme -> DarkColorScheme

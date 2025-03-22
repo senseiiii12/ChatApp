@@ -31,10 +31,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.Font
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import coil.request.CachePolicy
@@ -44,11 +41,9 @@ import com.chatapp.chatapp.features.chat.domain.Message
 import com.chatapp.chatapp.features.auth.domain.User
 import com.chatapp.chatapp.features.chat_rooms.presentation.UsersViewModel
 import com.chatapp.chatapp.ui.theme.Bg_Default_Avatar
-import com.chatapp.chatapp.ui.theme.ChatText
-import com.chatapp.chatapp.ui.theme.DarkGray_1
 import com.chatapp.chatapp.ui.theme.MyCustomTypography
 import com.chatapp.chatapp.ui.theme.Online
-import com.chatapp.chatapp.ui.theme.Surface_Card
+import com.chatapp.chatapp.ui.theme.SecondaryBackground
 import com.chatapp.chatapp.util.TimeManager
 import java.util.Date
 
@@ -73,7 +68,7 @@ fun ChatTopBar(
 
     TopAppBar(
         colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = Surface_Card
+            containerColor = SecondaryBackground
         ),
         title = {
             AnimatedContent(targetState = topMenuState.isOpenTopMenu) { stateTopMenuMessage ->

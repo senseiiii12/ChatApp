@@ -61,7 +61,7 @@ import com.chatapp.chatapp.ui.theme.ChatText
 import com.chatapp.chatapp.ui.theme.Outline_Card
 import com.chatapp.chatapp.ui.theme.PrimaryBackground
 import com.chatapp.chatapp.ui.theme.PrimaryPurple
-import com.chatapp.chatapp.ui.theme.Surface_Card
+import com.chatapp.chatapp.ui.theme.SecondaryBackground
 import com.chatapp.chatapp.util.CustomToast.ToastHost
 import com.chatapp.chatapp.util.CustomToast.ToastState
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
@@ -79,7 +79,7 @@ fun ChatScreen(
     chatViewModel: ChatViewModel
 ) {
     val systemUiController = rememberSystemUiController()
-    systemUiController.setSystemBarsColor(Surface_Card)
+    systemUiController.setSystemBarsColor(SecondaryBackground)
 
     val context = LocalContext.current
     val toastState = remember { ToastState() }

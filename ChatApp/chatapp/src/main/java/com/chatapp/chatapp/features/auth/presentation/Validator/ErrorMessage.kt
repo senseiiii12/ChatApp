@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.chatapp.chatapp.R
 import com.chatapp.chatapp.ui.theme.Error
+import com.chatapp.chatapp.ui.theme.MyCustomTypography
 
 @Composable
 fun <T> ErrorMessage(
@@ -40,9 +41,8 @@ fun <T> ErrorMessage(
             Text(
                 modifier = Modifier.padding(start = 12.dp, top = 2.dp),
                 text = message,
-                color = Error,
-                fontFamily = FontFamily(Font(R.font.gilroy_medium)),
-                fontSize = 10.sp
+                style = MyCustomTypography.Normal_10,
+                color = Error
             )
         }
     }

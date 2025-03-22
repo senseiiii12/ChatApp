@@ -1,9 +1,10 @@
 package com.chatapp.chatapp.features.chat_rooms.presentation
 
 import android.util.Log
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.chatapp.chatapp.features.chat_rooms.domain.UsersRepository
+import com.chatapp.chatapp.core.domain.UsersRepository
 import com.chatapp.chatapp.features.auth.domain.User
 import com.chatapp.chatapp.util.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -19,37 +20,20 @@ class UsersViewModel @Inject constructor(
     private val usersRepository: UsersRepository
 ) : ViewModel() {
 
+    private val _currentUser = mutableStateOf(User())
+    val currentUser = _currentUser
+
     private val _users = MutableStateFlow(UserListState())
     val users = _users.asStateFlow()
 
     private val _userStatuses = MutableStateFlow<Map<String, Pair<Boolean,Date>>>(emptyMap())
     val userStatuses = _userStatuses.asStateFlow()
 
-    private var usersLoaded = false
 
-    init {
-        Log.d("ViewModel", "init UsersViewModel")
-    }
-
-    fun getUsers() {
-        if (usersLoaded) return
+    fun getCurrentUser(){
         viewModelScope.launch {
-            usersRepository.getUsersList().collect { result ->
-                when (result) {
-                    is Resource.Loading -> {
-                        _users.value = UserListState(isLoading = true)
-                    }
-                    is Resource.Success -> {
-                        _users.value = UserListState(isLoading = false, isSuccess = result.data ?: emptyList())
-                        usersLoaded = true
-                        result.data?.forEach { user ->
-                            listenForOtherUserStatus(user.userId)
-                        }
-                    }
-                    is Resource.Error -> {
-                        _users.value = UserListState(isLoading = false,isError = result.message)
-                    }
-                }
+            usersRepository.getCurrentUser().collect { currentUser ->
+                _currentUser.value = currentUser
             }
         }
     }
@@ -64,17 +48,8 @@ class UsersViewModel @Inject constructor(
         }
     }
 
-
-    fun updateUserStatus(userId: String, isOnline: Boolean){
-        usersRepository.scheduleUpdateUserStatusWork(userId, isOnline)
+    fun updateUserOnlineStatus(userId: String, isOnline: Boolean){
+        usersRepository.updateUserOnlineStatus(userId, isOnline)
     }
-
-
-
-    // Функция для получения пользователя по userId
-    fun getUserById(userId: String): User? {
-        return _users.value.isSuccess.find { it.userId == userId }
-    }
-
 
 }

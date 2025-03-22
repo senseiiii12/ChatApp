@@ -28,22 +28,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.Font
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.toFontFamily
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.chatapp.chatapp.R
 import com.chatapp.chatapp.features.chat.domain.Message
-import com.chatapp.chatapp.ui.theme.ChatText
 import com.chatapp.chatapp.ui.theme.DarkGray_1
 import com.chatapp.chatapp.ui.theme.MyCustomTypography
 import com.chatapp.chatapp.ui.theme.Outline_1
 import com.chatapp.chatapp.ui.theme.PrimaryPurple
-import com.chatapp.chatapp.ui.theme.Surface_Card
+import com.chatapp.chatapp.ui.theme.SecondaryBackground
 
 sealed class SendState {
     object SendEditMessage : SendState()
@@ -89,7 +83,7 @@ fun ChatInputField(
         ) {
             TextField(
                 modifier = Modifier
-                    .background(Surface_Card)
+                    .background(SecondaryBackground)
                     .weight(1f)
                     .padding(horizontal = 8.dp),
                 value = valueField,
@@ -143,7 +137,7 @@ fun CurrentEditMessagePanel(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Surface_Card)
+                .background(SecondaryBackground)
                 .padding(horizontal = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
