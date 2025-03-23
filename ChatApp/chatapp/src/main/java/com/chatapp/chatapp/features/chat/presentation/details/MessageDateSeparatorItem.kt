@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.sp
 import com.chatapp.chatapp.R
 import com.chatapp.chatapp.ui.theme.DarkGray_2
 import com.chatapp.chatapp.ui.theme.MyCustomTypography
+import com.chatapp.chatapp.ui.theme.SecondaryBackground
 
 
 @Composable
@@ -31,17 +32,17 @@ fun MessageDateSeparatorItem(date: String) {
     ) {
         Divider(
             modifier = Modifier.weight(1f),
-            color = DarkGray_2
+            color = SecondaryBackground
         )
         Text(
             text = date,
             modifier = Modifier.padding(horizontal = 8.dp),
             style = MyCustomTypography.Normal_10,
-            color = DarkGray_2,
+            color = Color.White.copy(alpha = 0.25f),
         )
         Divider(
             modifier = Modifier.weight(1f),
-            color = DarkGray_2,
+            color = SecondaryBackground,
         )
     }
 }

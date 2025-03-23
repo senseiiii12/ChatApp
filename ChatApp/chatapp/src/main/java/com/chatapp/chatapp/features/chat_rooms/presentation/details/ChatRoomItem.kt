@@ -44,6 +44,7 @@ import com.chatapp.chatapp.ui.theme.ChatAppTheme
 import com.chatapp.chatapp.ui.theme.MyCustomTypography
 import com.chatapp.chatapp.ui.theme.Online
 import com.chatapp.chatapp.ui.theme.PrimaryBackground
+import com.chatapp.chatapp.ui.theme.PrimaryPurple
 import com.chatapp.chatapp.util.TimeManager
 import java.util.Date
 
@@ -62,15 +63,13 @@ fun ChatRoomItem(
     val timeManager = TimeManager()
     val lastMessageText =
         if (currentUserId == lastMessage?.userId) "You: ${lastMessage.text}" else "${lastMessage?.text ?: ""}"
-    val lastMessageColor = if (lastMessage?.status?.name.equals("READ")) Color.White.copy(alpha = 0.5f) else Color.White.copy(alpha = 0.75f)
+    val lastMessageColor = if (lastMessage?.status?.name.equals("READ")) Color.White.copy(alpha = 0.5f) else Color.White.copy(alpha = 0.8f)
 
 
 
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .shadow(4.dp, RoundedCornerShape(0.dp))
-            .clip(RoundedCornerShape(0.dp))
             .background(PrimaryBackground)
             .clickable { onClick() }
             .height(76.dp)
@@ -127,7 +126,7 @@ fun ChatRoomItem(
             ) {
                 Text(
                     text = otherUser.name,
-                    style = MyCustomTypography.Medium_18,
+                    style = MyCustomTypography.SemiBold_18,
                     color = Color.White
                 )
                 Text(
@@ -138,14 +137,15 @@ fun ChatRoomItem(
             }
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     modifier = Modifier
                         .weight(1f)
                         .padding(end = 24.dp),
                     text = lastMessageText,
-                    style = MyCustomTypography.Normal_14,
+                    style = MyCustomTypography.Medium_14,
                     color = lastMessageColor,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -157,13 +157,13 @@ fun ChatRoomItem(
                             .clip(CircleShape)
                             .heightIn(min = 16.dp, max = 16.dp)
                             .widthIn(min = 16.dp, max = 40.dp)
-                            .background(Color.White.copy(alpha = 0.25f))
+                            .background(PrimaryPurple)
                             .padding(horizontal = 4.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = "${state.unreadMessageCount}",
-                            style = MyCustomTypography.Normal_8,
+                            style = MyCustomTypography.Bold_8,
                             color = Color.White
                         )
                     }
@@ -219,12 +219,12 @@ private fun UserListItemPreview() {
         otherUser = testUser,
         isOnline = true,
         lastMessage = testMessage,
-        unreadMessageCount = 10
+        unreadMessageCount = 1
     )
 
     ChatAppTheme {
         ChatRoomItem(
-            currentUserId = "123",
+            currentUserId = "1235",
             state = testState,
             isOnline = true,
             onClick = {}

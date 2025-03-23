@@ -132,7 +132,7 @@ fun MessageItem(
         ) {
             Text(
                 text = message.text,
-                style = MyCustomTypography.Normal_14,
+                style = MyCustomTypography.Medium_14,
                 color = Color.White.copy(alpha = 0.75f),
             )
             Row(

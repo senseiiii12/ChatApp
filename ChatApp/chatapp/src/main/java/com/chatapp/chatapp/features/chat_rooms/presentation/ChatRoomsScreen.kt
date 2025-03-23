@@ -36,8 +36,6 @@ fun ChatRoomsScreen(
 ) {
     val systemUiController = rememberSystemUiController()
     systemUiController.setSystemBarsColor(SecondaryBackground)
-
-//    val usersViewModel: UsersViewModel = hiltViewModel()
     val chatRoomsViewModel: ChatRoomsViewModel = hiltViewModel()
 
     val stateChatRooms = chatRoomsViewModel.chatRoomsState.collectAsState()
@@ -84,7 +82,7 @@ fun ChatRoomsScreen(
                 }
             )
             Button(onClick = {
-//                usersViewModel.updateUserOnlineStatus(currentUser.userId, false)
+                usersViewModel.updateUserOnlineStatus(currentUser.userId, false)
                 FirebaseAuth.getInstance().signOut()
                 navigateToMainEntrance(navController)
             }) {

@@ -31,7 +31,7 @@ val ChatText = Color(0xFFC8C8C8)
 
 val Success = Color(0xFF93CCAA)
 val Error = Color(0xFFE53955)
-val Waiting = Color(0xFFD4F55E)
 
 val Online = Color(0xFF00FF85)
-val Mark_Message = Color(0xFF00FF85)
+val Green100 = Color(0xFF0cec9f)
+

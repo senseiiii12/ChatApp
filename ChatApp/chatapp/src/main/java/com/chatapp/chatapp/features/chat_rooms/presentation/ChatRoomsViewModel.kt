@@ -61,14 +61,12 @@ class ChatRoomsViewModel @Inject constructor(
 
     fun loadChatRooms(userId: String, onSucces:(Boolean) -> Unit) {
         viewModelScope.launch {
-            // Загружаем начальные данные о чатах
             chatRoomsRepository.getUserChatRooms(userId)
                 .collect { chatRooms ->
                     _chatRoomsState.update { current ->
                         if (current.isEmpty()) chatRooms else current
                     }
                 }
-            // Загружаем chatIds и запускаем подписку на сообщения
             chatRoomsRepository.getAllChatRoomsId(userId)
                 .collect { chatIds ->
                     _chatIds.value = chatIds

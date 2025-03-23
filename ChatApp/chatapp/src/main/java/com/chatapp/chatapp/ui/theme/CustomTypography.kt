@@ -22,6 +22,16 @@ object MyCustomTypography {
         fontWeight = FontWeight.Bold,
         fontSize = 14.sp,
     )
+    val Bold_12 = TextStyle(
+        fontFamily = PlusJakartaSans,
+        fontWeight = FontWeight.Bold,
+        fontSize = 12.sp,
+    )
+    val Bold_8 = TextStyle(
+        fontFamily = PlusJakartaSans,
+        fontWeight = FontWeight.Bold,
+        fontSize = 8.sp,
+    )
 
 
 
@@ -29,6 +39,11 @@ object MyCustomTypography {
         fontFamily = PlusJakartaSans,
         fontWeight = FontWeight.SemiBold,
         fontSize = 24.sp,
+    )
+    val SemiBold_18 = TextStyle(
+        fontFamily = PlusJakartaSans,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 18.sp,
     )
     val SemiBold_16 = TextStyle(
         fontFamily = PlusJakartaSans,
@@ -57,6 +72,16 @@ object MyCustomTypography {
         fontFamily = PlusJakartaSans,
         fontWeight = FontWeight.Medium,
         fontSize = 14.sp
+    )
+    val Medium_12 = TextStyle(
+        fontFamily = PlusJakartaSans,
+        fontWeight = FontWeight.Medium,
+        fontSize = 12.sp
+    )
+    val Medium_8 = TextStyle(
+        fontFamily = PlusJakartaSans,
+        fontWeight = FontWeight.Medium,
+        fontSize = 8.sp
     )
 
 

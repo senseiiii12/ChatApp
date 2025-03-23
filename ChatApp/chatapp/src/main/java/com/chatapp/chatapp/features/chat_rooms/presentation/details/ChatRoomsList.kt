@@ -2,6 +2,7 @@ package com.chatapp.chatapp.features.chat_rooms.presentation.details
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Divider
@@ -18,6 +19,7 @@ import com.chatapp.chatapp.core.presentation.UsersViewModel
 import com.chatapp.chatapp.features.chat_rooms.presentation.ChatRoomsState
 import com.chatapp.chatapp.features.chat_rooms.presentation.ChatRoomsViewModel
 import com.chatapp.chatapp.ui.theme.PrimaryBackground
+import com.chatapp.chatapp.ui.theme.SecondaryBackground
 import com.google.firebase.auth.FirebaseAuth
 
 
@@ -32,9 +34,7 @@ fun ChatRoomsList(
     val isOnline by usersViewModel.userStatuses.collectAsState()
 
     Column {
-        LazyColumn(
-            contentPadding = PaddingValues(start = 0.dp, top = 0.dp, end = 0.dp),
-        ) {
+        LazyColumn {
             items(stateChatRooms, key = { chatRoom -> chatRoom.chatId }) { chatRoom ->
                 ChatRoomItem(
                     modifier = Modifier.animateItem(),
@@ -43,7 +43,10 @@ fun ChatRoomsList(
                     isOnline = isOnline[chatRoom.otherUser.userId]?.first ?: false,
                     onClick = { onUserClick(chatRoom.otherUser) }
                 )
-                Divider(color = PrimaryBackground)
+                Divider(
+                    modifier = Modifier.padding(start = 88.dp),
+                    color = SecondaryBackground
+                )
             }
         }
     }
