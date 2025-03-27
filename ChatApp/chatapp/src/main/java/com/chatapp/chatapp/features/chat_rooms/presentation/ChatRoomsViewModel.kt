@@ -33,7 +33,7 @@ class ChatRoomsViewModel @Inject constructor(
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    private fun startListeningToChats() {
+    fun startListeningToChats() {
         _chatIds.filter { it.isNotEmpty() }
             .flatMapLatest { chatIds -> chatRoomsRepository.listenForMessagesInChats(chatIds) }
             .onEach { chatMessagesMap -> processChatMessages(chatMessagesMap) }
@@ -75,4 +75,6 @@ class ChatRoomsViewModel @Inject constructor(
             onSucces(true)
         }
     }
+
+
 }

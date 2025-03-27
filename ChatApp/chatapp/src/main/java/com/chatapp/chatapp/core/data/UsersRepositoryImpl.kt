@@ -28,15 +28,16 @@ class UsersRepositoryImpl @Inject constructor(
 ) : UsersRepository {
 
     override suspend fun getCurrentUser(): Flow<User> {
-        val currentUserId = firebaseAuth.currentUser?.uid ?: ""
+        val currentUserId = firebaseAuth.currentUser?.uid
         return flow {
-            Log.d("curerntUser123", currentUserId)
-            val result = firebaseFirestore
-                .collection("users")
-                .document(currentUserId)
-                .get().await()
-            val currentUser = result.toUser()
-            emit(currentUser)
+            Log.d("curerntUser123", "getCurrentUser() --- $currentUserId")
+            val result = currentUserId?.let {
+                firebaseFirestore
+                    .collection("users")
+                    .document(it)
+                    .get().await()
+            }
+            result?.toUser()?.let { emit(it) }
         }
     }
 

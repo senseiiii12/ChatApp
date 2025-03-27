@@ -1,5 +1,6 @@
 package com.chatapp.chatapp.features.search_user.presentation
 
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -32,6 +33,7 @@ import com.chatapp.chatapp.features.search_user.presentation.details.TopBarSearc
 import com.chatapp.chatapp.ui.theme.PrimaryBackground
 import com.chatapp.chatapp.ui.theme.SecondaryBackground
 import com.chatapp.chatapp.util.CustomSnackBar
+import com.google.gson.Gson
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -50,7 +52,7 @@ fun SearchUsersScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
-    val currentUserId = usersViewModel.currentUser.value.userId
+    val currentUser = usersViewModel.currentUser.value
 
     Scaffold(
         topBar = {
@@ -83,8 +85,8 @@ fun SearchUsersScreen(
                 itemsIndexed(searchUserList, key = { _, user -> user.userId }) { index, user ->
                     SearchUsersItem(
                         user = user,
-                        currentUserId = currentUserId,
-                        onAddFriendClick = { pendingUser ->
+                        currentUserId = currentUser.userId,
+                        onAddFriend = { pendingUser ->
                             friendRequestViewModel.sendFriendRequest(user.userId) { isSuccess ->
                                 resultFriendRequest = isSuccess
                                 scope.launch {
@@ -96,6 +98,15 @@ fun SearchUsersScreen(
                                 }
                             }
                         },
+                        onWriteMessage = { user ->
+                            val otherUserJson = Gson().toJson(user)
+                            val currentUserJson = Gson().toJson(currentUser)
+                            navController.navigate(
+                                "chat/${Uri.encode(otherUserJson)}/${
+                                    Uri.encode(currentUserJson)
+                                }"
+                            )
+                        }
                     )
                     Divider(
                         modifier = Modifier.padding(start = 62.dp),
@@ -111,14 +122,14 @@ suspend fun showSnackbarOnAddFriend(
     pendingUser: User,
     isSuccessAddFriend: Boolean,
     snackbarHostState: SnackbarHostState
-){
-    if (isSuccessAddFriend){
+) {
+    if (isSuccessAddFriend) {
         snackbarHostState.showSnackbar(
             message = "Friend request sent by ${pendingUser.name.toUpperCase()}",
             actionLabel = "Dismiss",
             duration = SnackbarDuration.Short
         )
-    }else{
+    } else {
         snackbarHostState.showSnackbar(
             message = "Friend request has already been sent to ${pendingUser.name.toUpperCase()}",
             actionLabel = "Dismiss",

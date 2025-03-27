@@ -12,6 +12,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
@@ -46,8 +47,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         currentUserId = FirebaseAuth.getInstance().currentUser?.uid
-        Log.d("currentUserId", currentUserId.toString())
-
+        Log.d("curerntUserLaunchedEffect", "---$currentUserId" ?: "no id")
         installSplashScreen().apply {
             setKeepOnScreenCondition {
                 splashViewModel.isLoading.value
@@ -59,6 +59,11 @@ class MainActivity : ComponentActivity() {
             val startDestination = splashViewModel.checkUser()
             val usersViewModel: UsersViewModel = hiltViewModel()
 
+            LaunchedEffect(usersViewModel.currentUser.value) {
+                currentUserId = FirebaseAuth.getInstance().currentUser?.uid
+                Log.d("curerntUserLaunchedEffect", currentUserId ?: "no id")
+            }
+
             ChatAppTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
@@ -69,16 +74,19 @@ class MainActivity : ComponentActivity() {
                         enterTransition = {
                             fadeIn(
                                 initialAlpha = 1f,
-                                animationSpec = tween(500, easing = FastOutSlowInEasing))
+                                animationSpec = tween(0, easing = FastOutSlowInEasing))
                         },
                         exitTransition = {
                             fadeOut(
                                 targetAlpha = 1f,
-                                animationSpec = tween(500, easing = FastOutSlowInEasing))
+                                animationSpec = tween(0, easing = FastOutSlowInEasing))
                         }
                     ) {
                         composable(route = Route.MainEntrance.route) {
-                            MainEntrance(navController = navController)
+                            MainEntrance(
+                                navController = navController,
+                                usersViewModel = usersViewModel
+                            )
                         }
                         composable(route = Route.HomePage.route) {
                             ChatRoomsScreen(

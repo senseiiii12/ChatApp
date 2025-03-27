@@ -37,9 +37,7 @@ import com.chatapp.chatapp.ui.theme.Bg_Default_Avatar
 import com.chatapp.chatapp.ui.theme.ChatAppTheme
 import com.chatapp.chatapp.ui.theme.Green100
 import com.chatapp.chatapp.ui.theme.MyCustomTypography
-import com.chatapp.chatapp.ui.theme.Online
 import com.chatapp.chatapp.ui.theme.PrimaryBackground
-import com.chatapp.chatapp.ui.theme.Success
 import java.util.Date
 
 
@@ -47,7 +45,8 @@ import java.util.Date
 fun SearchUsersItem(
     user: User,
     currentUserId: String,
-    onAddFriendClick: (User) -> Unit,
+    onAddFriend: (User) -> Unit,
+    onWriteMessage: (User) -> Unit,
 ) {
 
     val isFriend = if (user.friends.contains(currentUserId)) true else false
@@ -110,7 +109,7 @@ fun SearchUsersItem(
             ) {
                 IconButton(
                     modifier = Modifier.size(30.dp),
-                    onClick = {}
+                    onClick = {onWriteMessage(user)}
                 ) {
                     Image(
                         modifier = Modifier.size(20.dp),
@@ -138,7 +137,7 @@ fun SearchUsersItem(
                     IconButton(
                         modifier = Modifier.size(30.dp),
                         onClick = {
-                            onAddFriendClick(user)
+                            onAddFriend(user)
                             isRequestSent = true
                         },
                         enabled = !isRequestSent
@@ -172,7 +171,8 @@ private fun SearchUsersItemPreview() {
         SearchUsersItem(
             user = testUser,
             currentUserId = "123",
-            onAddFriendClick = {}
+            onAddFriend = {},
+            onWriteMessage = {}
         )
     }
 }

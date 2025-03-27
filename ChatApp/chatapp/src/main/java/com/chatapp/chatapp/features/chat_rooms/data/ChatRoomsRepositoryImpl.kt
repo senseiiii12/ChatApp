@@ -28,17 +28,6 @@ class ChatRoomsRepositoryImpl @Inject constructor(
     override suspend fun listenForMessagesInChats(chatIds: List<String>): Flow<Map<String, List<Message>>> {
         return callbackFlow {
             val currentMessages = mutableMapOf<String, List<Message>>().withDefault { emptyList() }
-//            chatIds.forEach { chatId ->
-//                val snapshot = chatCollection.document(chatId)
-//                    .collection("messages")
-//                    .orderBy("timestamp", Query.Direction.DESCENDING)
-//                    .limit(20)
-//                    .get()
-//                    .await()
-//                val messages = snapshot.documents.map { it.toMessage() }
-//                currentMessages[chatId] = messages
-//            }
-//            trySend(currentMessages.toMap())
             val listeners = chatIds.map { chatId ->
                 chatCollection.document(chatId)
                     .collection("messages")

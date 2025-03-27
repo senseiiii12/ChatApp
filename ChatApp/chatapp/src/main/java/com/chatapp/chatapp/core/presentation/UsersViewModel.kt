@@ -47,4 +47,9 @@ class UsersViewModel @Inject constructor(
         usersRepository.updateUserOnlineStatus(userId, isOnline)
     }
 
+    fun clearViewModel(){
+        _currentUser.value = User()
+        _userStatuses.value = emptyMap()
+    }
+
 }

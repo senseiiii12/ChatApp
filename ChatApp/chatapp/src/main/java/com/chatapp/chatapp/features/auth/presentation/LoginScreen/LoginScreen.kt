@@ -60,7 +60,7 @@ fun LoginScreen(
     OnClickShowRegister: () -> Unit,
     signInViewModel: SignInViewModel = hiltViewModel(),
     validateViewModel: ValidateViewModel = viewModel(),
-    usersViewModel: UsersViewModel = hiltViewModel()
+    usersViewModel: UsersViewModel
 ) {
     val scope = rememberCoroutineScope()
     var isShownDialog by rememberSaveable { mutableStateOf(false) }

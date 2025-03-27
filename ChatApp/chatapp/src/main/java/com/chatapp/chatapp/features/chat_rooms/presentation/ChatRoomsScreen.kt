@@ -1,6 +1,7 @@
 package com.chatapp.chatapp.features.chat_rooms.presentation
 
 import android.net.Uri
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -42,16 +43,21 @@ fun ChatRoomsScreen(
     val currentUser = usersViewModel.currentUser.value
 
 
+    LaunchedEffect(Unit) {
+        usersViewModel.getCurrentUser()
+        Log.d("curerntUser123", "${currentUser.name} --- ${currentUser.userId}")
+    }
 
     LaunchedEffect(currentUser) {
-        usersViewModel.getCurrentUser()
-        chatRoomsViewModel.loadChatRooms(currentUser.userId){ isSuccess ->
-            stateChatRooms.value.map {
-                usersViewModel.listenForOtherUserStatus(it.otherUser.userId)
+        if (currentUser.userId.isNotEmpty()){
+            Log.d("curerntUser123", "${currentUser.name} --- ${currentUser.userId}")
+            chatRoomsViewModel.loadChatRooms(currentUser.userId){ isSuccess ->
+                stateChatRooms.value.map {
+                    usersViewModel.listenForOtherUserStatus(it.otherUser.userId)
+                }
             }
         }
     }
-
 
     Scaffold(
         topBar = {
@@ -83,6 +89,7 @@ fun ChatRoomsScreen(
             )
             Button(onClick = {
                 usersViewModel.updateUserOnlineStatus(currentUser.userId, false)
+                usersViewModel.clearViewModel()
                 FirebaseAuth.getInstance().signOut()
                 navigateToMainEntrance(navController)
             }) {

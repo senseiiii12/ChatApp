@@ -19,6 +19,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.chatapp.chatapp.core.presentation.UsersViewModel
 import com.chatapp.chatapp.features.auth.presentation.LoginScreen.LoginScreen
 import com.chatapp.chatapp.features.auth.presentation.RegisterScreen.BottomSheetRegister
 import com.chatapp.chatapp.features.auth.presentation.RegisterScreen.ImageAvatar.ImageAvatarViewModel
@@ -30,7 +31,8 @@ import com.chatapp.chatapp.util.CustomSnackBar
 @Composable
 fun MainEntrance(
     viewModelSignUp: SignUpViewModel = hiltViewModel(),
-    navController: NavController
+    navController: NavController,
+    usersViewModel: UsersViewModel
 ) {
 
     val bottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -56,7 +58,8 @@ fun MainEntrance(
         ) {
             LoginScreen(
                 OnClickShowRegister = { viewModelSignUp.showSheet() },
-                navController = navController
+                navController = navController,
+                usersViewModel = usersViewModel
             )
             if (showBottomSheet) {
                 ModalBottomSheet(
