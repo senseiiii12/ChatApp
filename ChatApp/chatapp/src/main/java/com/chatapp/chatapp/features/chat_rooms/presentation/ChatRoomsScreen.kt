@@ -1,7 +1,9 @@
 package com.chatapp.chatapp.features.chat_rooms.presentation
 
+import android.app.Activity
 import android.net.Uri
 import android.util.Log
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,6 +15,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -41,23 +44,29 @@ fun ChatRoomsScreen(
 
     val stateChatRooms = chatRoomsViewModel.chatRoomsState.collectAsState()
     val currentUser = usersViewModel.currentUser.value
+    val currentUserId = usersViewModel.currentUserId.collectAsState()
 
+    BackHandler(enabled = true) {
+        (navController.context as? Activity)?.finish()
+    }
 
     LaunchedEffect(Unit) {
         usersViewModel.getCurrentUser()
-        Log.d("curerntUser123", "${currentUser.name} --- ${currentUser.userId}")
+        Log.d("curerntUser123", "getCurrentUser - ${currentUser}")
     }
 
     LaunchedEffect(currentUser) {
-        if (currentUser.userId.isNotEmpty()){
-            Log.d("curerntUser123", "${currentUser.name} --- ${currentUser.userId}")
-            chatRoomsViewModel.loadChatRooms(currentUser.userId){ isSuccess ->
+        currentUserId.value?.let {
+            Log.d("curerntUser123", "loadChatRooms - ${currentUser}")
+            chatRoomsViewModel.loadChatRooms(it){ isSuccess ->
                 stateChatRooms.value.map {
                     usersViewModel.listenForOtherUserStatus(it.otherUser.userId)
                 }
             }
         }
     }
+
+
 
     Scaffold(
         topBar = {
@@ -88,12 +97,11 @@ fun ChatRoomsScreen(
                 }
             )
             Button(onClick = {
-                usersViewModel.updateUserOnlineStatus(currentUser.userId, false)
-                usersViewModel.clearViewModel()
-                FirebaseAuth.getInstance().signOut()
+                chatRoomsViewModel.clearChatRooms()
+                usersViewModel.logout()
                 navigateToMainEntrance(navController)
             }) {
-                Text(text = "${currentUser?.name}")
+                Text(text = currentUserId.value.toString())
             }
         }
     }
@@ -102,10 +110,9 @@ fun ChatRoomsScreen(
 
 fun navigateToMainEntrance(navController: NavController) {
     navController.navigate(Route.MainEntrance.route) {
-        popUpTo(navController.graph.startDestinationId) {
+        popUpTo(navController.graph.id) {
             inclusive = true
         }
-        launchSingleTop = true
     }
 }
 

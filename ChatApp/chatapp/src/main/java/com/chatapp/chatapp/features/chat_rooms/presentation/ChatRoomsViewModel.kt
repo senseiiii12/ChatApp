@@ -76,5 +76,9 @@ class ChatRoomsViewModel @Inject constructor(
         }
     }
 
+    fun clearChatRooms() {
+        _chatRoomsState.value = emptyList()
+    }
+
 
 }

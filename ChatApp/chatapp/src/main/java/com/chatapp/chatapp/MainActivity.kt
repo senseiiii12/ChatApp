@@ -13,10 +13,12 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -39,15 +41,12 @@ class MainActivity : ComponentActivity() {
 
     val splashViewModel by viewModels<SplashViewModel>()
     val updateOnlineStatusViewModel by viewModels<UpdateOnlineStatusViewModel>()
-
-    var currentUserId: String? = null
+    val usersViewModel by viewModels<UsersViewModel>()
 
     @OptIn(ExperimentalAnimationApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        currentUserId = FirebaseAuth.getInstance().currentUser?.uid
-        Log.d("curerntUserLaunchedEffect", "---$currentUserId" ?: "no id")
         installSplashScreen().apply {
             setKeepOnScreenCondition {
                 splashViewModel.isLoading.value
@@ -57,12 +56,17 @@ class MainActivity : ComponentActivity() {
         setContent {
             val navController = rememberNavController()
             val startDestination = splashViewModel.checkUser()
-            val usersViewModel: UsersViewModel = hiltViewModel()
+            val currentUserId = usersViewModel.currentUserId.collectAsState()
 
-            LaunchedEffect(usersViewModel.currentUser.value) {
-                currentUserId = FirebaseAuth.getInstance().currentUser?.uid
-                Log.d("curerntUserLaunchedEffect", currentUserId ?: "no id")
+
+            LaunchedEffect(currentUserId) {
+                Log.d("currentUserIdLaunchedEffect", "LaunchedEffect - ${currentUserId.value}")
             }
+//            val usersViewModel: UsersViewModel = hiltViewModel()
+//            LaunchedEffect(usersViewModel.currentUser.value) {
+//                currentUserId = FirebaseAuth.getInstance().currentUser?.uid
+//                Log.d("curerntUserLaunchedEffect", currentUserId ?: "no id")
+//            }
 
             ChatAppTheme {
                 Surface(
@@ -83,12 +87,14 @@ class MainActivity : ComponentActivity() {
                         }
                     ) {
                         composable(route = Route.MainEntrance.route) {
+                            Log.d("currentUserIdonCreate", "MainEntrance - ${currentUserId.value}")
                             MainEntrance(
                                 navController = navController,
                                 usersViewModel = usersViewModel
                             )
                         }
                         composable(route = Route.HomePage.route) {
+                            Log.d("currentUserIdonCreate", "ChatRoomsScreen - ${currentUserId.value}")
                             ChatRoomsScreen(
                                 navController = navController,
                                 usersViewModel = usersViewModel
@@ -132,12 +138,16 @@ class MainActivity : ComponentActivity() {
 
     override fun onStart() {
         super.onStart()
-        currentUserId?.let { updateOnlineStatusViewModel.updateUserOnlineStatus(it, true) }
+        usersViewModel.currentUserId.value?.let {
+            usersViewModel.updateUserOnlineStatus(it, true)
+        }
     }
 
     override fun onStop() {
         super.onStop()
-        currentUserId?.let { updateOnlineStatusViewModel.updateUserOnlineStatus(it, false) }
+        usersViewModel.currentUserId.value?.let {
+            usersViewModel.updateUserOnlineStatus(it, false)
+        }
     }
 
 }
