@@ -191,7 +191,6 @@ fun UserAvatar(avatar: String?) {
                 contentDescription = null,
             )
         }
-
         else -> {
             AsyncImage(
                 modifier = Modifier
@@ -200,8 +199,10 @@ fun UserAvatar(avatar: String?) {
                 model = ImageRequest.Builder(LocalContext.current)
                     .data(avatar)
                     .crossfade(true)
-                    .memoryCachePolicy(CachePolicy.ENABLED)
+                    .diskCacheKey(avatar)
+                    .memoryCacheKey(avatar)
                     .diskCachePolicy(CachePolicy.ENABLED)
+                    .memoryCachePolicy(CachePolicy.ENABLED)
                     .build(),
                 contentScale = ContentScale.Crop,
                 contentDescription = null

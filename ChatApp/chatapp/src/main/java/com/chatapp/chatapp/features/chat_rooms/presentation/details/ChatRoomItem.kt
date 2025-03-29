@@ -29,6 +29,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,7 +42,12 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.ImageLoader
 import coil.compose.AsyncImage
+import coil.disk.DiskCache
+import coil.memory.MemoryCache
 import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.chatapp.chatapp.R
@@ -54,6 +61,7 @@ import com.chatapp.chatapp.ui.theme.MyCustomTypography
 import com.chatapp.chatapp.ui.theme.Online
 import com.chatapp.chatapp.ui.theme.PrimaryBackground
 import com.chatapp.chatapp.ui.theme.PrimaryPurple
+import com.chatapp.chatapp.util.ImageLoader.ImageLoaderViewModel
 import com.chatapp.chatapp.util.TimeManager
 import java.util.Date
 
@@ -68,14 +76,16 @@ fun ChatRoomItem(
 ) {
     val otherUser = state.otherUser
     val lastMessage = state.lastMessage
+    val context = LocalContext.current
 
+    val imageLoaderViewModel: ImageLoaderViewModel = hiltViewModel()
     val lastMessageText =
         if (currentUserId == lastMessage?.userId) "You: ${lastMessage.text}" else "${lastMessage?.text ?: ""}"
     val lastMessageColor =
         if (lastMessage?.status?.name.equals("READ")) Color.White.copy(alpha = 0.5f) else Color.White.copy(
             alpha = 0.8f
         )
-
+    val avatarUrl by remember { mutableStateOf(otherUser.avatar) }
 
 
     Row(
@@ -95,11 +105,14 @@ fun ChatRoomItem(
                         .clip(CircleShape)
                         .size(60.dp),
                     model = ImageRequest.Builder(LocalContext.current)
-                        .data(otherUser.avatar)
+                        .data(avatarUrl)
                         .crossfade(true)
-                        .memoryCachePolicy(CachePolicy.ENABLED)
+                        .diskCacheKey(avatarUrl)
+                        .memoryCacheKey(avatarUrl)
                         .diskCachePolicy(CachePolicy.ENABLED)
+                        .memoryCachePolicy(CachePolicy.ENABLED)
                         .build(),
+                    imageLoader = imageLoaderViewModel.imageLoader,
                     contentScale = ContentScale.Crop,
                     contentDescription = null
                 )
@@ -152,7 +165,7 @@ fun ChatRoomItem(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 AnimatedContent(
-                    targetState = lastMessage,
+                    targetState = lastMessageText,
                     transitionSpec = {
                         slideInVertically { height -> -height } + fadeIn() togetherWith
                                 slideOutVertically { height -> height } + fadeOut()
@@ -163,7 +176,7 @@ fun ChatRoomItem(
                         modifier = Modifier
                             .weight(1f)
                             .padding(end = 24.dp),
-                        text = targetMessage.text,
+                        text = targetMessage,
                         style = MyCustomTypography.Medium_14,
                         color = lastMessageColor,
                         maxLines = 1,

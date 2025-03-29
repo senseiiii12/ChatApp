@@ -3,53 +3,52 @@ package com.chatapp.chatapp.features.auth.presentation.RegisterScreen.ImageAvata
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.graphics.ImageDecoder
 import android.net.Uri
-import android.os.Build
-import android.provider.MediaStore
-import androidx.compose.runtime.State
-import androidx.compose.runtime.mutableStateOf
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import java.io.ByteArrayOutputStream
-import android.util.Base64
 import android.util.Log
+import androidx.lifecycle.ViewModel
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.withContext
+import java.io.ByteArrayOutputStream
 import java.util.UUID
-import javax.security.auth.callback.Callback
 
-class ImageAvatarViewModel: ViewModel() {
+class ImageAvatarViewModel : ViewModel() {
     private val _imageUri = MutableStateFlow<Uri?>(null)
     val imageUri: StateFlow<Uri?> = _imageUri
 
     fun setImageUri(uri: Uri) {
         _imageUri.value = uri
     }
+
     fun clearImageUri() {
         _imageUri.value = null
     }
 
-    fun uploadImageToFirebase(imageUri: Uri, callback: (String) -> Unit) {
+    fun uploadImageToFirebase(context: Context, imageUri: Uri, callback: (String) -> Unit) {
         val storage = FirebaseStorage.getInstance()
         val storageRef = storage.reference
+        val fileRef = storageRef.child("images/${UUID.randomUUID()}.webp")
 
-        val fileRef = storageRef.child("images/${UUID.randomUUID()}.jpg")
+        val compressedImage = compressAndResizeImage(context, imageUri)
 
-        fileRef.putFile(imageUri)
-            .addOnSuccessListener { taskSnapshot ->
+        fileRef.putBytes(compressedImage)
+            .addOnSuccessListener {
                 fileRef.downloadUrl.addOnSuccessListener { uri ->
-                    val downloadUrl = uri.toString()
-                    Log.d("Firebase", "URL: $downloadUrl")
-                    callback(downloadUrl)
+                    callback(uri.toString())
                 }
             }
             .addOnFailureListener { e ->
                 Log.e("Firebase", "Ошибка загрузки", e)
             }
+    }
+
+
+    private fun compressAndResizeImage(context: Context, imageUri: Uri, quality: Int = 70, maxWidth: Int = 800, maxHeight: Int = 800): ByteArray {
+        val inputStream = context.contentResolver.openInputStream(imageUri)
+        val originalBitmap = BitmapFactory.decodeStream(inputStream)
+        val resizedBitmap = Bitmap.createScaledBitmap(originalBitmap, maxWidth, maxHeight, true)
+        val outputStream = ByteArrayOutputStream()
+        resizedBitmap.compress(Bitmap.CompressFormat.WEBP, quality, outputStream)
+        return outputStream.toByteArray()
     }
 }

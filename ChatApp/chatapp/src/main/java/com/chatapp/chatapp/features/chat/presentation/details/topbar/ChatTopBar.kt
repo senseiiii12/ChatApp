@@ -172,8 +172,10 @@ fun ChatHeader(
                 model = ImageRequest.Builder(LocalContext.current)
                     .data(otherUser.avatar)
                     .crossfade(true)
-                    .memoryCachePolicy(CachePolicy.ENABLED)
+                    .diskCacheKey(otherUser.avatar)
+                    .memoryCacheKey(otherUser.avatar)
                     .diskCachePolicy(CachePolicy.ENABLED)
+                    .memoryCachePolicy(CachePolicy.ENABLED)
                     .build(),
                 contentScale = ContentScale.Crop,
                 contentDescription = null

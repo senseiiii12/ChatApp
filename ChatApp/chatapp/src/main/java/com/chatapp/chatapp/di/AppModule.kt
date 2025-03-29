@@ -1,5 +1,6 @@
 package com.chatapp.chatapp.di
 
+import android.app.Application
 import android.content.Context
 import com.chatapp.chatapp.features.auth.domain.AuthRepository
 import com.chatapp.chatapp.features.auth.data.AuthRepositoryImpl
@@ -23,6 +24,12 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
+
+    @Provides
+    @Singleton
+    fun provideContext(application: Application): Context {
+        return application.applicationContext
+    }
 
     @Provides
     @Singleton

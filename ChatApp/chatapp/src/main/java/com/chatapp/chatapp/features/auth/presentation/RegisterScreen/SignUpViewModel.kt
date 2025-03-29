@@ -1,17 +1,25 @@
 package com.chatapp.chatapp.features.auth.presentation.RegisterScreen
 
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chatapp.chatapp.features.auth.domain.AuthRepository
 import com.chatapp.chatapp.core.domain.UsersRepository
 import com.chatapp.chatapp.util.Resource
 import com.google.firebase.firestore.FieldValue
+import com.google.firebase.storage.FirebaseStorage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
+import java.io.ByteArrayOutputStream
+import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
@@ -50,19 +58,71 @@ class SignUpViewModel @Inject constructor(
                             "name" to name,
                             "email" to email,
                             "password" to password,
-                            "lastSeen" to FieldValue.serverTimestamp()
+                            "online" to false,
+                            "lastSeen" to FieldValue.serverTimestamp(),
+                            "friends" to emptyList<String>(),
                         )
                         authRepository.saveUserToDatabase(user)
                     }
 
                     is Resource.Loading -> {
-                        _signUpState.send(SignUpState(isLoading = true))
+
                     }
 
                     is Resource.Error -> {
-                        _signUpState.send(SignUpState(isError = result.message, isLoading = false))
+                        _signUpState.send(
+                            SignUpState(
+                                isError = result.message.toString(),
+                                isLoading = false
+                            )
+                        )
                     }
                 }
             }
         }
+
+    fun signUp(
+        context: Context,
+        imageUri: Uri?,
+        name: String,
+        email: String,
+        password: String
+    ) {
+        viewModelScope.launch {
+            _signUpState.send(SignUpState(isLoading = true))
+
+            val storage = FirebaseStorage.getInstance()
+            val storageRef = storage.reference
+            val fileRef = storageRef.child("images/${UUID.randomUUID()}.webp")
+
+            imageUri?.let {
+                val compressedImage = compressAndResizeImage(context, imageUri)
+                fileRef.putBytes(compressedImage)
+                    .addOnSuccessListener {
+                        fileRef.downloadUrl.addOnSuccessListener { uri ->
+                            registerUser(uri.toString(), name, email, password)
+                        }
+                    }
+                    .addOnFailureListener { e ->
+                        Log.e("Firebase", "Ошибка загрузки", e)
+                    }
+            } ?: registerUser(null, name, email, password)
+        }
+    }
+
+
+    private fun compressAndResizeImage(
+        context: Context,
+        imageUri: Uri,
+        quality: Int = 70,
+        maxWidth: Int = 800,
+        maxHeight: Int = 800
+    ): ByteArray {
+        val inputStream = context.contentResolver.openInputStream(imageUri)
+        val originalBitmap = BitmapFactory.decodeStream(inputStream)
+        val resizedBitmap = Bitmap.createScaledBitmap(originalBitmap, maxWidth, maxHeight, true)
+        val outputStream = ByteArrayOutputStream()
+        resizedBitmap.compress(Bitmap.CompressFormat.WEBP, quality, outputStream)
+        return outputStream.toByteArray()
+    }
 }

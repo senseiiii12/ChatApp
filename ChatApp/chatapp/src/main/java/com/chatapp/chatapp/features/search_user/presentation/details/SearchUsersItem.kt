@@ -65,16 +65,18 @@ fun SearchUsersItem(
             horizontalArrangement = Arrangement.Center
         ) {
             Box {
-                user.avatar?.let {
+                user.avatar?.let { avatar ->
                     AsyncImage(
                         modifier = Modifier
                             .clip(CircleShape)
                             .size(42.dp),
                         model = ImageRequest.Builder(LocalContext.current)
-                            .data(user.avatar)
+                            .data(avatar)
                             .crossfade(true)
-                            .memoryCachePolicy(CachePolicy.ENABLED)
+                            .diskCacheKey(avatar)
+                            .memoryCacheKey(avatar)
                             .diskCachePolicy(CachePolicy.ENABLED)
+                            .memoryCachePolicy(CachePolicy.ENABLED)
                             .build(),
                         contentScale = ContentScale.Crop,
                         contentDescription = null
@@ -109,7 +111,7 @@ fun SearchUsersItem(
             ) {
                 IconButton(
                     modifier = Modifier.size(30.dp),
-                    onClick = {onWriteMessage(user)}
+                    onClick = { onWriteMessage(user) }
                 ) {
                     Image(
                         modifier = Modifier.size(20.dp),

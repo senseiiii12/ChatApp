@@ -36,6 +36,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.KeyboardType
@@ -55,6 +56,8 @@ import com.chatapp.chatapp.features.auth.presentation.Validator.ValidateViewMode
 import com.chatapp.chatapp.ui.theme.MyCustomTypography
 import com.chatapp.chatapp.ui.theme.Success
 import kotlinx.coroutines.launch
+import kotlin.Boolean
+import kotlin.String
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -68,13 +71,20 @@ fun BottomSheetRegister(
     val validateViewModel: ValidateViewModel = viewModel()
     val viewModelImageAvatar: ImageAvatarViewModel = viewModel()
     val imageUri by viewModelImageAvatar.imageUri.collectAsState()
-    val state = viewModel.singUpState.collectAsState(initial = null)
+    val state = viewModel.singUpState.collectAsState(
+        SignUpState(
+            isLoading = false,
+            isSuccess = "",
+            isError = ""
+        )
+    )
 
-    var name = remember { mutableStateOf("") }
+    var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     val stateRegisterValidate = validateViewModel.validationRegisterState.collectAsState()
 
@@ -103,12 +113,12 @@ fun BottomSheetRegister(
                 iconStart = Icons.Default.Person,
                 keyboardType = KeyboardType.Text,
                 visualTransformation = VisualTransformation.None,
-                onValueChange = { name.value = it },
-                value = name.value
+                onValueChange = { name = it },
+                value = name
             )
             ValidateCheck(
                 modifier = Modifier.align(Alignment.CenterEnd),
-                isSuccess = name.value.isNotEmpty()
+                isSuccess = name.isNotEmpty()
             )
         }
         Spacer(modifier = Modifier.height(20.dp))
@@ -152,16 +162,13 @@ fun BottomSheetRegister(
         Spacer(modifier = Modifier.height(40.dp))
         ButtonEnter(
             text = "SignUp",
+            isLoading = state.value.isLoading,
             OnClick = {
                 if (stateRegisterValidate.value.errorEmailRegister.isEmpty() &&
                     stateRegisterValidate.value.errorPasswordRegister.isEmpty() &&
-                    name.value.isNotEmpty()
+                    name.isNotEmpty()
                 ) {
-                    if (imageUri != null) {
-                        viewModelImageAvatar.uploadImageToFirebase(imageUri!!) { downloadUrl ->
-                            viewModel.registerUser(downloadUrl, name.value, email, password)
-                        }
-                    } else viewModel.registerUser(null, name.value, email, password)
+                    viewModel.signUp(context,imageUri,name,email,password)
                 }
             },
         )
@@ -171,13 +178,13 @@ fun BottomSheetRegister(
 
 
 
-    LaunchedEffect(state.value?.isSuccess) {
-        if (state.value?.isSuccess?.isNotEmpty() == true) {
+    LaunchedEffect(state.value.isSuccess) {
+        if (state.value.isSuccess.isNotEmpty() == true) {
             onSuccesRegistration(true)
             scope.launch {
                 bottomSheetState.hide()
                 snackbarHostState.showSnackbar(
-                    message = state.value?.isSuccess ?: "",
+                    message = state.value.isSuccess,
                     actionLabel = "Dismiss",
                     duration = SnackbarDuration.Short
                 )
@@ -188,12 +195,12 @@ fun BottomSheetRegister(
             }
         }
     }
-    LaunchedEffect(key1 = state.value?.isError) {
+    LaunchedEffect(key1 = state.value.isError) {
         scope.launch {
-            if (state.value?.isError?.isNotEmpty() == true) {
+            if (state.value.isError.isNotEmpty() == true) {
                 onSuccesRegistration(false)
                 snackbarHostState.showSnackbar(
-                    message = state.value?.isError ?: "",
+                    message = state.value.isError,
                     actionLabel = "Dismiss",
                     duration = SnackbarDuration.Short
                 )
