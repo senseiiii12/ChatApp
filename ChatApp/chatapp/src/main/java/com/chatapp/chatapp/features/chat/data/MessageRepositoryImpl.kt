@@ -4,6 +4,7 @@ import android.util.Log
 import com.chatapp.chatapp.features.chat.domain.MessageRepository
 import com.chatapp.chatapp.features.chat.domain.Message
 import com.chatapp.chatapp.features.chat.domain.MessageStatus
+import com.chatapp.chatapp.util.extension.toMessage
 import com.google.firebase.firestore.DocumentChange
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
@@ -89,17 +90,6 @@ class MessageRepositoryImpl @Inject constructor(
                 onMessagesChanged(newMessages, updatedMessages, removedMessagesIds)
             }
     }
-    private fun DocumentSnapshot.toMessage(): Message {
-        return Message(
-            userId = getString("userId") ?: "",
-            text = getString("text") ?: "",
-            timestamp = getTimestamp("timestamp")?.toDate()?.time ?: 0L,
-            messageId = getString("messageId") ?: "",
-            status = MessageStatus.valueOf(getString("status") ?: MessageStatus.SENT.name)
-        )
-    }
-
-
 
     override suspend fun deleteMessage(chatId: String, selectedMessages: List<Message>) {
         try {

@@ -23,7 +23,7 @@ fun DocumentSnapshot.toMessage(): Message {
     return Message(
         userId = getString("userId") ?: "",
         text = getString("text") ?: "",
-        timestamp = getTimestamp("timestamp")?.toDate()?.time ?: 0L,
+        timestamp = getTimestamp("timestamp")?.toDate()?.time ?: System.currentTimeMillis(),
         messageId = getString("messageId") ?: "",
         status = MessageStatus.valueOf(getString("status") ?: MessageStatus.SENT.name)
     )

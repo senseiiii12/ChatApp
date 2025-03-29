@@ -30,7 +30,6 @@ class UsersRepositoryImpl @Inject constructor(
     override suspend fun getCurrentUser(): Flow<User> {
         val currentUserId = firebaseAuth.currentUser?.uid
         return flow {
-//            Log.d("curerntUser123", "getCurrentUser() --- $currentUserId")
             val result = currentUserId?.let {
                 firebaseFirestore
                     .collection("users")
@@ -69,7 +68,7 @@ class UsersRepositoryImpl @Inject constructor(
                 document.toUser()
             }
             val listFiltered = usersList.filter {
-                it.name.startsWith(query, ignoreCase = true) // Поиск по началу строки
+                it.name.startsWith(query, ignoreCase = true)
             }
             emit(listFiltered)
         } catch (e: Exception) {

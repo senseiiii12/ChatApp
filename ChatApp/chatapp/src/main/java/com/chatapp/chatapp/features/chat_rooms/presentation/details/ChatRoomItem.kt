@@ -1,6 +1,16 @@
 package com.chatapp.chatapp.features.chat_rooms.presentation.details
 
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateIntAsState
+import androidx.compose.animation.core.animateValueAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -16,13 +26,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
@@ -55,15 +64,17 @@ fun ChatRoomItem(
     state: ChatRoomsState,
     currentUserId: String,
     isOnline: Boolean,
-    onClick: () -> Unit
+    onClickChatRoom: () -> Unit
 ) {
     val otherUser = state.otherUser
     val lastMessage = state.lastMessage
 
-    val timeManager = TimeManager()
     val lastMessageText =
         if (currentUserId == lastMessage?.userId) "You: ${lastMessage.text}" else "${lastMessage?.text ?: ""}"
-    val lastMessageColor = if (lastMessage?.status?.name.equals("READ")) Color.White.copy(alpha = 0.5f) else Color.White.copy(alpha = 0.8f)
+    val lastMessageColor =
+        if (lastMessage?.status?.name.equals("READ")) Color.White.copy(alpha = 0.5f) else Color.White.copy(
+            alpha = 0.8f
+        )
 
 
 
@@ -71,7 +82,7 @@ fun ChatRoomItem(
         modifier = modifier
             .fillMaxWidth()
             .background(PrimaryBackground)
-            .clickable { onClick() }
+            .clickable { onClickChatRoom() }
             .height(76.dp)
             .padding(vertical = 8.dp, horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -130,7 +141,7 @@ fun ChatRoomItem(
                     color = Color.White
                 )
                 Text(
-                    text = timeManager.getTimeSinceLastMessage(lastMessage),
+                    text = TimeManager.getTimeSinceLastMessage(lastMessage),
                     style = MyCustomTypography.Normal_10,
                     color = Color.White.copy(alpha = 0.5f)
                 )
@@ -140,16 +151,25 @@ fun ChatRoomItem(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(end = 24.dp),
-                    text = lastMessageText,
-                    style = MyCustomTypography.Medium_14,
-                    color = lastMessageColor,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+                AnimatedContent(
+                    targetState = lastMessage,
+                    transitionSpec = {
+                        slideInVertically { height -> -height } + fadeIn() togetherWith
+                                slideOutVertically { height -> height } + fadeOut()
+                    },
+                    label = "lastMessageAnimation"
+                ) { targetMessage ->
+                    Text(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(end = 24.dp),
+                        text = targetMessage.text,
+                        style = MyCustomTypography.Medium_14,
+                        color = lastMessageColor,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
 
                 if (state.unreadMessageCount > 0 && currentUserId != lastMessage?.userId) {
                     Box(
@@ -227,7 +247,7 @@ private fun UserListItemPreview() {
             currentUserId = "1235",
             state = testState,
             isOnline = true,
-            onClick = {}
+            onClickChatRoom = {}
         )
     }
 }

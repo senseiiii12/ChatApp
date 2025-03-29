@@ -125,8 +125,8 @@ fun OnlineStatus(
 
     val isOnline by usersViewModel.userStatuses.collectAsState()
     val onlineStatus = isOnline[otherUser.userId]?.first ?: false
-    val lastSeenStatus = isOnline[otherUser.userId]?.second ?: Date(0)
-    val timeManager = remember { TimeManager() }
+    val lastSeenStatus = isOnline[otherUser.userId]?.second ?: otherUser.lastSeen
+
 
     AnimatedContent(targetState = onlineStatus) { isOnline ->
         if (isOnline) {
@@ -150,7 +150,7 @@ fun OnlineStatus(
         } else {
             Text(
                 modifier = Modifier.padding(start = 10.dp),
-                text = timeManager.formatLastSeenDate(lastSeenStatus),
+                text = TimeManager.formatLastSeenDate(lastSeenStatus),
                 style = MyCustomTypography.Normal_12,
                 color = Color.White.copy(alpha = 0.5f),
             )

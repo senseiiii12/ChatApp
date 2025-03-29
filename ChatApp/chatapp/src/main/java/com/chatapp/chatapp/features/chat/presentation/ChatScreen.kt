@@ -1,13 +1,18 @@
 package com.chatapp.chatapp.features.chat.presentation
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -46,11 +51,10 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.chatapp.chatapp.core.presentation.UsersViewModel
-import com.chatapp.chatapp.features.chat.domain.MessageStatus
 import com.chatapp.chatapp.features.auth.domain.User
+import com.chatapp.chatapp.features.chat.domain.MessageStatus
 import com.chatapp.chatapp.features.chat.presentation.details.ChatItem
 import com.chatapp.chatapp.features.chat.presentation.details.MessageDateSeparatorItem
 import com.chatapp.chatapp.features.chat.presentation.details.MessageItem
@@ -59,6 +63,7 @@ import com.chatapp.chatapp.features.chat.presentation.details.inputField.ChatInp
 import com.chatapp.chatapp.features.chat.presentation.details.topbar.ChatTopBar
 import com.chatapp.chatapp.features.chat.presentation.details.topbar.TopMenuState
 import com.chatapp.chatapp.ui.theme.ChatText
+import com.chatapp.chatapp.ui.theme.MyCustomTypography
 import com.chatapp.chatapp.ui.theme.Outline_Card
 import com.chatapp.chatapp.ui.theme.PrimaryBackground
 import com.chatapp.chatapp.ui.theme.PrimaryPurple
@@ -69,7 +74,6 @@ import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import okhttp3.internal.userAgent
 
 
 @Composable
@@ -190,7 +194,9 @@ fun MessageList(
     val scope = rememberCoroutineScope()
 
     Box(
-        modifier = Modifier.fillMaxSize().padding(paddingValues)
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(paddingValues)
     ) {
         LazyColumn(
             state = listState,
@@ -198,10 +204,10 @@ fun MessageList(
             reverseLayout = true,
             verticalArrangement = Arrangement.Bottom
         ) {
-            itemsIndexed(chatItems.value, key = { _, item ->
+            itemsIndexed(chatItems.value, key = { index, item ->
                 when (item) {
                     is ChatItem.MessageItem -> item.message.messageId
-                    is ChatItem.DateSeparatorItem -> item.date
+                    is ChatItem.DateSeparatorItem -> "$index-${item.date}"
                 }
             }) { index, item ->
                 when (item) {
@@ -239,12 +245,10 @@ fun MessageList(
                 }
             }
         }
-
         ScrollToEndList(
             chatItems = chatItems.value,
             listState = listState
         )
-
         FAB(
             modifier = Modifier.align(Alignment.BottomEnd),
             scope = scope,
@@ -254,7 +258,6 @@ fun MessageList(
         )
     }
 }
-
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -269,7 +272,6 @@ fun FAB(
     val isVisibleFab by remember {
         derivedStateOf { listState.firstVisibleItemIndex > 2 }
     }
-
     AnimatedVisibility(
         modifier = modifier,
         visible = isVisibleFab,
@@ -301,20 +303,33 @@ fun FAB(
             if (unreadMessagesCount > 0) {
                 val animatedUnreadCount by animateIntAsState(
                     targetValue = unreadMessagesCount,
-                    animationSpec = tween(durationMillis = 300, easing = LinearOutSlowInEasing)
+                    animationSpec = tween(durationMillis = 50, easing = FastOutSlowInEasing)
                 )
 
                 Badge(
                     modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .offset(x = (-4).dp, y = (-4).dp),
+                        .align(Alignment.TopCenter)
+                        .offset(x = (-10).dp, y = (-8).dp),
                     containerColor = PrimaryPurple
                 ) {
-                    Text(
-                        text = animatedUnreadCount.toString(),
-                        color = Color.White,
-                        fontSize = 12.sp
-                    )
+                    AnimatedContent(
+                        targetState = animatedUnreadCount,
+                        transitionSpec = {
+                            if (targetState > initialState) {
+                                slideInVertically { height -> height } + fadeIn() togetherWith
+                                        slideOutVertically { height -> -height } + fadeOut()
+                            } else {
+                                slideInVertically { height -> -height } + fadeIn() togetherWith
+                                        slideOutVertically { height -> height } + fadeOut()
+                            }
+                        }
+                    ) { targetCount ->
+                        Text(
+                            text = targetCount.toString(),
+                            color = Color.White,
+                            style = MyCustomTypography.Bold_12
+                        )
+                    }
                 }
             }
         }
@@ -326,14 +341,19 @@ fun ScrollToEndList(
     chatItems: List<ChatItem>,
     listState: LazyListState,
 ) {
-    val isVisibleFab by remember {
-        derivedStateOf { listState.firstVisibleItemIndex > 1 }
+
+    val messageItemSize = chatItems.count { it is ChatItem.MessageItem }
+    val isAtBottom = remember {
+        derivedStateOf {
+            val layoutInfo = listState.layoutInfo
+            val firstVisibleItemIndex = layoutInfo.visibleItemsInfo.firstOrNull()?.index ?: 0
+            firstVisibleItemIndex <= 2
+        }
     }
-    if (!isVisibleFab) {
-        LaunchedEffect(chatItems.size) {
-            if (chatItems.isNotEmpty()) {
-                listState.animateScrollToItem(0)
-            }
+
+    LaunchedEffect(messageItemSize) {
+        if (chatItems.isNotEmpty() && isAtBottom.value) {
+            listState.animateScrollToItem(0)
         }
     }
 }

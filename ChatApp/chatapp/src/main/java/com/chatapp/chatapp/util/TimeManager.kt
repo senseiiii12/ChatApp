@@ -11,7 +11,7 @@ import java.util.Locale
 import java.util.TimeZone
 import java.util.concurrent.TimeUnit
 
-class TimeManager {
+object TimeManager {
      fun getTimeSinceLastMessage(lastMessage: Message?): String {
         if (lastMessage == null) {
             return "non message"
@@ -40,10 +40,7 @@ class TimeManager {
              days > 0 -> "$days ${pluralize(days, "d", "d", "d")} ago"
              hours > 0 -> "$hours ${pluralize(hours, "h", "h", "h")} ago"
              minutes > 0 -> "$minutes ${pluralize(minutes, "min", "min", "min")} ago"
-             else -> if(seconds < 0){
-                 "just now"
-             } else "$seconds ${pluralize(seconds, "sec", "sec", "sec")} ago"
-
+             else -> "just now"
          }
     }
 

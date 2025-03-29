@@ -1,6 +1,7 @@
 package com.chatapp.chatapp.features.search_user.presentation
 
 import android.net.Uri
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -83,6 +84,7 @@ fun SearchUsersScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 itemsIndexed(searchUserList, key = { _, user -> user.userId }) { index, user ->
+                    Log.d("SearchUsers", user.toString())
                     SearchUsersItem(
                         user = user,
                         currentUserId = currentUser.userId,

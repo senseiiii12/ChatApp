@@ -34,7 +34,7 @@ fun ChatRoomsList(
                     currentUserId = currentUserId,
                     state = chatRoom,
                     isOnline = isOnline[chatRoom.otherUser.userId]?.first ?: false,
-                    onClick = { onUserClick(chatRoom.otherUser) }
+                    onClickChatRoom = { onUserClick(chatRoom.otherUser) }
                 )
                 Divider(
                     modifier = Modifier.padding(start = 88.dp),
