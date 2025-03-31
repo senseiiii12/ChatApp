@@ -12,13 +12,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.chatapp.chatapp.core.presentation.UsersViewModel
 import com.chatapp.chatapp.features.auth.domain.User
-import com.chatapp.chatapp.features.chat_rooms.presentation.ChatRoomsState
+import com.chatapp.chatapp.features.chat_rooms.domain.models.ChatRooms
 import com.chatapp.chatapp.ui.theme.SecondaryBackground
 
 
 @Composable
 fun ChatRoomsList(
-    stateChatRooms: List<ChatRoomsState>,
+    stateChatRooms: List<ChatRooms>,
     onUserClick: (User) -> Unit,
     usersViewModel: UsersViewModel,
 ) {

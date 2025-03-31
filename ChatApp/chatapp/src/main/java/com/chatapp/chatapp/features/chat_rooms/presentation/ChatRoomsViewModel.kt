@@ -1,19 +1,21 @@
 package com.chatapp.chatapp.features.chat_rooms.presentation
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chatapp.chatapp.features.chat.domain.Message
-import com.chatapp.chatapp.features.chat.domain.MessageStatus
 import com.chatapp.chatapp.features.chat_rooms.domain.ChatRoomsRepository
-import com.chatapp.chatapp.features.chat_rooms.presentation.ChatRoomsState
+import com.chatapp.chatapp.features.chat_rooms.domain.models.ChatRoomsMessagesInfo
+import com.chatapp.chatapp.features.chat_rooms.domain.models.ChatRooms
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -23,61 +25,65 @@ class ChatRoomsViewModel @Inject constructor(
     private val chatRoomsRepository: ChatRoomsRepository
 ) : ViewModel() {
 
-    private val _chatRoomsState = MutableStateFlow<List<ChatRoomsState>>(emptyList())
-    val chatRoomsState = _chatRoomsState.asStateFlow()
+    private val _chatRooms = MutableStateFlow<List<ChatRooms>>(emptyList())
+    val chatRooms = _chatRooms.asStateFlow()
 
     private val _chatIds = MutableStateFlow<List<String>>(emptyList())
-    val chatIds = _chatIds.asStateFlow()
-
-    init {
-        startListeningToChats()
-    }
+    private var isListening = false
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    fun startListeningToChats() {
-        _chatIds.filter { it.isNotEmpty() }
-            .flatMapLatest { chatIds -> chatRoomsRepository.listenForMessagesInChats(chatIds) }
-            .onEach { chatMessagesMap -> processChatMessages(chatMessagesMap) }
-            .launchIn(viewModelScope)
+    fun loadAndListenToChats(userId: String,onSucces: () -> Unit) {
+        viewModelScope.launch {
+            if (_chatRooms.value.isNotEmpty() && isListening) {
+                return@launch
+            }
+
+            if (_chatRooms.value.isEmpty()) {
+                chatRoomsRepository.getUserChatRooms(userId)
+                    .catch { e -> Log.e("ChatViewModel", "Ошибка загрузки чатов: ${e.message}", e) }
+                    .collect { chatRooms ->
+                        val sortedChatRooms = chatRooms.sortedByDescending { it.lastMessage.timestamp }
+                        _chatRooms.value = sortedChatRooms
+                        _chatIds.value = sortedChatRooms.map { it.chatId }
+                    }
+            }
+
+            if (!isListening) {
+                _chatIds
+                    .filter { it.isNotEmpty() }
+                    .flatMapLatest { chatIds ->
+                        chatRoomsRepository.lastMessagesListner(chatIds)
+                            .map { chatMessagesMap -> processChatMessages(chatMessagesMap)}
+                    }
+                    .catch { e -> Log.e("ChatViewModel", "Ошибка в слушателе сообщений: ${e.message}", e) }
+                    .launchIn(viewModelScope)
+                isListening = true
+            }
+        }.invokeOnCompletion {
+            onSucces()
+        }
     }
 
-    private fun processChatMessages(chatMessagesMap: Map<String, List<Message>>) {
-        _chatRoomsState.update { currentChatRooms ->
-            currentChatRooms.map { chatRoom ->
-                val messages = chatMessagesMap[chatRoom.chatId]
-                if (messages != null) {
-                    val lastMessage = messages.maxByOrNull { it.timestamp } ?: Message()
-                    val unreadCount = messages.count { it.status == MessageStatus.DELIVERED }
+    private fun processChatMessages(chatMessagesMap: Map<String, ChatRoomsMessagesInfo>) {
+        _chatRooms.update { currentChatRooms ->
+            val updatedChatRooms = currentChatRooms.map { chatRoom ->
+                val chatInfo = chatMessagesMap[chatRoom.chatId]
+                if (chatInfo != null && chatInfo.messages.isNotEmpty()) {
+                    val lastMessage = chatInfo.messages.maxByOrNull { it.timestamp } ?: Message()
                     chatRoom.copy(
                         lastMessage = lastMessage,
-                        unreadMessageCount = unreadCount
+                        unreadMessageCount = chatInfo.unreadCount
                     )
                 } else {
                     chatRoom
                 }
             }
-        }
-    }
-
-    fun loadChatRooms(userId: String, onSucces:(Boolean) -> Unit) {
-        viewModelScope.launch {
-            chatRoomsRepository.getUserChatRooms(userId)
-                .collect { chatRooms ->
-                    _chatRoomsState.update { current ->
-                        if (current.isEmpty()) chatRooms else current
-                    }
-                }
-            chatRoomsRepository.getAllChatRoomsId(userId)
-                .collect { chatIds ->
-                    _chatIds.value = chatIds
-                }
-        }.invokeOnCompletion {
-            onSucces(true)
+            updatedChatRooms.sortedByDescending { it.lastMessage.timestamp }
         }
     }
 
     fun clearChatRooms() {
-        _chatRoomsState.value = emptyList()
+        _chatRooms.value = emptyList()
     }
 
 

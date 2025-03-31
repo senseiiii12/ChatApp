@@ -1,9 +1,9 @@
-package com.chatapp.chatapp.features.chat_rooms.presentation
+package com.chatapp.chatapp.features.chat_rooms.domain.models
 
 import com.chatapp.chatapp.features.auth.domain.User
 import com.chatapp.chatapp.features.chat.domain.Message
 
-data class ChatRoomsState(
+data class ChatRooms(
     val chatId: String = "",
     val otherUser: User = User(),
     val isOnline: Boolean = false,

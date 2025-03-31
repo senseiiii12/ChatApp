@@ -2,7 +2,6 @@ package com.chatapp.chatapp.features.chat_rooms.presentation
 
 import android.app.Activity
 import android.net.Uri
-import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
@@ -16,7 +15,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -29,8 +27,6 @@ import com.chatapp.chatapp.ui.theme.SecondaryBackground
 import com.chatapp.chatapp.util.NetworkConnection.NetworkConnectionIndicator
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.google.gson.Gson
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.launch
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -42,34 +38,24 @@ fun ChatRoomsScreen(
     val systemUiController = rememberSystemUiController()
     systemUiController.setSystemBarsColor(SecondaryBackground)
     val chatRoomsViewModel: ChatRoomsViewModel = hiltViewModel()
-    val chatsId = chatRoomsViewModel.chatIds.collectAsState()
-    val scope = rememberCoroutineScope()
-
-    val stateChatRooms = chatRoomsViewModel.chatRoomsState.collectAsState()
+    
+    val stateChatRooms = chatRoomsViewModel.chatRooms.collectAsState()
     val currentUser = usersViewModel.currentUser.value
     val currentUserId = usersViewModel.currentUserId.collectAsState()
 
     BackHandler(enabled = true) {
         (navController.context as? Activity)?.finish()
     }
-
-
     LaunchedEffect(Unit) {
         usersViewModel.getCurrentUser()
-        Log.d("curerntUser123", "getCurrentUser - ${currentUser}")
     }
-
-    LaunchedEffect(currentUser) {
-        currentUserId.value?.let {
-            Log.d("curerntUser123", "loadChatRooms - ${currentUser}")
-            chatRoomsViewModel.loadChatRooms(it){ isSuccess ->
-                stateChatRooms.value.map {
-                    usersViewModel.listenForOtherUserStatus(it.otherUser.userId)
-                }
+    LaunchedEffect(Unit) {
+        chatRoomsViewModel.loadAndListenToChats(currentUserId.value.toString()) {
+            stateChatRooms.value.map {
+                usersViewModel.listenForOtherUserStatus(it.otherUser.userId)
             }
         }
     }
-
 
     Scaffold(
         topBar = {

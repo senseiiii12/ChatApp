@@ -2,10 +2,6 @@ package com.chatapp.chatapp.features.chat_rooms.presentation.details
 
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.animateIntAsState
-import androidx.compose.animation.core.animateValueAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -43,18 +39,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
-import coil.ImageLoader
 import coil.compose.AsyncImage
-import coil.disk.DiskCache
-import coil.memory.MemoryCache
 import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.chatapp.chatapp.R
 import com.chatapp.chatapp.features.auth.domain.User
 import com.chatapp.chatapp.features.chat.domain.Message
 import com.chatapp.chatapp.features.chat.domain.MessageStatus
-import com.chatapp.chatapp.features.chat_rooms.presentation.ChatRoomsState
+import com.chatapp.chatapp.features.chat_rooms.domain.models.ChatRooms
 import com.chatapp.chatapp.ui.theme.Bg_Default_Avatar
 import com.chatapp.chatapp.ui.theme.ChatAppTheme
 import com.chatapp.chatapp.ui.theme.MyCustomTypography
@@ -69,7 +61,7 @@ import java.util.Date
 @Composable
 fun ChatRoomItem(
     modifier: Modifier = Modifier,
-    state: ChatRoomsState,
+    state: ChatRooms,
     currentUserId: String,
     isOnline: Boolean,
     onClickChatRoom: () -> Unit
@@ -247,7 +239,7 @@ private fun UserListItemPreview() {
         password = "123",
         lastSeen = Date(0)
     )
-    val testState = ChatRoomsState(
+    val testState = ChatRooms(
         chatId = "123",
         otherUser = testUser,
         isOnline = true,
