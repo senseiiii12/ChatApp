@@ -8,6 +8,7 @@ import com.chatapp.chatapp.features.chat_rooms.domain.ChatRoomsRepository
 import com.chatapp.chatapp.features.chat_rooms.domain.models.ChatRoomsMessagesInfo
 import com.chatapp.chatapp.features.chat_rooms.domain.models.ChatRooms
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -18,6 +19,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
@@ -32,11 +34,9 @@ class ChatRoomsViewModel @Inject constructor(
     private var isListening = false
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    fun loadAndListenToChats(userId: String,onSucces: () -> Unit) {
-        viewModelScope.launch {
-            if (_chatRooms.value.isNotEmpty() && isListening) {
-                return@launch
-            }
+    suspend fun loadAndListenToChats(userId: String) {
+        return withContext(Dispatchers.IO) {
+            if (_chatRooms.value.isNotEmpty() && !isListening) return@withContext
 
             if (_chatRooms.value.isEmpty()) {
                 chatRoomsRepository.getUserChatRooms(userId)
@@ -53,26 +53,24 @@ class ChatRoomsViewModel @Inject constructor(
                     .filter { it.isNotEmpty() }
                     .flatMapLatest { chatIds ->
                         chatRoomsRepository.lastMessagesListner(chatIds)
-                            .map { chatMessagesMap -> processChatMessages(chatMessagesMap)}
+                            .map { chatMessagesMap -> processChatMessages(chatMessagesMap) }
                     }
                     .catch { e -> Log.e("ChatViewModel", "Ошибка в слушателе сообщений: ${e.message}", e) }
                     .launchIn(viewModelScope)
                 isListening = true
             }
-        }.invokeOnCompletion {
-            onSucces()
         }
     }
+
 
     private fun processChatMessages(chatMessagesMap: Map<String, ChatRoomsMessagesInfo>) {
         _chatRooms.update { currentChatRooms ->
             val updatedChatRooms = currentChatRooms.map { chatRoom ->
                 val chatInfo = chatMessagesMap[chatRoom.chatId]
-                if (chatInfo != null && chatInfo.messages.isNotEmpty()) {
-                    val lastMessage = chatInfo.messages.maxByOrNull { it.timestamp } ?: Message()
+                if (chatInfo != null && chatInfo.lastMessage != null) {
                     chatRoom.copy(
-                        lastMessage = lastMessage,
-                        unreadMessageCount = chatInfo.unreadCount
+                        lastMessage = chatInfo.lastMessage,
+                        unreadMessageCount = chatInfo.unreadMessageCount
                     )
                 } else {
                     chatRoom

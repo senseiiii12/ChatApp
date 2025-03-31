@@ -2,13 +2,17 @@ package com.chatapp.chatapp.features.chat_rooms.presentation.details
 
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,18 +28,23 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -61,22 +70,36 @@ import java.util.Date
 @Composable
 fun ChatRoomItem(
     modifier: Modifier = Modifier,
-    state: ChatRooms,
+    chatRoomState: ChatRooms,
     currentUserId: String,
     isOnline: Boolean,
     onClickChatRoom: () -> Unit
 ) {
-    val otherUser = state.otherUser
-    val lastMessage = state.lastMessage
-    val context = LocalContext.current
+    val otherUser = chatRoomState.otherUser
+    val lastMessage = chatRoomState.lastMessage
+
+    val lastMessageText = remember(lastMessage) { lastMessage?.text ?: "" }
+    val isCurrentUser = remember(lastMessage) { currentUserId == lastMessage?.userId }
+
+    val annotatedlastMessageText = remember(lastMessageText, isCurrentUser) {
+        buildAnnotatedString {
+            if (isCurrentUser) {
+                withStyle(style = SpanStyle(color = PrimaryPurple)) {
+                    append("You: ")
+                }
+            }
+            append(lastMessageText)
+        }
+    }
+
+    val lastMessageColor = remember(lastMessage) {
+        if (lastMessage?.status?.name.equals("READ"))
+            Color.White.copy(alpha = 0.5f)
+        else
+            Color.White.copy(alpha = 0.8f)
+    }
 
     val imageLoaderViewModel: ImageLoaderViewModel = hiltViewModel()
-    val lastMessageText =
-        if (currentUserId == lastMessage?.userId) "You: ${lastMessage.text}" else "${lastMessage?.text ?: ""}"
-    val lastMessageColor =
-        if (lastMessage?.status?.name.equals("READ")) Color.White.copy(alpha = 0.5f) else Color.White.copy(
-            alpha = 0.8f
-        )
     val avatarUrl by remember { mutableStateOf(otherUser.avatar) }
 
 
@@ -117,16 +140,26 @@ fun ChatRoomItem(
                 contentScale = ContentScale.Crop,
                 contentDescription = null,
             )
-
-            if (isOnline) {
-                Box(
-                    modifier = Modifier
-                        .padding(top = 3.dp, end = 3.dp)
-                        .align(Alignment.TopEnd)
-                        .clip(CircleShape)
-                        .size(10.dp)
-                        .background(Online)
-                )
+            Row (
+                modifier = Modifier.align(Alignment.TopEnd)
+            ){
+                AnimatedVisibility(
+                    visible = isOnline,
+                    enter = scaleIn() + fadeIn(),
+                    exit = scaleOut() + fadeOut()
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .padding(top = 3.dp, end = 3.dp)
+                            .clip(CircleShape)
+                            .size(12.dp)
+                            .background(PrimaryBackground)
+                            .padding(2.dp)
+                            .size(12.dp)
+                            .clip(CircleShape)
+                            .background(Online)
+                    )
+                }
             }
         }
         Column(
@@ -157,7 +190,7 @@ fun ChatRoomItem(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 AnimatedContent(
-                    targetState = lastMessageText,
+                    targetState = annotatedlastMessageText,
                     transitionSpec = {
                         slideInVertically { height -> -height } + fadeIn() togetherWith
                                 slideOutVertically { height -> height } + fadeOut()
@@ -176,7 +209,7 @@ fun ChatRoomItem(
                     )
                 }
 
-                if (state.unreadMessageCount > 0 && currentUserId != lastMessage?.userId) {
+                if (chatRoomState.unreadMessageCount > 0 && currentUserId != lastMessage?.userId) {
                     Box(
                         modifier = Modifier
                             .clip(CircleShape)
@@ -187,7 +220,7 @@ fun ChatRoomItem(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "${state.unreadMessageCount}",
+                            text = "${chatRoomState.unreadMessageCount}",
                             style = MyCustomTypography.Bold_8,
                             color = Color.White
                         )
@@ -250,7 +283,7 @@ private fun UserListItemPreview() {
     ChatAppTheme {
         ChatRoomItem(
             currentUserId = "1235",
-            state = testState,
+            chatRoomState = testState,
             isOnline = true,
             onClickChatRoom = {}
         )

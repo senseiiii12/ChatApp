@@ -36,7 +36,7 @@ class ChatRoomsRepositoryImpl @Inject constructor(
     override suspend fun lastMessagesListner(chatIds: List<String>): Flow<Map<String, ChatRoomsMessagesInfo>> {
         return callbackFlow {
             val currentMessages = mutableMapOf<String, ChatRoomsMessagesInfo>().withDefault {
-                ChatRoomsMessagesInfo(emptyList(), 0)
+                ChatRoomsMessagesInfo(Message(), 0)
             }
             val listeners = chatIds.map { chatId ->
                 chatCollection.document(chatId)
@@ -46,11 +46,12 @@ class ChatRoomsRepositoryImpl @Inject constructor(
                     .addSnapshotListener { snapshot, e ->
                         if (e != null || snapshot == null) return@addSnapshotListener
                         val messages = snapshot.documents.map { it.toMessage() }
-                        val unreadCount = messages.count { it.status == MessageStatus.DELIVERED }
+                        val lastMessage = messages.maxByOrNull { it.timestamp } ?: Message()
+                        val unreadMessageCount = messages.count { it.status == MessageStatus.DELIVERED }
 
                         currentMessages[chatId] = ChatRoomsMessagesInfo(
-                            messages = messages,
-                            unreadCount = unreadCount
+                            lastMessage = lastMessage,
+                            unreadMessageCount = unreadMessageCount
                         )
                         trySend(currentMessages.toMap())
                     }
@@ -118,30 +119,16 @@ class ChatRoomsRepositoryImpl @Inject constructor(
                 .await()
 
             if (!chatDoc.exists()) return null
-
             val participants = chatDoc.get("participants") as? List<String> ?: emptyList()
             val otherUserId = participants.firstOrNull { it != currentUserId } ?: return null
-
             val otherUser = fetchUserData(otherUserId) ?: return null
-
-            val messagesSnapshot = firebaseFirestore.collection("chats")
-                .document(chatId)
-                .collection("messages")
-                .orderBy("timestamp", Query.Direction.DESCENDING)
-                .limit(20)
-                .get()
-                .await()
-
-            val messages = messagesSnapshot.documents.map { it.toMessage() }
-            val lastMessage = messages.maxByOrNull { it.timestamp } ?: Message()
-            val unreadMessageCount = messages.count { it.status == MessageStatus.DELIVERED }
 
             ChatRooms(
                 chatId = chatId,
                 otherUser = otherUser,
                 isOnline = otherUser.online,
-                lastMessage = lastMessage,
-                unreadMessageCount = unreadMessageCount
+                lastMessage = Message(),
+                unreadMessageCount = 0
             )
         } catch (e: Exception) {
             Log.e("ChatDebug", "Ошибка в buildChatRoomState для $chatId: ${e.message}", e)

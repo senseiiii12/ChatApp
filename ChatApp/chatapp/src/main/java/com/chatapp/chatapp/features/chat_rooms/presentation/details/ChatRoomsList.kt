@@ -32,7 +32,7 @@ fun ChatRoomsList(
                 ChatRoomItem(
                     modifier = Modifier.animateItem(),
                     currentUserId = currentUserId,
-                    state = chatRoom,
+                    chatRoomState = chatRoom,
                     isOnline = isOnline[chatRoom.otherUser.userId]?.first ?: false,
                     onClickChatRoom = { onUserClick(chatRoom.otherUser) }
                 )

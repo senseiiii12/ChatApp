@@ -2,6 +2,7 @@ package com.chatapp.chatapp.features.chat_rooms.presentation
 
 import android.app.Activity
 import android.net.Uri
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
@@ -38,7 +39,7 @@ fun ChatRoomsScreen(
     val systemUiController = rememberSystemUiController()
     systemUiController.setSystemBarsColor(SecondaryBackground)
     val chatRoomsViewModel: ChatRoomsViewModel = hiltViewModel()
-    
+
     val stateChatRooms = chatRoomsViewModel.chatRooms.collectAsState()
     val currentUser = usersViewModel.currentUser.value
     val currentUserId = usersViewModel.currentUserId.collectAsState()
@@ -50,10 +51,9 @@ fun ChatRoomsScreen(
         usersViewModel.getCurrentUser()
     }
     LaunchedEffect(Unit) {
-        chatRoomsViewModel.loadAndListenToChats(currentUserId.value.toString()) {
-            stateChatRooms.value.map {
-                usersViewModel.listenForOtherUserStatus(it.otherUser.userId)
-            }
+        chatRoomsViewModel.loadAndListenToChats(currentUserId.value.toString())
+        stateChatRooms.value.map {
+            usersViewModel.listenForOtherUserStatus(it.otherUser.userId)
         }
     }
 

@@ -35,8 +35,6 @@ class UsersViewModel @Inject constructor(
 
         auth.addAuthStateListener { firebaseAuth ->
             _currentUserId.value = firebaseAuth.currentUser?.uid
-            Log.d("curerntUser123", "AuthStateListener - ${firebaseAuth.currentUser?.uid}")
-            Log.d("curerntUser123", "AuthStateListener - ${_currentUser.value}")
         }
     }
 
