@@ -14,6 +14,9 @@ import com.chatapp.chatapp.core.domain.FriendRequestRepository
 import com.chatapp.chatapp.core.domain.UsersRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FirebaseFirestoreSettings
+import com.google.firebase.firestore.firestoreSettings
+import com.google.firebase.firestore.persistentCacheSettings
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -37,7 +40,13 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun providesFirebaseFirestore() = FirebaseFirestore.getInstance()
+    fun providesFirebaseFirestore(): FirebaseFirestore {
+        return FirebaseFirestore.getInstance().apply {
+            firestoreSettings = firestoreSettings {
+                setLocalCacheSettings(persistentCacheSettings { })
+            }
+        }
+    }
 
     @Provides
     @Singleton

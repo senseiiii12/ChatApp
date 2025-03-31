@@ -37,18 +37,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.Font
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.buildpc.firstcompose.EnterScreen.components.ButtonEnter
 import com.buildpc.firstcompose.EnterScreen.components.EditField
-import com.chatapp.chatapp.R
 import com.chatapp.chatapp.features.auth.presentation.RegisterScreen.ImageAvatar.ImageAvatar
 import com.chatapp.chatapp.features.auth.presentation.RegisterScreen.ImageAvatar.ImageAvatarViewModel
 import com.chatapp.chatapp.features.auth.presentation.Validator.ErrorMessage
@@ -56,8 +52,6 @@ import com.chatapp.chatapp.features.auth.presentation.Validator.ValidateViewMode
 import com.chatapp.chatapp.ui.theme.MyCustomTypography
 import com.chatapp.chatapp.ui.theme.Success
 import kotlinx.coroutines.launch
-import kotlin.Boolean
-import kotlin.String
 
 
 @OptIn(ExperimentalMaterial3Api::class)

@@ -27,6 +27,7 @@ class ChatRoomsViewModel @Inject constructor(
     val chatRoomsState = _chatRoomsState.asStateFlow()
 
     private val _chatIds = MutableStateFlow<List<String>>(emptyList())
+    val chatIds = _chatIds.asStateFlow()
 
     init {
         startListeningToChats()
@@ -57,7 +58,6 @@ class ChatRoomsViewModel @Inject constructor(
             }
         }
     }
-
 
     fun loadChatRooms(userId: String, onSucces:(Boolean) -> Unit) {
         viewModelScope.launch {

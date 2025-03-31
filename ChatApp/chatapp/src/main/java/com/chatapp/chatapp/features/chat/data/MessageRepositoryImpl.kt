@@ -1,20 +1,21 @@
 package com.chatapp.chatapp.features.chat.data
 
 import android.util.Log
-import com.chatapp.chatapp.features.chat.domain.MessageRepository
 import com.chatapp.chatapp.features.chat.domain.Message
+import com.chatapp.chatapp.features.chat.domain.MessageRepository
 import com.chatapp.chatapp.features.chat.domain.MessageStatus
 import com.chatapp.chatapp.util.extension.toMessage
 import com.google.firebase.firestore.DocumentChange
-import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FirebaseFirestoreSettings
 import com.google.firebase.firestore.ListenSource
+import com.google.firebase.firestore.MetadataChanges
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.SnapshotListenOptions
-import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.callbackFlow
+import com.google.firebase.firestore.firestoreSettings
+import com.google.firebase.firestore.memoryCacheSettings
+import com.google.firebase.firestore.persistentCacheSettings
 import kotlinx.coroutines.tasks.await
 import java.util.UUID
 import javax.inject.Inject
@@ -25,9 +26,11 @@ class MessageRepositoryImpl @Inject constructor(
 
     val chatCollection = firestore.collection("chats")
 
+
     val options = SnapshotListenOptions.Builder()
         .setSource(ListenSource.DEFAULT)
         .build()
+
 
     override suspend fun sendMessage(chatId: String, currentUserId: String, messageText: String) {
         val messageId = UUID.randomUUID().toString()

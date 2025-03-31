@@ -15,21 +15,22 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.chatapp.chatapp.core.presentation.UsersViewModel
-import com.chatapp.chatapp.features.navigation.Route
-import com.chatapp.chatapp.features.chat_rooms.presentation.details.TopBarChatsRoom
 import com.chatapp.chatapp.features.chat_rooms.presentation.details.ChatRoomsList
-import com.chatapp.chatapp.features.chat_rooms.presentation.ChatRoomsViewModel
+import com.chatapp.chatapp.features.chat_rooms.presentation.details.TopBarChatsRoom
+import com.chatapp.chatapp.features.navigation.Route
 import com.chatapp.chatapp.ui.theme.PrimaryBackground
 import com.chatapp.chatapp.ui.theme.SecondaryBackground
 import com.chatapp.chatapp.util.NetworkConnection.NetworkConnectionIndicator
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
-import com.google.firebase.auth.FirebaseAuth
 import com.google.gson.Gson
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -41,6 +42,8 @@ fun ChatRoomsScreen(
     val systemUiController = rememberSystemUiController()
     systemUiController.setSystemBarsColor(SecondaryBackground)
     val chatRoomsViewModel: ChatRoomsViewModel = hiltViewModel()
+    val chatsId = chatRoomsViewModel.chatIds.collectAsState()
+    val scope = rememberCoroutineScope()
 
     val stateChatRooms = chatRoomsViewModel.chatRoomsState.collectAsState()
     val currentUser = usersViewModel.currentUser.value
@@ -49,6 +52,7 @@ fun ChatRoomsScreen(
     BackHandler(enabled = true) {
         (navController.context as? Activity)?.finish()
     }
+
 
     LaunchedEffect(Unit) {
         usersViewModel.getCurrentUser()
@@ -65,7 +69,6 @@ fun ChatRoomsScreen(
             }
         }
     }
-
 
 
     Scaffold(
