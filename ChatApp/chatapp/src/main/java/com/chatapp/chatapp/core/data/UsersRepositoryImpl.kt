@@ -2,6 +2,10 @@ package com.chatapp.chatapp.core.data
 
 import android.content.Context
 import android.util.Log
+import androidx.work.BackoffPolicy
+import androidx.work.Constraints
+import androidx.work.ExistingWorkPolicy
+import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
@@ -19,6 +23,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.tasks.await
 import java.util.Date
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 class UsersRepositoryImpl @Inject constructor(
@@ -81,10 +86,25 @@ class UsersRepositoryImpl @Inject constructor(
             "userId" to userId,
             "isOnline" to isOnline
         )
+
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED) // Ждет подключения к сети
+            .build()
+
         val workRequest = OneTimeWorkRequestBuilder<UpdateStatusWorker>()
             .setInputData(inputData)
+            .setConstraints(constraints)
+            .setBackoffCriteria(
+                BackoffPolicy.EXPONENTIAL,
+                30, TimeUnit.SECONDS
+            )
             .build()
-        WorkManager.getInstance(context).enqueue(workRequest)
+
+        WorkManager.getInstance(context).enqueueUniqueWork(
+            "update_user_status",
+            ExistingWorkPolicy.REPLACE,
+            workRequest
+        )
     }
 
 

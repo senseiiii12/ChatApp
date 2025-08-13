@@ -9,14 +9,19 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
+import javax.inject.Inject
 
-class FriendRequestRepositoryImpl : FriendRequestRepository {
+class FriendRequestRepositoryImpl @Inject constructor(
+    private val firebaseFirestore: FirebaseFirestore,
+    private val firebaseAuth: FirebaseAuth
+) : FriendRequestRepository {
 
-    val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
-    val firestore = FirebaseFirestore.getInstance()
+    val currentUserId = firebaseAuth.currentUser?.uid
+
     override suspend fun sendFriendRequest(toUserId: String, onResult: (Boolean) -> Unit) {
+        val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
         try {
-            val existingRequestSnapshot = firestore.collection("friend_requests")
+            val existingRequestSnapshot = firebaseFirestore.collection("friend_requests")
                 .whereEqualTo("fromUserId", currentUserId)
                 .whereEqualTo("toUserId", toUserId)
                 .whereIn("status", listOf("pending", "accepted"))
@@ -27,7 +32,7 @@ class FriendRequestRepositoryImpl : FriendRequestRepository {
                 onResult(false)
                 return
             }
-            val requestRef = firestore.collection("friend_requests").document()
+            val requestRef = firebaseFirestore.collection("friend_requests").document()
             val request = FriendRequest(
                 id = requestRef.id,
                 fromUserId = currentUserId ?: "",
@@ -43,8 +48,10 @@ class FriendRequestRepositoryImpl : FriendRequestRepository {
     }
 
     override suspend fun getPendingFriendRequestsWithUserInfo(): List<FriendRequestWithUser> {
+        val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
+        Log.d("currentUserId-getPendingFriendRequestsWithUserInfo", currentUserId.toString())
         return try {
-            val snapshot = firestore
+            val snapshot = firebaseFirestore
                 .collection("friend_requests")
                 .whereEqualTo("toUserId", currentUserId)
                 .whereEqualTo("status", "pending")
@@ -54,7 +61,7 @@ class FriendRequestRepositoryImpl : FriendRequestRepository {
             val friendRequests = snapshot.toObjects(FriendRequest::class.java)
 
             val friendRequestsWithUsers = friendRequests.mapNotNull { request ->
-                val userSnapshot = firestore.collection("users")
+                val userSnapshot = firebaseFirestore.collection("users")
                     .document(request.fromUserId)
                     .get()
                     .await()
@@ -74,41 +81,51 @@ class FriendRequestRepositoryImpl : FriendRequestRepository {
         }
     }
 
-    override suspend fun respondToFriendRequest(requestId: String, accept: Boolean, onResult: (Boolean) -> Unit) {
-        try {
-            val requestRef = firestore.collection("friend_requests").document(requestId)
-            val requestSnapshot = requestRef.get().await()
-            val friendRequest = requestSnapshot.toObject(FriendRequest::class.java)
-
-            if (friendRequest == null) {
-                Log.e("FriendRequest", "Request not found with ID: $requestId")
-                return
-            }
+    override suspend fun respondToFriendRequest(
+        friendRequest: FriendRequest,
+        accept: Boolean
+    ): RespondFriendResult {
+        return try {
+            val requestRef = firebaseFirestore.collection("friend_requests").document(friendRequest.id)
 
             if (accept) {
-                addFriendsToEachUser(friendRequest.fromUserId, friendRequest.toUserId){
-                    requestRef.delete().addOnSuccessListener { onResult(true) }
-                }
+                acceptFriendRequest(
+                    friendRequest.fromUserId,
+                    friendRequest.toUserId,
+                    friendRequest.id
+                )
+                RespondFriendResult.SuccessAccept
             } else {
-                requestRef.delete().addOnSuccessListener { onResult(true) }
+                requestRef.delete().await()
+                RespondFriendResult.SuccessDecline
             }
         } catch (e: Exception) {
-            Log.e("FriendRequest", "Error responding to friend request: ${e.message}")
+            Log.e("FriendRequest", "Error responding to friend request: ${e.message}", e)
+            if (accept) RespondFriendResult.ErrorAccept else RespondFriendResult.ErrorDecline
         }
     }
 
-    private suspend fun addFriendsToEachUser(userId1: String, userId2: String, onSuccess: () -> Unit) {
-        try {
-            firestore.collection("users").document(userId1)
-                .update("friends", FieldValue.arrayUnion(userId2)).await()
+    private suspend fun acceptFriendRequest(
+        userId1: String,
+        userId2: String,
+        friendRequestId: String
+    ) {
+        val user1Ref = firebaseFirestore.collection("users").document(userId1)
+        val user2Ref = firebaseFirestore.collection("users").document(userId2)
+        val requestRef = firebaseFirestore.collection("friend_requests").document(friendRequestId)
 
-            firestore.collection("users").document(userId2)
-                .update("friends", FieldValue.arrayUnion(userId1)).await()
-
-            onSuccess()
-
-        } catch (e: Exception) {
-            Log.e("Friends", "Error adding friends: ${e.message}")
-        }
+        firebaseFirestore.runTransaction { transaction ->
+            transaction.update(user1Ref, "friends", FieldValue.arrayUnion(userId2))
+            transaction.update(user2Ref, "friends", FieldValue.arrayUnion(userId1))
+            transaction.delete(requestRef)
+        }.await()
     }
+
+    sealed class RespondFriendResult {
+        object SuccessAccept : RespondFriendResult()
+        object ErrorAccept : RespondFriendResult()
+        object SuccessDecline : RespondFriendResult()
+        object ErrorDecline : RespondFriendResult()
+    }
+
 }

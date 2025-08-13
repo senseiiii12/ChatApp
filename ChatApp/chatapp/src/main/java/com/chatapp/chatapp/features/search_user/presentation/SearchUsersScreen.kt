@@ -89,7 +89,7 @@ fun SearchUsersScreen(
                         user = user,
                         currentUserId = currentUser.userId,
                         onAddFriend = { pendingUser ->
-                            friendRequestViewModel.sendFriendRequest(user.userId) { isSuccess ->
+                            friendRequestViewModel.sendFriendRequest(pendingUser.userId) { isSuccess ->
                                 resultFriendRequest = isSuccess
                                 scope.launch {
                                     showSnackbarOnAddFriend(

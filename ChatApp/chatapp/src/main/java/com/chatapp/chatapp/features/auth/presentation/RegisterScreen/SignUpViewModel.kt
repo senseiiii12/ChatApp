@@ -13,11 +13,14 @@ import com.chatapp.chatapp.util.Resource
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.storage.FirebaseStorage
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import java.io.ByteArrayOutputStream
 import java.util.UUID
 import javax.inject.Inject
@@ -41,45 +44,6 @@ class SignUpViewModel @Inject constructor(
         _showBottomSheet.value = false
     }
 
-    fun registerUser(avatar: String?, name: String, email: String, password: String) =
-        viewModelScope.launch {
-            authRepository.registerUser(email, password).collect { result ->
-                when (result) {
-                    is Resource.Success -> {
-                        _signUpState.send(
-                            SignUpState(
-                                isSuccess = "Success Registration",
-                                isLoading = false
-                            )
-                        )
-                        val user = mapOf(
-                            "userId" to authRepository.getCurrentUserUID(),
-                            "avatar" to avatar,
-                            "name" to name,
-                            "email" to email,
-                            "password" to password,
-                            "online" to false,
-                            "lastSeen" to FieldValue.serverTimestamp(),
-                            "friends" to emptyList<String>(),
-                        )
-                        authRepository.saveUserToDatabase(user)
-                    }
-
-                    is Resource.Loading -> {
-
-                    }
-
-                    is Resource.Error -> {
-                        _signUpState.send(
-                            SignUpState(
-                                isError = result.message.toString(),
-                                isLoading = false
-                            )
-                        )
-                    }
-                }
-            }
-        }
 
     fun signUp(
         context: Context,
@@ -91,24 +55,70 @@ class SignUpViewModel @Inject constructor(
         viewModelScope.launch {
             _signUpState.send(SignUpState(isLoading = true))
 
-            val storage = FirebaseStorage.getInstance()
-            val storageRef = storage.reference
-            val fileRef = storageRef.child("images/${UUID.randomUUID()}.webp")
+            try {
+                val avatarDeferred = async {
+                    imageUri?.let {
+                        val compressedImage = compressAndResizeImage(context, it)
+                        val storageRef = FirebaseStorage.getInstance().reference
+                            .child("images/${UUID.randomUUID()}.webp")
 
-            imageUri?.let {
-                val compressedImage = compressAndResizeImage(context, imageUri)
-                fileRef.putBytes(compressedImage)
-                    .addOnSuccessListener {
-                        fileRef.downloadUrl.addOnSuccessListener { uri ->
-                            registerUser(uri.toString(), name, email, password)
-                        }
+                        storageRef.putBytes(compressedImage).await()
+                        storageRef.downloadUrl.await().toString()
                     }
-                    .addOnFailureListener { e ->
-                        Log.e("Firebase", "Ошибка загрузки", e)
+                }
+
+                val registerDeferred = async {
+                    authRepository.registerUser(email, password).first { it !is Resource.Loading }
+                }
+
+                val avatarUrl = avatarDeferred.await()
+                when (val result = registerDeferred.await()) {
+                    is Resource.Success -> {
+                        val user = mapOf(
+                            "userId" to authRepository.getCurrentUserUID(),
+                            "avatar" to avatarUrl,
+                            "name" to name,
+                            "email" to email,
+                            "password" to password,
+                            "online" to false,
+                            "lastSeen" to FieldValue.serverTimestamp(),
+                            "friends" to emptyList<String>()
+                        )
+
+                        authRepository.saveUserToDatabase(user)
+
+                        _signUpState.send(
+                            SignUpState(
+                                isSuccess = "Success Registration",
+                                isLoading = false
+                            )
+                        )
                     }
-            } ?: registerUser(null, name, email, password)
+
+                    is Resource.Error -> {
+                        _signUpState.send(
+                            SignUpState(
+                                isError = result.message ?: "Unknown error",
+                                isLoading = false
+                            )
+                        )
+                    }
+
+                    else -> Unit
+                }
+
+            } catch (e: Exception) {
+                Log.e("SignUp", "Ошибка регистрации", e)
+                _signUpState.send(
+                    SignUpState(
+                        isError = e.message ?: "Ошибка регистрации",
+                        isLoading = false
+                    )
+                )
+            }
         }
     }
+
 
 
     private fun compressAndResizeImage(

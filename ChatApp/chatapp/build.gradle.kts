@@ -6,6 +6,7 @@ plugins {
     id("com.google.gms.google-services")
     kotlin("kapt")
     id ("dagger.hilt.android.plugin")
+    id("com.google.firebase.crashlytics")
 }
 
 android {
@@ -126,6 +127,9 @@ dependencies {
     implementation("androidx.work:work-runtime-ktx:2.8.0")
 
     implementation ("com.google.accompanist:accompanist-navigation-animation:0.32.0")
+
+    implementation("com.google.firebase:firebase-crashlytics:19.4.3")
+    implementation("com.google.firebase:firebase-analytics:21.5.0")
 
 }
 

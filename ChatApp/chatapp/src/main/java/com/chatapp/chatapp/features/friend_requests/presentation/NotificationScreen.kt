@@ -1,5 +1,9 @@
 package com.chatapp.chatapp.features.friend_requests.presentation
 
+import android.util.Log
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedContentScope
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -16,16 +20,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -52,14 +57,14 @@ import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.chatapp.chatapp.R
-import com.chatapp.chatapp.features.auth.domain.User
 import com.chatapp.chatapp.core.presentation.FriendRequestViewModel
 import com.chatapp.chatapp.ui.theme.Bg_Default_Avatar
 import com.chatapp.chatapp.ui.theme.ChatText
 import com.chatapp.chatapp.ui.theme.DarkGray_1
 import com.chatapp.chatapp.ui.theme.Error
+import com.chatapp.chatapp.ui.theme.Green100
+import com.chatapp.chatapp.ui.theme.MyCustomTypography
 import com.chatapp.chatapp.ui.theme.PrimaryBackground
-import com.chatapp.chatapp.ui.theme.Success
 import com.chatapp.chatapp.ui.theme.SecondaryBackground
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -69,12 +74,8 @@ fun NotificationScreen(
     friendRequestViewModel: FriendRequestViewModel = hiltViewModel()
 ) {
 
-
-    LaunchedEffect(Unit) {
-        friendRequestViewModel.getPendingFriendRequestsWithUserInfo()
-    }
-
-    val requestInFriends by friendRequestViewModel.friendRequestAndUserInfo.collectAsState()
+    val requestInFriendsState by friendRequestViewModel.friendRequestsState.collectAsState()
+    Log.d("requestInFriends",requestInFriendsState.toString())
 
     Scaffold(
         topBar = {
@@ -122,20 +123,22 @@ fun NotificationScreen(
                 contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                itemsIndexed(
-                    requestInFriends,
-                    key = { _, request -> request.user.userId }) { index, request ->
+                items(
+                    requestInFriendsState.requestsInFriendItemData,
+                    key = { it.request.id }) { item ->
                     FriendListUsersItem(
-                        user = request.user,
+                        itemState = item,
                         onAccept = {
-                            friendRequestViewModel.respondToFriendRequest(request.friendRequest.id, true){
-                                friendRequestViewModel.getPendingFriendRequestsWithUserInfo()
-                            }
+                            friendRequestViewModel.respondToFriendRequest(
+                                item.request,
+                                true
+                            )
                         },
                         onDecline = {
-                            friendRequestViewModel.respondToFriendRequest(request.friendRequest.id, false){
-                                friendRequestViewModel.getPendingFriendRequestsWithUserInfo()
-                            }
+                            friendRequestViewModel.respondToFriendRequest(
+                                item.request,
+                                false
+                            )
                         }
                     )
                 }
@@ -148,7 +151,7 @@ fun NotificationScreen(
 
 @Composable
 fun FriendListUsersItem(
-    user: User,
+    itemState: RequestsInFriendItemState,
     onAccept: () -> Unit,
     onDecline: () -> Unit,
 ) {
@@ -168,13 +171,13 @@ fun FriendListUsersItem(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box {
-                user.avatar?.let {
+                itemState.user.avatar?.let {
                     AsyncImage(
                         modifier = Modifier
                             .clip(CircleShape)
                             .size(30.dp),
                         model = ImageRequest.Builder(LocalContext.current)
-                            .data(user.avatar)
+                            .data(itemState.user.avatar)
                             .crossfade(true)
                             .memoryCachePolicy(CachePolicy.ENABLED)
                             .diskCachePolicy(CachePolicy.ENABLED)
@@ -194,33 +197,61 @@ fun FriendListUsersItem(
             }
             Spacer(modifier = Modifier.width(16.dp))
             Text(
-                text = user.name,
+                text = itemState.user.name,
                 fontSize = 16.sp,
                 fontFamily = FontFamily(Font(R.font.gilroy_bold)),
                 color = ChatText
             )
         }
+        // Кнопки
         Row(modifier = Modifier.padding(end = 6.dp)) {
-            IconButton(
-                modifier = Modifier.size(25.dp),
-                onClick = { onAccept() }
+            // Accept
+            OutlinedButton(
+                onClick = onAccept,
+                enabled = !itemState.isLoadingAccept && !itemState.isSuccessAccept,
+                border = BorderStroke(1.dp, Green100.copy(alpha = 0.5f))
             ) {
-                Icon(
-                    imageVector = Icons.Default.Check,
-                    contentDescription = null,
-                    tint = Success
-                )
+                when {
+                    itemState.isLoadingAccept -> {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(12.dp),
+                            strokeWidth = 2.dp
+                        )
+                    }
+                    else -> {
+                        Text(
+                            text = "Accept",
+                            style = MyCustomTypography.Medium_12,
+                            color = Color.White
+                        )
+                    }
+                }
             }
+
             Spacer(modifier = Modifier.width(8.dp))
-            IconButton(
-                modifier = Modifier.size(25.dp),
-                onClick = { onDecline() }
+
+
+            OutlinedButton(
+                onClick = onDecline,
+                enabled = !itemState.isLoadingDecline && !itemState.isSuccessDecline,
+                border = BorderStroke(1.dp, Error.copy(alpha = 0.5f)),
             ) {
-                Icon(
-                    imageVector = Icons.Default.Clear,
-                    contentDescription = null,
-                    tint = Error
-                )
+                AnimatedContent(
+                    targetState = itemState.isLoadingDecline,
+                ) { isLoading ->
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(12.dp),
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text(
+                            text = "Decline",
+                            style = MyCustomTypography.Medium_12,
+                            color = Color.White
+                        )
+                    }
+                }
             }
         }
     }

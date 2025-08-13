@@ -70,8 +70,11 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun providesFriendRequestRepositoryImpl() : FriendRequestRepository {
-        return FriendRequestRepositoryImpl()
+    fun providesFriendRequestRepositoryImpl(
+        firebaseFirestore: FirebaseFirestore,
+        firebaseAuth: FirebaseAuth
+    ) : FriendRequestRepository {
+        return FriendRequestRepositoryImpl(firebaseFirestore,firebaseAuth)
     }
 
     @Provides

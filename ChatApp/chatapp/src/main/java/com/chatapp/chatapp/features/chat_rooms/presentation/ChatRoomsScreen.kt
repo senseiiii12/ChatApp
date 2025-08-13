@@ -2,21 +2,24 @@ package com.chatapp.chatapp.features.chat_rooms.presentation
 
 import android.app.Activity
 import android.net.Uri
-import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Create
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.chatapp.chatapp.core.presentation.UsersViewModel
@@ -24,6 +27,7 @@ import com.chatapp.chatapp.features.chat_rooms.presentation.details.ChatRoomsLis
 import com.chatapp.chatapp.features.chat_rooms.presentation.details.TopBarChatsRoom
 import com.chatapp.chatapp.features.navigation.Route
 import com.chatapp.chatapp.ui.theme.PrimaryBackground
+import com.chatapp.chatapp.ui.theme.PrimaryPurple
 import com.chatapp.chatapp.ui.theme.SecondaryBackground
 import com.chatapp.chatapp.util.NetworkConnection.NetworkConnectionIndicator
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
@@ -64,6 +68,18 @@ fun ChatRoomsScreen(
                 onMenuButtonClick = {}
             )
         },
+        floatingActionButton = {
+            FloatingActionButton(
+                containerColor = PrimaryPurple,
+                onClick = {}
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Create,
+                    contentDescription = null,
+                    tint = Color.White
+                )
+            }
+        }
     ) { paddingValues ->
         Column(
             modifier = Modifier
