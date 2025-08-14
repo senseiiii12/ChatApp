@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chatapp.chatapp.core.domain.UsersRepository
 import com.chatapp.chatapp.features.auth.domain.User
+import com.chatapp.chatapp.features.search_user.presentation.details.UserWithFriendRequest
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -16,7 +17,7 @@ class SearchUsersViewModel @Inject constructor(
     private val usersRepository: UsersRepository
 ): ViewModel() {
 
-    private val _users = MutableStateFlow<List<User>>(emptyList())
+    private val _users = MutableStateFlow<List<UserWithFriendRequest>>(emptyList())
     val users = _users.asStateFlow()
 
     fun searchUsers(query: String) {

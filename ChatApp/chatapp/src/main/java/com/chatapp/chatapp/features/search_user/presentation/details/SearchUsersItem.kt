@@ -2,13 +2,15 @@ package com.chatapp.chatapp.features.search_user.presentation.details
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -33,6 +35,7 @@ import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.chatapp.chatapp.R
 import com.chatapp.chatapp.features.auth.domain.User
+import com.chatapp.chatapp.features.friend_requests.presentation.AnimatedOutlinedButton
 import com.chatapp.chatapp.ui.theme.Bg_Default_Avatar
 import com.chatapp.chatapp.ui.theme.ChatAppTheme
 import com.chatapp.chatapp.ui.theme.Green100
@@ -45,111 +48,134 @@ import java.util.Date
 fun SearchUsersItem(
     user: User,
     currentUserId: String,
+    haveIncomingRequest: Boolean,
+    haveOutgoingRequest: Boolean,
+    canSendRequest: Boolean,
     onAddFriend: (User) -> Unit,
+    onAcceptFriend: () -> Unit,
     onWriteMessage: (User) -> Unit,
 ) {
-
-    val isFriend = if (user.friends.contains(currentUserId)) true else false
+    val isFriend = user.friends.contains(currentUserId)
     var isRequestSent by remember { mutableStateOf(false) }
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .background(PrimaryBackground)
-            .clickable { }
             .padding(horizontal = 8.dp, vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ) {
-            Box {
-                user.avatar?.let { avatar ->
-                    AsyncImage(
-                        modifier = Modifier
-                            .clip(CircleShape)
-                            .size(42.dp),
-                        model = ImageRequest.Builder(LocalContext.current)
-                            .data(avatar)
-                            .crossfade(true)
-                            .diskCacheKey(avatar)
-                            .memoryCacheKey(avatar)
-                            .diskCachePolicy(CachePolicy.ENABLED)
-                            .memoryCachePolicy(CachePolicy.ENABLED)
-                            .build(),
-                        contentScale = ContentScale.Crop,
-                        contentDescription = null
-                    )
-                } ?: Image(
+        Box {
+            user.avatar?.let { avatar ->
+                AsyncImage(
                     modifier = Modifier
                         .clip(CircleShape)
-                        .background(Bg_Default_Avatar)
                         .size(42.dp),
-                    painter = painterResource(id = R.drawable.defaulf_user_avatar),
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(avatar)
+                        .crossfade(true)
+                        .diskCachePolicy(CachePolicy.ENABLED)
+                        .memoryCachePolicy(CachePolicy.ENABLED)
+                        .build(),
                     contentScale = ContentScale.Crop,
-                    contentDescription = null,
+                    contentDescription = null
                 )
-            }
+            } ?: Image(
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .background(Bg_Default_Avatar)
+                    .size(42.dp),
+                painter = painterResource(id = R.drawable.defaulf_user_avatar),
+                contentScale = ContentScale.Crop,
+                contentDescription = null,
+            )
         }
+
+        Spacer(modifier = Modifier.width(12.dp))
+
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 12.dp, end = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                modifier = Modifier,
                 text = user.name,
                 style = MyCustomTypography.Bold_14,
                 color = Color.White,
                 overflow = TextOverflow.Ellipsis
             )
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(
-                    modifier = Modifier.size(30.dp),
-                    onClick = { onWriteMessage(user) }
-                ) {
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = { onWriteMessage(user) }) {
                     Image(
                         modifier = Modifier.size(20.dp),
                         painter = painterResource(id = R.drawable.ic_write_message),
-                        contentScale = ContentScale.Crop,
                         colorFilter = ColorFilter.tint(Color.White),
-                        contentDescription = null,
+                        contentDescription = null
                     )
                 }
-                if (isFriend) {
-                    IconButton(
-                        modifier = Modifier.size(30.dp),
-                        onClick = {},
-                        enabled = false
-                    ) {
-                        Image(
-                            modifier = Modifier.size(20.dp),
-                            painter = painterResource(id = R.drawable.ic_current_friend),
-                            contentScale = ContentScale.Crop,
-                            colorFilter = ColorFilter.tint(Green100),
-                            contentDescription = null,
+
+                when {
+                    isFriend -> {
+                        AnimatedOutlinedButton(
+                            modifier = Modifier.height(30.dp),
+                            text = "Friend",
+                            enabled = false,
+                            borderColor = Color.Transparent,
+                            containerColor = Green100.copy(alpha = 0.2f),
+                            textColor = Green100,
+                            style = MyCustomTypography.Medium_12,
+                            onClick = {}
                         )
                     }
-                } else {
-                    IconButton(
-                        modifier = Modifier.size(30.dp),
-                        onClick = {
-                            onAddFriend(user)
-                            isRequestSent = true
-                        },
-                        enabled = !isRequestSent
-                    ) {
-                        Image(
-                            modifier = Modifier.size(20.dp),
-                            painter = painterResource(id = R.drawable.ic_add_user),
-                            contentScale = ContentScale.Crop,
-                            colorFilter = ColorFilter.tint(Color.White),
-                            contentDescription = null,
+                    canSendRequest -> {
+                        if (!isRequestSent){
+                            AnimatedOutlinedButton(
+                                modifier = Modifier.height(30.dp),
+                                text = "Add Friend",
+                                borderColor = Green100,
+                                containerColor = Green100.copy(alpha = 0.2f),
+                                textColor = Green100,
+                                style = MyCustomTypography.Medium_12,
+                                onClick = {
+                                    onAddFriend(user)
+                                    isRequestSent = true
+                                }
+                            )
+                        }else{
+                            AnimatedOutlinedButton(
+                                modifier = Modifier.height(30.dp),
+                                text = "Request sent",
+                                enabled = false,
+                                borderColor = Color.Yellow,
+                                containerColor = Color.Yellow.copy(alpha = 0.2f),
+                                textColor = Color.Yellow,
+                                style = MyCustomTypography.Medium_12,
+                                onClick = {}
+                            )
+                        }
+                    }
+                    haveIncomingRequest -> {
+                        AnimatedOutlinedButton(
+                            modifier = Modifier.height(30.dp),
+                            text = "Accept as friend",
+                            borderColor = Green100,
+                            containerColor = Green100.copy(alpha = 0.2f),
+                            textColor = Green100,
+                            style = MyCustomTypography.Medium_12,
+                            onClick = { onAcceptFriend() }
+                        )
+                    }
+                    haveOutgoingRequest -> {
+                        AnimatedOutlinedButton(
+                            modifier = Modifier.height(30.dp),
+                            text = "Request sent",
+                            enabled = false,
+                            borderColor = Color.Yellow,
+                            containerColor = Color.Yellow.copy(alpha = 0.3f),
+                            textColor = Color.Yellow,
+                            style = MyCustomTypography.Medium_12,
+                            onClick = {}
                         )
                     }
                 }
@@ -158,12 +184,13 @@ fun SearchUsersItem(
     }
 }
 
+
 @Preview
 @Composable
 private fun SearchUsersItemPreview() {
     val testUser = User(
         userId = "123",
-        name = "Александр Чепига",
+        name = "Alexander",
         email = "",
         password = "123",
         lastSeen = Date(0),
@@ -173,8 +200,12 @@ private fun SearchUsersItemPreview() {
         SearchUsersItem(
             user = testUser,
             currentUserId = "123",
+            haveIncomingRequest = true,
+            haveOutgoingRequest = false,
+            canSendRequest = false,
             onAddFriend = {},
-            onWriteMessage = {}
+            onAcceptFriend = {},
+            onWriteMessage = {},
         )
     }
 }

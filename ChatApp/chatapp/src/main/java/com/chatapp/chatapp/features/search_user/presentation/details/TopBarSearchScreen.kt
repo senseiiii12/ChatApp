@@ -41,7 +41,7 @@ fun TopBarSearchScreen(
             }
         },
         actions = {
-            IconButton(onClick = { navController.navigate(Route.Notification.route) }) {
+            IconButton(onClick = { navController.navigate(Route.FriendsRequests.route) }) {
                 Icon(
                     imageVector = Icons.Default.AccountCircle,
                     contentDescription = "Friend requests",

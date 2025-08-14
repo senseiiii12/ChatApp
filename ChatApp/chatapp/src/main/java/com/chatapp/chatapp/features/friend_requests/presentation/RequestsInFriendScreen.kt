@@ -2,8 +2,13 @@ package com.chatapp.chatapp.features.friend_requests.presentation
 
 import android.util.Log
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedContentScope
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.with
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -47,6 +52,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
@@ -66,16 +72,21 @@ import com.chatapp.chatapp.ui.theme.Green100
 import com.chatapp.chatapp.ui.theme.MyCustomTypography
 import com.chatapp.chatapp.ui.theme.PrimaryBackground
 import com.chatapp.chatapp.ui.theme.SecondaryBackground
+import com.chatapp.chatapp.ui.theme.Surface_2
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
-fun NotificationScreen(
+fun RequestsInFriendScreen(
     navController: NavController,
     friendRequestViewModel: FriendRequestViewModel = hiltViewModel()
 ) {
 
-    val requestInFriendsState by friendRequestViewModel.friendRequestsState.collectAsState()
-    Log.d("requestInFriends",requestInFriendsState.toString())
+    LaunchedEffect(Unit) {
+        friendRequestViewModel.getPendingFriendRequestsWithUserInfo()
+    }
+
+    val requestInFriendState by friendRequestViewModel.friendRequestsState.collectAsState()
+    Log.d("requestInFriends", requestInFriendState.toString())
 
     Scaffold(
         topBar = {
@@ -89,10 +100,9 @@ fun NotificationScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Notification",
-                            fontFamily = FontFamily(Font(R.font.gilroy_bold)),
-                            fontSize = 28.sp,
-                            color = DarkGray_1
+                            text = "Friends request",
+                            style = MyCustomTypography.Bold_24,
+                            color = Color.White.copy(alpha = 0.5f)
                         )
                     }
                 },
@@ -115,51 +125,67 @@ fun NotificationScreen(
                 .fillMaxSize()
                 .padding(top = paddingValues.calculateTopPadding())
                 .background(PrimaryBackground),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            Spacer(modifier = Modifier.height(8.dp))
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(
-                    requestInFriendsState.requestsInFriendItemData,
-                    key = { it.request.id }) { item ->
-                    FriendListUsersItem(
-                        itemState = item,
-                        onAccept = {
-                            friendRequestViewModel.respondToFriendRequest(
-                                item.request,
-                                true
-                            )
-                        },
-                        onDecline = {
-                            friendRequestViewModel.respondToFriendRequest(
-                                item.request,
-                                false
-                            )
-                        }
-                    )
+            if (requestInFriendState.isLoading) {
+                CircularProgressIndicator(
+                    color = Color.White.copy(alpha = 0.5f)
+                )
+            } else if (requestInFriendState.requestsInFriendItemData.isEmpty()) {
+                EmptyScreen()
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(
+                        requestInFriendState.requestsInFriendItemData,
+                        key = { it.request.id }) { item ->
+                        FriendListUsersItem(
+                            modifier = Modifier.animateItem(),
+                            itemState = item,
+                            onAccept = {
+                                friendRequestViewModel.respondToFriendRequest(
+                                    item.request,
+                                    true
+                                )
+                            },
+                            onDecline = {
+                                friendRequestViewModel.respondToFriendRequest(
+                                    item.request,
+                                    false
+                                )
+                            }
+                        )
+                    }
                 }
             }
         }
-
     }
+}
+
+@Composable
+fun EmptyScreen(modifier: Modifier = Modifier) {
+    Text(
+        text = "Friend request is empty",
+        style = MyCustomTypography.SemiBold_16,
+        color = Surface_2
+    )
 }
 
 
 @Composable
 fun FriendListUsersItem(
+    modifier: Modifier,
     itemState: RequestsInFriendItemState,
     onAccept: () -> Unit,
     onDecline: () -> Unit,
 ) {
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
-            .shadow(8.dp, RoundedCornerShape(22.dp))
-            .clip(RoundedCornerShape(22.dp))
+            .shadow(8.dp)
             .background(SecondaryBackground)
             .clickable { }
             .height(50.dp)
@@ -198,62 +224,82 @@ fun FriendListUsersItem(
             Spacer(modifier = Modifier.width(16.dp))
             Text(
                 text = itemState.user.name,
-                fontSize = 16.sp,
-                fontFamily = FontFamily(Font(R.font.gilroy_bold)),
-                color = ChatText
+                style = MyCustomTypography.Medium_14,
+                color = Color.White.copy(alpha = 0.5f)
             )
         }
-        // Кнопки
-        Row(modifier = Modifier.padding(end = 6.dp)) {
-            // Accept
-            OutlinedButton(
-                onClick = onAccept,
-                enabled = !itemState.isLoadingAccept && !itemState.isSuccessAccept,
-                border = BorderStroke(1.dp, Green100.copy(alpha = 0.5f))
-            ) {
-                when {
-                    itemState.isLoadingAccept -> {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(12.dp),
-                            strokeWidth = 2.dp
-                        )
-                    }
-                    else -> {
-                        Text(
-                            text = "Accept",
-                            style = MyCustomTypography.Medium_12,
-                            color = Color.White
-                        )
-                    }
-                }
-            }
-
+        Row(modifier = Modifier.padding(end = 8.dp)) {
+            AnimatedOutlinedButton(
+                modifier = Modifier.height(30.dp),
+                text = "Accept",
+                isLoading = itemState.isLoadingAccept,
+                enabled = true,
+                borderColor = Green100,
+                containerColor = Green100.copy(alpha = 0.1f),
+                textColor = Green100,
+                style = MyCustomTypography.Medium_12,
+                onClick = onAccept
+            )
             Spacer(modifier = Modifier.width(8.dp))
+            AnimatedOutlinedButton(
+                modifier = Modifier.height(30.dp),
+                text = "Decline",
+                isLoading = itemState.isLoadingDecline,
+                enabled = true,
+                borderColor = Error,
+                containerColor = Error.copy(alpha = 0.1f),
+                textColor = Error,
+                style = MyCustomTypography.Medium_12,
+                onClick = onDecline
+            )
 
+        }
+    }
+}
 
-            OutlinedButton(
-                onClick = onDecline,
-                enabled = !itemState.isLoadingDecline && !itemState.isSuccessDecline,
-                border = BorderStroke(1.dp, Error.copy(alpha = 0.5f)),
-            ) {
-                AnimatedContent(
-                    targetState = itemState.isLoadingDecline,
-                ) { isLoading ->
-                    if (isLoading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(12.dp),
-                            strokeWidth = 2.dp
-                        )
-                    } else {
-                        Text(
-                            text = "Decline",
-                            style = MyCustomTypography.Medium_12,
-                            color = Color.White
-                        )
-                    }
-                }
+@OptIn(ExperimentalAnimationApi::class)
+@Composable
+fun AnimatedOutlinedButton(
+    modifier: Modifier = Modifier,
+    text: String,
+    isLoading: Boolean = false,
+    enabled: Boolean = true,
+    borderColor: Color = Color.Gray,
+    containerColor: Color = Color.Transparent,
+    textColor: Color = Color.White,
+    style: TextStyle,
+    onClick: () -> Unit
+) {
+    OutlinedButton(
+        modifier = modifier,
+        onClick = onClick,
+        enabled = enabled && !isLoading,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = containerColor
+        ),
+        border = BorderStroke(1.dp, borderColor)
+    ) {
+        AnimatedContent(
+            targetState = isLoading,
+            transitionSpec = {
+                fadeIn(animationSpec = tween(200)) with fadeOut(animationSpec = tween(200))
+            }
+        ) { loading ->
+            if (loading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(14.dp),
+                    strokeWidth = 1.dp,
+                    color = Color.White
+                )
+            } else {
+                Text(
+                    text = text,
+                    style = style,
+                    color = textColor
+                )
             }
         }
     }
 }
+
 

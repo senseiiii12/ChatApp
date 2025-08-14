@@ -11,6 +11,8 @@ import androidx.work.WorkManager
 import androidx.work.workDataOf
 import com.chatapp.chatapp.features.auth.domain.User
 import com.chatapp.chatapp.core.domain.UsersRepository
+import com.chatapp.chatapp.core.domain.models.FriendRequest
+import com.chatapp.chatapp.features.search_user.presentation.details.UserWithFriendRequest
 import com.chatapp.chatapp.util.Resource
 import com.chatapp.chatapp.util.UpdateStatusWorker
 import com.chatapp.chatapp.util.extension.toUser
@@ -61,21 +63,54 @@ class UsersRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun searchUsers(query: String): Flow<List<User>> = flow {
+    override suspend fun searchUsers(query: String): Flow<List<UserWithFriendRequest>> = flow {
         val currentUserId = firebaseAuth.currentUser?.uid ?: ""
         try {
-            val result = firebaseFirestore
-                .collection("users")
-                .whereNotEqualTo("userId",currentUserId)
+            // 1. Получаем ВСЕ запросы, где участвует текущий пользователь
+            val requestsSnapshot = firebaseFirestore
+                .collection("friend_requests")
+                .whereIn("toUserId", listOf(currentUserId)) // Firestore whereIn ограничен 10 значениями
                 .get(Source.DEFAULT)
                 .await()
-            val usersList = result.documents.map { document ->
-                document.toUser()
+
+            val requestsSnapshotFrom = firebaseFirestore
+                .collection("friend_requests")
+                .whereIn("fromUserId", listOf(currentUserId))
+                .get(Source.DEFAULT)
+                .await()
+
+            val allRequests = (requestsSnapshot.documents + requestsSnapshotFrom.documents)
+                .mapNotNull { it.toObject(FriendRequest::class.java) }
+                .filter { it.status == "pending" }
+
+            // 2. Получаем всех пользователей кроме себя
+            val usersSnapshot = firebaseFirestore
+                .collection("users")
+                .whereNotEqualTo("userId", currentUserId)
+                .get(Source.DEFAULT)
+                .await()
+
+            val usersList = usersSnapshot.documents
+                .map { it.toUser() }
+                .filter { it.name.startsWith(query, ignoreCase = true) }
+
+            // 3. Соединяем данные
+            val resultList = usersList.map { user ->
+                val incomingRequest = allRequests.find {
+                    it.fromUserId == user.userId && it.toUserId == currentUserId
+                }
+                val outgoingRequest = allRequests.find {
+                    it.toUserId == user.userId && it.fromUserId == currentUserId
+                }
+                UserWithFriendRequest(
+                    user = user,
+                    incomingRequest = incomingRequest,
+                    outgoingRequest = outgoingRequest
+                )
             }
-            val listFiltered = usersList.filter {
-                it.name.startsWith(query, ignoreCase = true)
-            }
-            emit(listFiltered)
+
+            emit(resultList)
+
         } catch (e: Exception) {
             emit(emptyList())
         }

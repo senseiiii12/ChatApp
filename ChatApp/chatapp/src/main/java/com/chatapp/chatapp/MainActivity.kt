@@ -18,7 +18,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -30,10 +29,9 @@ import com.chatapp.chatapp.features.chat.presentation.ChatViewModel
 import com.chatapp.chatapp.features.chat_rooms.presentation.ChatRoomsScreen
 import com.chatapp.chatapp.core.presentation.UsersViewModel
 import com.chatapp.chatapp.features.auth.presentation.MainEntrance
-import com.chatapp.chatapp.features.friend_requests.presentation.NotificationScreen
+import com.chatapp.chatapp.features.friend_requests.presentation.RequestsInFriendScreen
 import com.chatapp.chatapp.features.search_user.presentation.SearchUsersScreen
 import com.chatapp.chatapp.ui.theme.ChatAppTheme
-import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -100,8 +98,8 @@ class MainActivity : ComponentActivity() {
                                 usersViewModel = usersViewModel
                             )
                         }
-                        composable(route = Route.Notification.route) {
-                            NotificationScreen(navController = navController)
+                        composable(route = Route.FriendsRequests.route) {
+                            RequestsInFriendScreen(navController = navController)
                         }
                         composable(route = Route.SearchUsers.route) {
                             SearchUsersScreen(
