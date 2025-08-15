@@ -9,16 +9,12 @@ import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
-import com.chatapp.chatapp.features.auth.domain.User
 import com.chatapp.chatapp.core.domain.UsersRepository
-import com.chatapp.chatapp.core.domain.models.FriendRequest
-import com.chatapp.chatapp.features.search_user.presentation.details.UserWithFriendRequest
+import com.chatapp.chatapp.features.auth.domain.User
 import com.chatapp.chatapp.util.Resource
 import com.chatapp.chatapp.util.UpdateStatusWorker
 import com.chatapp.chatapp.util.extension.toUser
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.DocumentSnapshot
-import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Source
 import kotlinx.coroutines.flow.Flow
@@ -34,8 +30,11 @@ class UsersRepositoryImpl @Inject constructor(
     private val context: Context
 ) : UsersRepository {
 
+    private val currentUserId: String = firebaseAuth.currentUser?.uid
+        ?: throw IllegalStateException("User not logged in")
+
     override suspend fun getCurrentUser(): Flow<User> {
-        val currentUserId = firebaseAuth.currentUser?.uid
+//        val currentUserId = firebaseAuth.currentUser?.uid
         return flow {
             val result = currentUserId?.let {
                 firebaseFirestore
@@ -63,54 +62,21 @@ class UsersRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun searchUsers(query: String): Flow<List<UserWithFriendRequest>> = flow {
-        val currentUserId = firebaseAuth.currentUser?.uid ?: ""
+   override suspend fun searchUsers(query: String): Flow<List<User>> = flow {
+       Log.d("searchUsers", currentUserId.toString())
         try {
-            // 1. Получаем ВСЕ запросы, где участвует текущий пользователь
-            val requestsSnapshot = firebaseFirestore
-                .collection("friend_requests")
-                .whereIn("toUserId", listOf(currentUserId)) // Firestore whereIn ограничен 10 значениями
+            val snapshot = firebaseFirestore.collection("users")
+                .orderBy("name")
+                .startAt(query)
+                .endAt(query + "\uf8ff")
                 .get(Source.DEFAULT)
                 .await()
 
-            val requestsSnapshotFrom = firebaseFirestore
-                .collection("friend_requests")
-                .whereIn("fromUserId", listOf(currentUserId))
-                .get(Source.DEFAULT)
-                .await()
-
-            val allRequests = (requestsSnapshot.documents + requestsSnapshotFrom.documents)
-                .mapNotNull { it.toObject(FriendRequest::class.java) }
-                .filter { it.status == "pending" }
-
-            // 2. Получаем всех пользователей кроме себя
-            val usersSnapshot = firebaseFirestore
-                .collection("users")
-                .whereNotEqualTo("userId", currentUserId)
-                .get(Source.DEFAULT)
-                .await()
-
-            val usersList = usersSnapshot.documents
+            val usersList = snapshot.documents
                 .map { it.toUser() }
-                .filter { it.name.startsWith(query, ignoreCase = true) }
+                .filter { it.userId != currentUserId }
 
-            // 3. Соединяем данные
-            val resultList = usersList.map { user ->
-                val incomingRequest = allRequests.find {
-                    it.fromUserId == user.userId && it.toUserId == currentUserId
-                }
-                val outgoingRequest = allRequests.find {
-                    it.toUserId == user.userId && it.fromUserId == currentUserId
-                }
-                UserWithFriendRequest(
-                    user = user,
-                    incomingRequest = incomingRequest,
-                    outgoingRequest = outgoingRequest
-                )
-            }
-
-            emit(resultList)
-
+            emit(usersList)
         } catch (e: Exception) {
             emit(emptyList())
         }
@@ -123,7 +89,7 @@ class UsersRepositoryImpl @Inject constructor(
         )
 
         val constraints = Constraints.Builder()
-            .setRequiredNetworkType(NetworkType.CONNECTED) // Ждет подключения к сети
+            .setRequiredNetworkType(NetworkType.CONNECTED)
             .build()
 
         val workRequest = OneTimeWorkRequestBuilder<UpdateStatusWorker>()

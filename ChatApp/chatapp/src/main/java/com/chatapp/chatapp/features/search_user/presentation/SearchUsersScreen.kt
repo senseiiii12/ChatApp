@@ -47,7 +47,7 @@ fun SearchUsersScreen(
     usersViewModel: UsersViewModel
 ) {
 
-    val searchUserList by searchUsersViewModel.users.collectAsState()
+    val searchUserList by searchUsersViewModel.searchResults.collectAsState()
     var searchText by remember { mutableStateOf("") }
     var resultFriendRequest by remember { mutableStateOf(false) }
 
@@ -63,7 +63,7 @@ fun SearchUsersScreen(
                 value = searchText,
                 onValueChange = {
                     searchText = it
-                    if (searchText.isNotEmpty()) searchUsersViewModel.searchUsers(searchText)
+                    if (searchText.isNotEmpty()) searchUsersViewModel.observeSearchQuery(searchText)
                 }
             )
         },

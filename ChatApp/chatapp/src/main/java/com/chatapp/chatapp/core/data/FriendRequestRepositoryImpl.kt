@@ -8,6 +8,9 @@ import com.chatapp.chatapp.core.domain.models.FriendRequestWithUser
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Source
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
@@ -16,7 +19,8 @@ class FriendRequestRepositoryImpl @Inject constructor(
     private val firebaseAuth: FirebaseAuth
 ) : FriendRequestRepository {
 
-    val currentUserId = firebaseAuth.currentUser?.uid
+    private val currentUserId: String = firebaseAuth.currentUser?.uid
+        ?: throw IllegalStateException("User not logged in")
 
     override suspend fun sendFriendRequest(toUserId: String, onResult: (Boolean) -> Unit) {
         val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
@@ -44,6 +48,31 @@ class FriendRequestRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             Log.e("FriendRequest", "Error sending friend request: ${e.message}")
+        }
+    }
+
+    override suspend fun getFriendRequestsForSearchUser(): Flow<List<FriendRequest>> = flow {
+        try {
+            val incomingSnapshot = firebaseFirestore
+                .collection("friend_requests")
+                .whereEqualTo("toUserId", currentUserId)
+                .whereEqualTo("status", "pending")
+                .get(Source.DEFAULT)
+                .await()
+
+            val outgoingSnapshot = firebaseFirestore
+                .collection("friend_requests")
+                .whereEqualTo("fromUserId", currentUserId)
+                .whereEqualTo("status", "pending")
+                .get(Source.DEFAULT)
+                .await()
+
+            val requests = (incomingSnapshot.documents + outgoingSnapshot.documents)
+                .mapNotNull { it.toObject(FriendRequest::class.java) }
+
+            emit(requests)
+        } catch (e: Exception) {
+            emit(emptyList())
         }
     }
 
