@@ -9,6 +9,7 @@ plugins {
     alias(libs.plugins.jetbrainsKotlinAndroid) apply false
     id ("com.google.gms.google-services") version "4.4.2" apply false
     id("com.google.dagger.hilt.android") version "2.48" apply false
+    id("com.google.firebase.crashlytics") version "3.0.3" apply false
 }
 subprojects {
     tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {

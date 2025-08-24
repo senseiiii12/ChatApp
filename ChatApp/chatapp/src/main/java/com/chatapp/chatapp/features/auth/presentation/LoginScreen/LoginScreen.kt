@@ -46,7 +46,8 @@ import com.chatapp.chatapp.R
 import com.chatapp.chatapp.features.auth.presentation.Validator.ErrorMessage
 import com.chatapp.chatapp.features.auth.presentation.Validator.ValidateViewModel
 import com.chatapp.chatapp.features.navigation.Route
-import com.chatapp.chatapp.features.chat_rooms.presentation.UsersViewModel
+import com.chatapp.chatapp.core.presentation.UsersViewModel
+import com.chatapp.chatapp.ui.theme.MyCustomTypography
 import com.chatapp.chatapp.ui.theme.PrimaryBackground
 import com.chatapp.chatapp.ui.theme.PrimaryPurple
 import com.chatapp.chatapp.ui.theme.Surface_1
@@ -57,14 +58,14 @@ import kotlinx.coroutines.launch
 fun LoginScreen(
     navController: NavController,
     OnClickShowRegister: () -> Unit,
-    viewModel: SignInViewModel = hiltViewModel(),
+    signInViewModel: SignInViewModel = hiltViewModel(),
     validateViewModel: ValidateViewModel = viewModel(),
-    usersViewModel: UsersViewModel = hiltViewModel()
+    usersViewModel: UsersViewModel
 ) {
     val scope = rememberCoroutineScope()
     var isShownDialog by rememberSaveable { mutableStateOf(false) }
     val stateLoginValidate = validateViewModel.validationLoginState.collectAsState()
-    val stateLogin = viewModel.signInState.collectAsState()
+    val stateLogin = signInViewModel.signInState.collectAsState()
 
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -90,9 +91,8 @@ fun LoginScreen(
             Spacer(modifier = Modifier.weight(0.1f))
             Text(
                 text = "Login to ChatApp",
-                fontSize = 24.sp,
-                color = Color.White,
-                fontFamily = FontFamily(Font(R.font.gilroy_semibold))
+                style = MyCustomTypography.SemiBold_24,
+                color = Color.White
             )
             Spacer(modifier = Modifier.height(40.dp))
             ButtonContinueWith(
@@ -113,10 +113,7 @@ fun LoginScreen(
                     iconStart = Icons.Default.Email,
                     visualTransformation = VisualTransformation.None,
                     keyboardType = KeyboardType.Email,
-                    onValueChange = {
-                        email = it
-//                        validateViewModel.validateEmailLogin(email)
-                    },
+                    onValueChange = { email = it },
                     value = email
                 )
             }
@@ -133,9 +130,7 @@ fun LoginScreen(
                 )
             }
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 5.dp),
+                modifier = Modifier.fillMaxWidth().padding(top = 5.dp),
                 horizontalArrangement = Arrangement.End
             ) {
                 Text(
@@ -144,9 +139,8 @@ fun LoginScreen(
                             isShownDialog = !isShownDialog
                     },
                     text = "Forgot Password?",
-                    color = PrimaryPurple,
-                    fontFamily = FontFamily(Font(R.font.gilroy_medium)),
-                    fontSize = 14.sp
+                    style = MyCustomTypography.Medium_14,
+                    color = PrimaryPurple
                 )
             }
             Spacer(modifier = Modifier.height(20.dp))
@@ -154,9 +148,9 @@ fun LoginScreen(
                 {
                     if (stateLoginValidate.value.errorEmailLogin.isEmpty()) {
                         scope.launch {
-                            viewModel.loginUser(email, password) {
-                                viewModel.getCurrentUserUID()?.let {
-                                    usersViewModel.updateUserStatus(it, true)
+                            signInViewModel.loginUser(email, password) {
+                                signInViewModel.getCurrentUserUID()?.let {
+                                    usersViewModel.updateUserOnlineStatus(it, true)
                                 }
                             }
                         }
@@ -169,10 +163,9 @@ fun LoginScreen(
             )
             Spacer(modifier = Modifier.height(40.dp))
             Text(
-                text = "Don’t have a ChatApp account ?",
-                color = Color.White,
-                fontFamily = FontFamily(Font(R.font.gilroy_medium)),
-                fontSize = 14.sp
+                text = "Don’t have account ?",
+                style = MyCustomTypography.Medium_14,
+                color = Color.White
             )
             Spacer(modifier = Modifier.height(10.dp))
             ButtonEnter(

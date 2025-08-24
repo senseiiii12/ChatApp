@@ -31,10 +31,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.Font
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import coil.request.CachePolicy
@@ -42,12 +39,11 @@ import coil.request.ImageRequest
 import com.chatapp.chatapp.R
 import com.chatapp.chatapp.features.chat.domain.Message
 import com.chatapp.chatapp.features.auth.domain.User
-import com.chatapp.chatapp.features.chat_rooms.presentation.UsersViewModel
+import com.chatapp.chatapp.core.presentation.UsersViewModel
 import com.chatapp.chatapp.ui.theme.Bg_Default_Avatar
-import com.chatapp.chatapp.ui.theme.ChatText
-import com.chatapp.chatapp.ui.theme.DarkGray_1
+import com.chatapp.chatapp.ui.theme.MyCustomTypography
 import com.chatapp.chatapp.ui.theme.Online
-import com.chatapp.chatapp.ui.theme.Surface_Card
+import com.chatapp.chatapp.ui.theme.SecondaryBackground
 import com.chatapp.chatapp.util.TimeManager
 import java.util.Date
 
@@ -62,17 +58,14 @@ fun ChatTopBar(
     onDeleteMessage: (List<Message>) -> Unit,
     onEditMessage: (String, Message?) -> Unit,
     onCopyMessage: (List<Message>) -> Unit,
-    usersViewModel: UsersViewModel = hiltViewModel()
+    usersViewModel: UsersViewModel
 ) {
 
     val topMenuState = stateTopMenu.value
-    LaunchedEffect(Unit) {
-        usersViewModel.listenForOtherUserStatus(otherUser.userId)
-    }
 
     TopAppBar(
         colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = Surface_Card
+            containerColor = SecondaryBackground
         ),
         title = {
             AnimatedContent(targetState = topMenuState.isOpenTopMenu) { stateTopMenuMessage ->
@@ -132,8 +125,8 @@ fun OnlineStatus(
 
     val isOnline by usersViewModel.userStatuses.collectAsState()
     val onlineStatus = isOnline[otherUser.userId]?.first ?: false
-    val lastSeenStatus = isOnline[otherUser.userId]?.second ?: Date(0)
-    val timeManager = remember { TimeManager() }
+    val lastSeenStatus = isOnline[otherUser.userId]?.second ?: otherUser.lastSeen
+
 
     AnimatedContent(targetState = onlineStatus) { isOnline ->
         if (isOnline) {
@@ -150,18 +143,16 @@ fun OnlineStatus(
                 Text(
                     modifier = Modifier.padding(start = 5.dp),
                     text = "Online",
-                    fontSize = 10.sp,
+                    style = MyCustomTypography.Normal_12,
                     color = Online,
-                    fontFamily = FontFamily(Font(R.font.gilroy_semibold)),
                 )
             }
         } else {
             Text(
                 modifier = Modifier.padding(start = 10.dp),
-                text = timeManager.formatLastSeenDate(lastSeenStatus),
-                fontSize = 12.sp,
-                color = DarkGray_1,
-                fontFamily = FontFamily(Font(R.font.gilroy_semibold)),
+                text = TimeManager.formatLastSeenDate(lastSeenStatus),
+                style = MyCustomTypography.Normal_12,
+                color = Color.White.copy(alpha = 0.5f),
             )
         }
     }
@@ -181,8 +172,10 @@ fun ChatHeader(
                 model = ImageRequest.Builder(LocalContext.current)
                     .data(otherUser.avatar)
                     .crossfade(true)
-                    .memoryCachePolicy(CachePolicy.ENABLED)
+                    .diskCacheKey(otherUser.avatar)
+                    .memoryCacheKey(otherUser.avatar)
                     .diskCachePolicy(CachePolicy.ENABLED)
+                    .memoryCachePolicy(CachePolicy.ENABLED)
                     .build(),
                 contentScale = ContentScale.Crop,
                 contentDescription = null
@@ -200,9 +193,8 @@ fun ChatHeader(
             Text(
                 modifier = Modifier.padding(start = 10.dp),
                 text = otherUser.name,
-                fontSize = 20.sp,
-                color = ChatText,
-                fontFamily = FontFamily(Font(R.font.gilroy_bold)),
+                style = MyCustomTypography.Bold_20,
+                color = Color.White,
             )
             OnlineStatus(
                 otherUser = otherUser,

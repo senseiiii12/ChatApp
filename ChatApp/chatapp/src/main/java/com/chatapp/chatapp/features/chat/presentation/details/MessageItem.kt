@@ -31,15 +31,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.Font
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
@@ -49,12 +48,11 @@ import com.chatapp.chatapp.features.chat.domain.MessageStatus
 import com.chatapp.chatapp.features.auth.domain.User
 import com.chatapp.chatapp.ui.theme.Bg_Default_Avatar
 import com.chatapp.chatapp.ui.theme.ChatAppTheme
-import com.chatapp.chatapp.ui.theme.ChatText
-import com.chatapp.chatapp.ui.theme.Mark_Message
+import com.chatapp.chatapp.ui.theme.MyCustomTypography
 import com.chatapp.chatapp.ui.theme.Online
 import com.chatapp.chatapp.ui.theme.PrimaryBackground
 import com.chatapp.chatapp.ui.theme.PrimaryPurple
-import com.chatapp.chatapp.ui.theme.Surface_Card
+import com.chatapp.chatapp.ui.theme.SecondaryBackground
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -81,13 +79,13 @@ fun MessageItem(
         )
     }
     val otherUserColor = remember {
-        Brush.linearGradient(listOf(Surface_Card.copy(alpha = 0.8f), Surface_Card))
+        Brush.linearGradient(listOf(SecondaryBackground.copy(alpha = 0.8f), SecondaryBackground))
     }
     val backgroundColor = remember { if (isCurrentUser) currentUserColor else otherUserColor }
     val horizontalArrangement =
         remember { if (isCurrentUser) Arrangement.End else Arrangement.Start }
     val screenWidth = LocalConfiguration.current.screenWidthDp
-    val selectedColorMessage = remember{ if (isEditing) Surface_Card else PrimaryBackground }
+    val selectedColorMessage = remember{ if (isEditing) SecondaryBackground else PrimaryBackground }
 
     Row(
         modifier = modifier
@@ -121,22 +119,21 @@ fun MessageItem(
         Column(
             modifier = Modifier
                 .padding(horizontal = 4.dp)
-                .clip(RoundedCornerShape(16.dp))
+                .clip(RoundedCornerShape(18.dp))
                 .widthIn(min = 20.dp, max = (screenWidth * 0.7).dp)
                 .background(backgroundColor)
                 .combinedClickable(
                     onClick = {},
                     onLongClick = { if (isCurrentUser) onOpenTopMenu(message) }
                 )
-                .padding(start = 8.dp, top = 8.dp, end = 8.dp, bottom = 6.dp)
+                .padding(start = 8.dp, top = 8.dp, end = 8.dp, bottom = 8.dp)
                 .animateContentSize(animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy)),
             verticalArrangement = Arrangement.Center
         ) {
             Text(
                 text = message.text,
-                fontSize = 14.sp,
-                fontFamily = FontFamily(Font(R.font.gilroy_semibold)),
-                color = ChatText,
+                style = MyCustomTypography.Medium_14,
+                color = Color.White.copy(alpha = 0.75f),
             )
             Row(
                 modifier = Modifier.align(Alignment.End),
@@ -146,26 +143,26 @@ fun MessageItem(
                 Text(
                     modifier = Modifier,
                     text = formatTimestampToDate(Date(message.timestamp)),
-                    fontSize = 8.sp,
-                    fontFamily = FontFamily(Font(R.font.gilroy_medium)),
-                    color = ChatText.copy(alpha = 0.6f),
+                    style = MyCustomTypography.Normal_8,
+                    color = Color.White.copy(alpha = 0.5f),
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 if(isCurrentUser){
                     when (status) {
                         MessageStatus.DELIVERED -> {
-                            Icon(
+                            Image(
                                 modifier = Modifier.size(12.dp),
-                                imageVector = Icons.Default.Check,
+                                painter = painterResource(id = R.drawable.ic_message_delivered),
                                 contentDescription = null,
-                                tint = Mark_Message
+                                colorFilter = ColorFilter.tint(Online)
                             )
                         }
                         MessageStatus.READ -> {
                             Image(
                                 modifier = Modifier.size(12.dp),
-                                painter = painterResource(id = R.drawable.double_check_icon),
+                                painter = painterResource(id = R.drawable.ic_message_read),
                                 contentDescription = null,
+                                colorFilter = ColorFilter.tint(Online)
                             )
                         }
                         else -> {}
@@ -194,7 +191,6 @@ fun UserAvatar(avatar: String?) {
                 contentDescription = null,
             )
         }
-
         else -> {
             AsyncImage(
                 modifier = Modifier
@@ -203,8 +199,10 @@ fun UserAvatar(avatar: String?) {
                 model = ImageRequest.Builder(LocalContext.current)
                     .data(avatar)
                     .crossfade(true)
-                    .memoryCachePolicy(CachePolicy.ENABLED)
+                    .diskCacheKey(avatar)
+                    .memoryCacheKey(avatar)
                     .diskCachePolicy(CachePolicy.ENABLED)
+                    .memoryCachePolicy(CachePolicy.ENABLED)
                     .build(),
                 contentScale = ContentScale.Crop,
                 contentDescription = null

@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.chatapp.chatapp.R
 import com.chatapp.chatapp.ui.theme.ChatAppTheme
+import com.chatapp.chatapp.ui.theme.MyCustomTypography
 import com.chatapp.chatapp.ui.theme.Outline_1
 
 @Composable
@@ -36,21 +37,20 @@ fun SpacerOr() {
                 .height(1.dp)
                 .width(40.dp)
                 .weight(0.5f)
-                .background(Outline_1)
+                .background(Color.White.copy(alpha = 0.5f))
         )
         Text(
             modifier = Modifier.padding(horizontal = 10.dp),
             text = "Or",
-            color = Color.White,
-            fontFamily = FontFamily(Font(R.font.poppins_medium)),
-            fontSize = 14.sp
+            style = MyCustomTypography.SemiBold_14,
+            color = Color.White.copy(alpha = 0.5f)
         )
         Box(
             modifier = Modifier
                 .height(1.dp)
                 .width(40.dp)
                 .weight(0.5f)
-                .background(Outline_1)
+                .background(Color.White.copy(alpha = 0.5f))
         )
         Spacer(modifier = Modifier.weight(0.3f))
     }

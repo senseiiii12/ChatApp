@@ -23,7 +23,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.chatapp.chatapp.ui.theme.ChatAppTheme
 import com.chatapp.chatapp.ui.theme.Outline_Card
-import com.chatapp.chatapp.ui.theme.Surface_Card
+import com.chatapp.chatapp.ui.theme.SecondaryBackground
 
 @Composable
 fun UserListItemShimmerEffect() {
@@ -38,7 +38,7 @@ fun UserListItemShimmerEffect() {
                 RoundedCornerShape(8.dp)
             )
             .clip(RoundedCornerShape(8.dp))
-            .background(Surface_Card)
+            .background(SecondaryBackground)
             .height(60.dp)
             .padding(10.dp),
         verticalAlignment = Alignment.CenterVertically,

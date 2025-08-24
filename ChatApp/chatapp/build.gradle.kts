@@ -6,6 +6,7 @@ plugins {
     id("com.google.gms.google-services")
     kotlin("kapt")
     id ("dagger.hilt.android.plugin")
+    id("com.google.firebase.crashlytics")
 }
 
 android {
@@ -36,11 +37,11 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
     }
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = "11"
     }
     buildFeatures {
         compose = true
@@ -101,6 +102,7 @@ dependencies {
     // Поддержка корутин
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+    implementation ("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")
 
     // Coil (Загрузка изображений)
     implementation("io.coil-kt:coil-compose:2.4.0")
@@ -125,6 +127,9 @@ dependencies {
     implementation("androidx.work:work-runtime-ktx:2.8.0")
 
     implementation ("com.google.accompanist:accompanist-navigation-animation:0.32.0")
+
+    implementation("com.google.firebase:firebase-crashlytics:19.4.3")
+    implementation("com.google.firebase:firebase-analytics:21.5.0")
 
 }
 

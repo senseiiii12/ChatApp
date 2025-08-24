@@ -36,22 +36,20 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.Font
-import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.buildpc.firstcompose.EnterScreen.components.ButtonEnter
 import com.buildpc.firstcompose.EnterScreen.components.EditField
-import com.chatapp.chatapp.R
 import com.chatapp.chatapp.features.auth.presentation.RegisterScreen.ImageAvatar.ImageAvatar
 import com.chatapp.chatapp.features.auth.presentation.RegisterScreen.ImageAvatar.ImageAvatarViewModel
 import com.chatapp.chatapp.features.auth.presentation.Validator.ErrorMessage
 import com.chatapp.chatapp.features.auth.presentation.Validator.ValidateViewModel
+import com.chatapp.chatapp.ui.theme.MyCustomTypography
 import com.chatapp.chatapp.ui.theme.Success
 import kotlinx.coroutines.launch
 
@@ -67,13 +65,20 @@ fun BottomSheetRegister(
     val validateViewModel: ValidateViewModel = viewModel()
     val viewModelImageAvatar: ImageAvatarViewModel = viewModel()
     val imageUri by viewModelImageAvatar.imageUri.collectAsState()
-    val state = viewModel.singUpState.collectAsState(initial = null)
+    val state = viewModel.singUpState.collectAsState(
+        SignUpState(
+            isLoading = false,
+            isSuccess = "",
+            isError = ""
+        )
+    )
 
-    var name = remember { mutableStateOf("") }
+    var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     val stateRegisterValidate = validateViewModel.validationRegisterState.collectAsState()
 
@@ -89,26 +94,25 @@ fun BottomSheetRegister(
             viewModel = viewModelImageAvatar,
             imageUri = imageUri
         )
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(16.dp))
         Text(
             text = "Register to ChatApp",
-            fontFamily = FontFamily(Font(R.font.gilroy_medium)),
-            fontSize = 24.sp,
+            style = MyCustomTypography.SemiBold_24,
             color = Color.White
         )
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(16.dp))
         Box {
             EditField(
                 placeholder = "Name",
                 iconStart = Icons.Default.Person,
                 keyboardType = KeyboardType.Text,
                 visualTransformation = VisualTransformation.None,
-                onValueChange = { name.value = it },
-                value = name.value
+                onValueChange = { name = it },
+                value = name
             )
             ValidateCheck(
                 modifier = Modifier.align(Alignment.CenterEnd),
-                isSuccess = name.value.isNotEmpty()
+                isSuccess = name.isNotEmpty()
             )
         }
         Spacer(modifier = Modifier.height(20.dp))
@@ -152,16 +156,13 @@ fun BottomSheetRegister(
         Spacer(modifier = Modifier.height(40.dp))
         ButtonEnter(
             text = "SignUp",
+            isLoading = state.value.isLoading,
             OnClick = {
                 if (stateRegisterValidate.value.errorEmailRegister.isEmpty() &&
                     stateRegisterValidate.value.errorPasswordRegister.isEmpty() &&
-                    name.value.isNotEmpty()
+                    name.isNotEmpty()
                 ) {
-                    if (imageUri != null) {
-                        viewModelImageAvatar.uploadImageToFirebase(imageUri!!) { downloadUrl ->
-                            viewModel.registerUser(downloadUrl, name.value, email, password)
-                        }
-                    } else viewModel.registerUser(null, name.value, email, password)
+                    viewModel.signUp(context,imageUri,name,email,password)
                 }
             },
         )
@@ -171,13 +172,13 @@ fun BottomSheetRegister(
 
 
 
-    LaunchedEffect(state.value?.isSuccess) {
-        if (state.value?.isSuccess?.isNotEmpty() == true) {
+    LaunchedEffect(state.value.isSuccess) {
+        if (state.value.isSuccess.isNotEmpty() == true) {
             onSuccesRegistration(true)
             scope.launch {
                 bottomSheetState.hide()
                 snackbarHostState.showSnackbar(
-                    message = state.value?.isSuccess ?: "",
+                    message = state.value.isSuccess,
                     actionLabel = "Dismiss",
                     duration = SnackbarDuration.Short
                 )
@@ -188,12 +189,12 @@ fun BottomSheetRegister(
             }
         }
     }
-    LaunchedEffect(key1 = state.value?.isError) {
+    LaunchedEffect(key1 = state.value.isError) {
         scope.launch {
-            if (state.value?.isError?.isNotEmpty() == true) {
+            if (state.value.isError.isNotEmpty() == true) {
                 onSuccesRegistration(false)
                 snackbarHostState.showSnackbar(
-                    message = state.value?.isError ?: "",
+                    message = state.value.isError,
                     actionLabel = "Dismiss",
                     duration = SnackbarDuration.Short
                 )

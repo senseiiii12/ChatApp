@@ -30,6 +30,7 @@ import com.chatapp.chatapp.R
 import com.chatapp.chatapp.ui.theme.ChatAppTheme
 import com.chatapp.chatapp.ui.theme.ChatText
 import com.chatapp.chatapp.ui.theme.DarkGray_2
+import com.chatapp.chatapp.ui.theme.MyCustomTypography
 import com.chatapp.chatapp.ui.theme.Surface_2
 
 
@@ -50,9 +51,8 @@ fun ButtonContinueWith(
     ) {
         Text(
             text = text,
-            color = ChatText,
-            fontFamily = FontFamily(Font(R.font.gilroy_semibold)),
-            fontSize = 14.sp
+            style = MyCustomTypography.SemiBold_14,
+            color = Color.White.copy(alpha = 0.5f)
         )
         Row(
             modifier = Modifier

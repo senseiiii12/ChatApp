@@ -1,5 +1,6 @@
 package com.chatapp.chatapp.features.chat.presentation.details
 
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -9,13 +10,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.chatapp.chatapp.R
-import com.chatapp.chatapp.ui.theme.DarkGray_1
 import com.chatapp.chatapp.ui.theme.DarkGray_2
+import com.chatapp.chatapp.ui.theme.MyCustomTypography
+import com.chatapp.chatapp.ui.theme.SecondaryBackground
 
 
 @Composable
@@ -29,18 +32,17 @@ fun MessageDateSeparatorItem(date: String) {
     ) {
         Divider(
             modifier = Modifier.weight(1f),
-            color = DarkGray_2
+            color = SecondaryBackground
         )
         Text(
             text = date,
             modifier = Modifier.padding(horizontal = 8.dp),
-            fontFamily = FontFamily(Font(R.font.gilroy_medium)),
-            color = DarkGray_1,
-            fontSize = 10.sp
+            style = MyCustomTypography.Normal_10,
+            color = Color.White.copy(alpha = 0.25f),
         )
         Divider(
             modifier = Modifier.weight(1f),
-            color = DarkGray_2,
+            color = SecondaryBackground,
         )
     }
 }

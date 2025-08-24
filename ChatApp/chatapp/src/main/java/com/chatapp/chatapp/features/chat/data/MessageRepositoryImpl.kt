@@ -1,19 +1,21 @@
 package com.chatapp.chatapp.features.chat.data
 
 import android.util.Log
-import com.chatapp.chatapp.features.chat.domain.MessageRepository
 import com.chatapp.chatapp.features.chat.domain.Message
+import com.chatapp.chatapp.features.chat.domain.MessageRepository
 import com.chatapp.chatapp.features.chat.domain.MessageStatus
+import com.chatapp.chatapp.util.extension.toMessage
 import com.google.firebase.firestore.DocumentChange
-import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FirebaseFirestoreSettings
 import com.google.firebase.firestore.ListenSource
+import com.google.firebase.firestore.MetadataChanges
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.SnapshotListenOptions
-import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.callbackFlow
+import com.google.firebase.firestore.firestoreSettings
+import com.google.firebase.firestore.memoryCacheSettings
+import com.google.firebase.firestore.persistentCacheSettings
 import kotlinx.coroutines.tasks.await
 import java.util.UUID
 import javax.inject.Inject
@@ -24,9 +26,11 @@ class MessageRepositoryImpl @Inject constructor(
 
     val chatCollection = firestore.collection("chats")
 
+
     val options = SnapshotListenOptions.Builder()
         .setSource(ListenSource.DEFAULT)
         .build()
+
 
     override suspend fun sendMessage(chatId: String, currentUserId: String, messageText: String) {
         val messageId = UUID.randomUUID().toString()
@@ -37,13 +41,17 @@ class MessageRepositoryImpl @Inject constructor(
             "status" to MessageStatus.DELIVERED.name,
             "timestamp" to FieldValue.serverTimestamp()
         )
+        val participantsMap = mutableMapOf(
+            "participants" to chatId.split("-"),
+            "chatId" to chatId
+        )
         try {
             chatCollection.document(chatId)
                 .collection("messages")
                 .document(messageId)
                 .set(messageMap)
                 .await()
-
+            chatCollection.document(chatId).set(participantsMap).await()
         }catch (e:Exception){
             Log.e("ChatViewModel", "Send message: $messageId", e)
         }
@@ -63,8 +71,7 @@ class MessageRepositoryImpl @Inject constructor(
         }
     }
 
-
-    override fun listenForMessages(chatId: String, onMessagesChanged: (List<Message>, List<Message>, List<String>) -> Unit) {
+    override fun listenMessagesInCurrentChat(chatId: String, onMessagesChanged: (List<Message>, List<Message>, List<String>) -> Unit) {
         chatCollection.document(chatId)
             .collection("messages")
             .orderBy("timestamp", Query.Direction.DESCENDING)
@@ -85,35 +92,6 @@ class MessageRepositoryImpl @Inject constructor(
 
                 onMessagesChanged(newMessages, updatedMessages, removedMessagesIds)
             }
-    }
-    private fun DocumentSnapshot.toMessage(): Message {
-        return Message(
-            userId = getString("userId") ?: "",
-            text = getString("text") ?: "",
-            timestamp = getTimestamp("timestamp")?.toDate()?.time ?: 0L,
-            messageId = getString("messageId") ?: "",
-            status = MessageStatus.valueOf(getString("status") ?: MessageStatus.SENT.name)
-        )
-    }
-
-    override suspend fun listenForMessagesInChats(chatIds: List<String>): Flow<Map<String, List<Message>>> {
-        return callbackFlow {
-            val currentMessages = mutableMapOf<String, List<Message>>().withDefault { emptyList() }
-
-            val listeners = chatIds.map { chatId ->
-                chatCollection.document(chatId)
-                    .collection("messages")
-                    .orderBy("timestamp", Query.Direction.DESCENDING)
-                    .limit(20)
-                    .addSnapshotListener { snapshot, e ->
-                        if (e != null || snapshot == null) return@addSnapshotListener
-                        val messages = snapshot.documents.map { it.toMessage() }
-                        currentMessages[chatId] = messages
-                        trySend(currentMessages.toMap())
-                    }
-            }
-            awaitClose { listeners.forEach { it.remove() } }
-        }
     }
 
     override suspend fun deleteMessage(chatId: String, selectedMessages: List<Message>) {

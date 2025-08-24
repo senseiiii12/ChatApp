@@ -10,28 +10,27 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.Font
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import coil.compose.rememberImagePainter
-import com.chatapp.chatapp.R
+import com.chatapp.chatapp.ui.theme.MyCustomTypography
 import com.chatapp.chatapp.ui.theme.Outline_1
 import com.chatapp.chatapp.ui.theme.Surface_1
-import com.chatapp.chatapp.ui.theme.Surface_2
 
 @Composable
 fun ImageAvatar(
@@ -57,7 +56,7 @@ fun ImageAvatar(
                     .zIndex(1f)
                     .padding(top = 5.dp, end = 5.dp)
                     .align(Alignment.TopEnd)
-                    .border(2.dp, Surface_2, CircleShape)
+                    .border(2.dp, Color.White.copy(alpha = 0.5f), CircleShape)
                     .clip(CircleShape)
                     .background(Surface_1)
                     .size(16.dp)
@@ -77,7 +76,7 @@ fun ImageAvatar(
                     painter = rememberImagePainter(it),
                     contentDescription = null,
                     modifier = Modifier
-                        .border(2.dp, Surface_2, CircleShape)
+                        .border(2.dp, Color.White.copy(alpha = 0.5f), CircleShape)
                         .clip(CircleShape)
                         .size(80.dp)
                         .clickable {
@@ -95,21 +94,19 @@ fun ImageAvatar(
     } ?: Box(
         modifier = Modifier
             .size(80.dp)
-            .border(2.dp, Surface_2, CircleShape)
+            .border(2.dp, Color.White.copy(alpha = 0.5f), CircleShape)
             .clip(CircleShape)
             .clickable {
-                val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+                val intent =
+                    Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
                 launcher.launch(intent)
             },
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = "Photo",
-            fontFamily = FontFamily(Font(R.font.gilroy_medium)),
-            fontSize = 10.sp,
-            color = Surface_2,
+            style = MyCustomTypography.Normal_10,
+            color = Color.White.copy(alpha = 0.5f),
         )
     }
-
-
 }
