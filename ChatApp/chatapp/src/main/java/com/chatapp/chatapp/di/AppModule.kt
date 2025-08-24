@@ -12,6 +12,8 @@ import com.chatapp.chatapp.features.chat_rooms.data.ChatRoomsRepositoryImpl
 import com.chatapp.chatapp.features.chat_rooms.domain.ChatRoomsRepository
 import com.chatapp.chatapp.core.domain.FriendRequestRepository
 import com.chatapp.chatapp.core.domain.UsersRepository
+import com.chatapp.chatapp.features.my_friends.data.MyFriendsRepositoryImpl
+import com.chatapp.chatapp.features.my_friends.domain.MyFriendsRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreSettings
@@ -85,6 +87,15 @@ object AppModule {
         @ApplicationContext context: Context
     ) : UsersRepository {
         return UsersRepositoryImpl(firebaseFirestore,firebaseAuth,context)
+    }
+
+    @Provides
+    @Singleton
+    fun providesMyFriendsRepositoryImpl(
+        firebaseFirestore: FirebaseFirestore,
+        firebaseAuth: FirebaseAuth
+    ) : MyFriendsRepository {
+        return MyFriendsRepositoryImpl(firebaseFirestore,firebaseAuth)
     }
 
 }

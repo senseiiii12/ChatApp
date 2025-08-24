@@ -10,7 +10,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.navigation.NavController
+import com.chatapp.chatapp.R
 import com.chatapp.chatapp.features.navigation.Route
 import com.chatapp.chatapp.ui.theme.SecondaryBackground
 
@@ -41,6 +43,13 @@ fun TopBarSearchScreen(
             }
         },
         actions = {
+            IconButton(onClick = { navController.navigate(Route.MyFriends.route) }) {
+                Icon(
+                    painter = painterResource(R.drawable.my_friends),
+                    contentDescription = "Friend requests",
+                    tint = Color.White
+                )
+            }
             IconButton(onClick = { navController.navigate(Route.FriendsRequests.route) }) {
                 Icon(
                     imageVector = Icons.Default.AccountCircle,

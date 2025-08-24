@@ -30,6 +30,7 @@ import com.chatapp.chatapp.features.chat_rooms.presentation.ChatRoomsScreen
 import com.chatapp.chatapp.core.presentation.UsersViewModel
 import com.chatapp.chatapp.features.auth.presentation.MainEntrance
 import com.chatapp.chatapp.features.friend_requests.presentation.RequestsInFriendScreen
+import com.chatapp.chatapp.features.my_friends.presentation.MyFriendsScreen
 import com.chatapp.chatapp.features.search_user.presentation.SearchUsersScreen
 import com.chatapp.chatapp.ui.theme.ChatAppTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -38,7 +39,6 @@ import dagger.hilt.android.AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     val splashViewModel by viewModels<SplashViewModel>()
-    val updateOnlineStatusViewModel by viewModels<UpdateOnlineStatusViewModel>()
     val usersViewModel by viewModels<UsersViewModel>()
 
     @OptIn(ExperimentalAnimationApi::class)
@@ -100,6 +100,9 @@ class MainActivity : ComponentActivity() {
                         }
                         composable(route = Route.FriendsRequests.route) {
                             RequestsInFriendScreen(navController = navController)
+                        }
+                        composable(route = Route.MyFriends.route) {
+                            MyFriendsScreen(navController = navController)
                         }
                         composable(route = Route.SearchUsers.route) {
                             SearchUsersScreen(

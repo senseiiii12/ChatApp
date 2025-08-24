@@ -34,7 +34,6 @@ class UsersRepositoryImpl @Inject constructor(
         ?: throw IllegalStateException("User not logged in")
 
     override suspend fun getCurrentUser(): Flow<User> {
-//        val currentUserId = firebaseAuth.currentUser?.uid
         return flow {
             val result = currentUserId?.let {
                 firebaseFirestore

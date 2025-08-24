@@ -78,7 +78,7 @@ class FriendRequestRepositoryImpl @Inject constructor(
 
     override suspend fun getPendingFriendRequestsWithUserInfo(): List<FriendRequestWithUser> {
         val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
-        Log.d("currentUserId-getPendingFriendRequestsWithUserInfo", currentUserId.toString())
+        Log.d("getPendingFriendRequestsWithUserInfo", currentUserId.toString())
         return try {
             val snapshot = firebaseFirestore
                 .collection("friend_requests")
