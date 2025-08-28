@@ -8,6 +8,6 @@ interface MyFriendsRepository {
 
     suspend fun getMyFriends(): Flow<Resource<List<User>>>
 
-    suspend fun deleteFriend()
+    suspend fun deleteFriend(friendId: String)
 
 }
