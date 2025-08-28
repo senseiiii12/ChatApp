@@ -5,6 +5,7 @@ import com.chatapp.chatapp.features.my_friends.domain.MyFriendsRepository
 import com.chatapp.chatapp.util.Resource
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldPath
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -24,7 +25,6 @@ class MyFriendsRepositoryImpl @Inject constructor(
 
         try {
             val userDoc = firebaseFirestore.collection("users").document(currentUserId).get().await()
-
             val friendsIds = userDoc.get("friends") as? List<String> ?: emptyList()
 
             if (friendsIds.isEmpty()) {
@@ -52,7 +52,24 @@ class MyFriendsRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun deleteFriend() {
-        TODO("Not yet implemented")
+    override suspend fun deleteFriend(friendId: String) {
+        val currentUserRef = firebaseFirestore.collection("users").document(currentUserId)
+        val friendRef = firebaseFirestore.collection("users").document(friendId)
+
+        val batch = firebaseFirestore.batch()
+
+        batch.update(
+            currentUserRef,
+            "friends",
+            FieldValue.arrayRemove(friendId)
+        )
+        batch.update(
+            friendRef,
+            "friends",
+            FieldValue.arrayRemove(currentUserId)
+        )
+
+        batch.commit().await()
     }
+
 }
