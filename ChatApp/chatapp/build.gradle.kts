@@ -66,6 +66,7 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.appcompat)
+//    implementation(platform(libs.androidx.compose.bom))
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -130,6 +131,13 @@ dependencies {
 
     implementation("com.google.firebase:firebase-crashlytics:19.4.3")
     implementation("com.google.firebase:firebase-analytics:21.5.0")
+
+    implementation("com.github.senseiiii12:CustomSnackBarLibrary:v0.1.4")
+
+
+
+
+
 
 }
 

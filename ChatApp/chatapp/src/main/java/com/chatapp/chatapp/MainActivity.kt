@@ -6,10 +6,12 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.LaunchedEffect
@@ -22,17 +24,17 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.chatapp.chatapp.core.presentation.SplashViewModel
-import com.chatapp.chatapp.core.presentation.UpdateOnlineStatusViewModel
-import com.chatapp.chatapp.features.navigation.Route
+import com.chatapp.chatapp.core.presentation.UsersViewModel
+import com.chatapp.chatapp.features.auth.presentation.MainEntrance
 import com.chatapp.chatapp.features.chat.presentation.ChatScreen
 import com.chatapp.chatapp.features.chat.presentation.ChatViewModel
 import com.chatapp.chatapp.features.chat_rooms.presentation.ChatRoomsScreen
-import com.chatapp.chatapp.core.presentation.UsersViewModel
-import com.chatapp.chatapp.features.auth.presentation.MainEntrance
 import com.chatapp.chatapp.features.friend_requests.presentation.RequestsInFriendScreen
 import com.chatapp.chatapp.features.my_friends.presentation.MyFriendsScreen
+import com.chatapp.chatapp.features.navigation.Route
 import com.chatapp.chatapp.features.search_user.presentation.SearchUsersScreen
 import com.chatapp.chatapp.ui.theme.ChatAppTheme
+import com.chatapp.chatapp.ui.theme.PrimaryBackground
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -66,22 +68,38 @@ class MainActivity : ComponentActivity() {
 //                Log.d("curerntUserLaunchedEffect", currentUserId ?: "no id")
 //            }
 
+
             ChatAppTheme {
                 Surface(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier.fillMaxSize().background(PrimaryBackground),
                 ) {
                     NavHost(
+                        modifier = Modifier.background(PrimaryBackground),
                         navController = navController,
                         startDestination = startDestination,
                         enterTransition = {
-                            fadeIn(
-                                initialAlpha = 1f,
-                                animationSpec = tween(0, easing = FastOutSlowInEasing))
+                            slideInHorizontally(
+                                initialOffsetX = { fullWidth -> fullWidth },
+                                animationSpec = spring()
+                            ) + fadeIn()
                         },
                         exitTransition = {
-                            fadeOut(
-                                targetAlpha = 1f,
-                                animationSpec = tween(0, easing = FastOutSlowInEasing))
+                            slideOutHorizontally(
+                                targetOffsetX = { fullWidth -> -fullWidth },
+                                animationSpec = spring()
+                            ) + fadeOut()
+                        },
+                        popEnterTransition = {
+                            slideInHorizontally(
+                                initialOffsetX = { fullWidth -> -fullWidth },
+                                animationSpec = spring()
+                            ) + fadeIn()
+                        },
+                        popExitTransition = {
+                            slideOutHorizontally(
+                                targetOffsetX = { fullWidth -> fullWidth },
+                                animationSpec = spring()
+                            ) + fadeOut()
                         }
                     ) {
                         composable(route = Route.MainEntrance.route) {
