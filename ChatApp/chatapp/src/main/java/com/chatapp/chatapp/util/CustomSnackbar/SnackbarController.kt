@@ -3,6 +3,7 @@ package com.chatapp.chatapp.util.CustomSnackbar
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Stable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.Dp
@@ -17,7 +18,7 @@ sealed class SnackBarState {
     object Close : SnackBarState()
 }
 
-class SnackbarController(private val scope: CoroutineScope) {
+class SnackbarController() {
     private val _snackBarEvents = MutableStateFlow<SnackBarState?>(null)
     val snackBarEvents: StateFlow<SnackBarState?> = _snackBarEvents.asStateFlow()
 
@@ -35,6 +36,7 @@ class SnackbarController(private val scope: CoroutineScope) {
     }
 }
 
+@Stable
 data class SnackbarData(
     val icon: (@Composable (() -> Unit))? = null,
     val text: @Composable () -> Unit,
@@ -43,7 +45,7 @@ data class SnackbarData(
     val backgroundColor: Color = Color.DarkGray,
     val shape: Shape = RoundedCornerShape(12.dp),
     val elevation: Dp = 6.dp,
-    val innerPadding: PaddingValues = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
-    val outerPadding: PaddingValues = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+    val innerPadding: PaddingValues = PaddingValues(horizontal = 0.dp, vertical = 0.dp),
+    val outerPadding: PaddingValues = PaddingValues(horizontal = 0.dp, vertical = 0.dp),
     val durationMillis: Long = 3000
 )

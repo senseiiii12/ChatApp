@@ -47,7 +47,7 @@ import com.chatapp.chatapp.util.CustomSnackbar.SnackbarData
 import com.chatapp.chatapp.util.NetworkConnection.NetworkConnectionIndicator
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.google.gson.Gson
-import com.snackbar.customsnackbarlibrary.FancyButton
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -63,10 +63,7 @@ fun ChatRoomsScreen(
     val currentUser = usersViewModel.currentUser.value
     val currentUserId = usersViewModel.currentUserId.collectAsState()
 
-
-
-    val scope = rememberCoroutineScope()
-    val snackbarController = remember { SnackbarController(scope) }
+    val snackbarController = remember { SnackbarController() }
 
     BackHandler(enabled = true) {
         (navController.context as? Activity)?.finish()
@@ -192,8 +189,8 @@ fun MySnackBar(
                 }
             },
             backgroundColor = Color.Black,
-            durationMillis = 2000,
-            innerPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+            durationMillis = 5000,
+            innerPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp),
             outerPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
         )
     )

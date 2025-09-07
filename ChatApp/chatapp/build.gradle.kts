@@ -132,7 +132,7 @@ dependencies {
     implementation("com.google.firebase:firebase-crashlytics:19.4.3")
     implementation("com.google.firebase:firebase-analytics:21.5.0")
 
-    implementation("com.github.senseiiii12:CustomSnackBarLibrary:v0.1.4")
+//    implementation("com.github.senseiiii12:CustomSnackBarLibrary:v0.1.4")
 
 
 
