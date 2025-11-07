@@ -50,7 +50,6 @@ import kotlin.math.abs
 
 private const val DISMISS_ANIMATION_DELAY = 200
 
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CustomSnackbarHost(

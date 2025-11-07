@@ -11,13 +11,13 @@ plugins {
 
 android {
     namespace = "com.chatapp.chatapp"
-    compileSdk = 34
+    compileSdk = 35
 
 
     defaultConfig {
         applicationId = "com.chatapp.chatapp"
         minSdk = 26
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
@@ -66,7 +66,7 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.appcompat)
-//    implementation(platform(libs.androidx.compose.bom))
+    implementation(platform(libs.androidx.compose.bom))
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -77,7 +77,6 @@ dependencies {
 
     implementation(libs.navigation.compose)
     implementation(libs.kotlinx.serialization.json)
-    implementation(platform("androidx.compose:compose-bom:2023.10.00"))
 
 
     // Compose анимации
@@ -132,7 +131,7 @@ dependencies {
     implementation("com.google.firebase:firebase-crashlytics:19.4.3")
     implementation("com.google.firebase:firebase-analytics:21.5.0")
 
-//    implementation("com.github.senseiiii12:CustomSnackBarLibrary:v0.1.4")
+    implementation("com.github.senseiiii12:SwipeSnack:0.2.1")
 
 
 

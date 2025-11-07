@@ -26,11 +26,9 @@ class MessageRepositoryImpl @Inject constructor(
 
     val chatCollection = firestore.collection("chats")
 
-
     val options = SnapshotListenOptions.Builder()
         .setSource(ListenSource.DEFAULT)
         .build()
-
 
     override suspend fun sendMessage(chatId: String, currentUserId: String, messageText: String) {
         val messageId = UUID.randomUUID().toString()

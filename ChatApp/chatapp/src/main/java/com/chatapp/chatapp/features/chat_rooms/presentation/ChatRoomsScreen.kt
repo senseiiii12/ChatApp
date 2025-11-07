@@ -5,7 +5,6 @@ import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -24,8 +23,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
@@ -41,12 +38,12 @@ import com.chatapp.chatapp.ui.theme.MyCustomTypography
 import com.chatapp.chatapp.ui.theme.PrimaryBackground
 import com.chatapp.chatapp.ui.theme.PrimaryPurple
 import com.chatapp.chatapp.ui.theme.SecondaryBackground
-import com.chatapp.chatapp.util.CustomSnackbar.CustomSnackbarHost
-import com.chatapp.chatapp.util.CustomSnackbar.SnackbarController
-import com.chatapp.chatapp.util.CustomSnackbar.SnackbarData
 import com.chatapp.chatapp.util.NetworkConnection.NetworkConnectionIndicator
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.google.gson.Gson
+import com.snackbar.snackswipe.SnackSwipeBox
+import com.snackbar.snackswipe.SnackSwipeController
+import com.snackbar.snackswipe.showSnackSwipe
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -63,7 +60,6 @@ fun ChatRoomsScreen(
     val currentUser = usersViewModel.currentUser.value
     val currentUserId = usersViewModel.currentUserId.collectAsState()
 
-    val snackbarController = remember { SnackbarController() }
 
     BackHandler(enabled = true) {
         (navController.context as? Activity)?.finish()
@@ -78,7 +74,8 @@ fun ChatRoomsScreen(
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+
+    SnackSwipeBox { snackbarController ->
         Scaffold(
             topBar = {
                 TopBarChatsRoom(
@@ -135,64 +132,57 @@ fun ChatRoomsScreen(
                 }
             }
         }
-        CustomSnackbarHost(
-            controller = snackbarController,
-            modifier = Modifier
-        )
-
-
     }
 }
 
 
 fun MySnackBar(
-    snackbarController: SnackbarController,
+    snackbarController: SnackSwipeController,
     onCustomAction: () -> Unit
 ) {
-    snackbarController.show(
-        SnackbarData(
-            icon = {
-                Icon(
-                    Icons.Default.CheckCircle,
-                    contentDescription = null,
-                    tint = Green100
-                )
-            },
-            text = {
-                Text(
-                    text = "Привет, это кастомный Snackbar3333333333",
-                    style = MyCustomTypography.SemiBold_12,
-                    color = Color.White.copy(alpha = 0.5f),
-                    overflow = TextOverflow.Ellipsis,
-                    maxLines = 1,
-                )
-            },
-            customAction = {
-                Text(
-                    modifier = Modifier.clickable { onCustomAction() },
-                    text = "Send",
-                    style = MyCustomTypography.Bold_14,
-                    color = Color.White
-                )
-            },
-            dismissAction = {
-                IconButton(
-                    onClick = {
-                        snackbarController.close()
-                    }
-                ) {
-                    Icon(
-                        Icons.Default.Close,
-                        contentDescription = "Закрыть",
-                        tint = Color.White
-                    )
+    snackbarController.showSnackSwipe(
+        icon = {
+            Icon(
+                Icons.Default.CheckCircle,
+                contentDescription = null,
+                tint = Green100
+            )
+        },
+        messageText = {
+            Text(
+                text = "Привет, это кастомный Snackbar3333333333",
+                style = MyCustomTypography.SemiBold_12,
+                color = Color.White.copy(alpha = 0.5f),
+                overflow = TextOverflow.Ellipsis,
+                maxLines = 1,
+            )
+        },
+        customAction = {
+            Text(
+                modifier = Modifier.clickable { onCustomAction() },
+                text = "Send",
+                style = MyCustomTypography.Bold_14,
+                color = Color.White
+            )
+        },
+        dismissAction = {
+            IconButton(
+                onClick = {
+                    snackbarController.close()
                 }
-            },
-            backgroundColor = Color.Black,
-            durationMillis = 5000,
-            innerPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp),
-            outerPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
-        )
+            ) {
+                Icon(
+                    Icons.Default.Close,
+                    contentDescription = "Закрыть",
+                    tint = Color.White
+                )
+            }
+        },
+        backgroundColor = Color.Black,
+        durationMillis = 5000,
+        innerPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp),
+        outerPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
+
     )
 }
 

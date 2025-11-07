@@ -68,7 +68,6 @@ class MainActivity : ComponentActivity() {
 //                Log.d("curerntUserLaunchedEffect", currentUserId ?: "no id")
 //            }
 
-
             ChatAppTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize().background(PrimaryBackground),
