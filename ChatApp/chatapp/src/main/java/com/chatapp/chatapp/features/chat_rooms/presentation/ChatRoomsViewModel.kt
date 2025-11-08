@@ -38,36 +38,6 @@ class ChatRoomsViewModel @Inject constructor(
     private val _chatIds = MutableStateFlow<List<String>>(emptyList())
     private var isListening = false
 
-
-//    @OptIn(ExperimentalCoroutinesApi::class)
-//    suspend fun loadAndListenToChats(currentUserId: String) {
-//        return withContext(Dispatchers.IO) {
-//            if (_chatRooms.value.isNotEmpty() && !isListening) return@withContext
-//
-//            if (_chatRooms.value.isEmpty()) {
-//                chatRoomsRepository.getUserChatRooms(currentUserId)
-//                    .catch { e -> Log.e("ChatViewModel", "Ошибка загрузки чатов: ${e.message}", e) }
-//                    .collect { chatRooms ->
-//                        val sortedChatRooms = chatRooms.sortedByDescending { it.lastMessage.timestamp }
-//                        _chatRooms.value = sortedChatRooms
-//                        _chatIds.value = sortedChatRooms.map { it.chatId }
-//                    }
-//            }
-//
-//            if (!isListening) {
-//                _chatIds
-//                    .filter { it.isNotEmpty() }
-//                    .flatMapLatest { chatIds ->
-//                        chatRoomsRepository.lastMessagesListner(chatIds,currentUserId)
-//                            .map { chatMessagesMap -> processChatMessages(chatMessagesMap) }
-//                    }
-//                    .catch { e -> Log.e("ChatViewModel", "Ошибка в слушателе сообщений: ${e.message}", e) }
-//                    .launchIn(viewModelScope)
-//                isListening = true
-//            }
-//        }
-//    }
-
     @OptIn(ExperimentalCoroutinesApi::class)
     suspend fun loadAndListenToChats(currentUserId: String) {
         withContext(Dispatchers.IO) {
