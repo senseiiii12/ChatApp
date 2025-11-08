@@ -32,8 +32,11 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
@@ -74,7 +77,6 @@ import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
-
 @Composable
 fun ChatScreen(
     chatId: String,
@@ -89,15 +91,36 @@ fun ChatScreen(
 
     val context = LocalContext.current
     val toastState = remember { ToastState() }
+    val snackbarHostState = remember { SnackbarHostState() }
     val listState = rememberLazyListState()
+    val scope = rememberCoroutineScope()
     val currentUserId = remember { FirebaseAuth.getInstance().currentUser?.uid ?: "" }
 
     val chatInputFieldState = chatViewModel.chatInputFieldState.collectAsState()
     val topMenuState = chatViewModel.topMenuState.collectAsState()
+    val operationError by chatViewModel.operationError.collectAsState()
 
-    LaunchedEffect(Unit) {
+    // Инициализация слушателя сообщений
+    LaunchedEffect(chatId) {
         chatViewModel.listenForMessagesInChat(chatId, listState)
-        chatViewModel
+    }
+
+    // Очистка ресурсов при выходе из экрана
+    DisposableEffect(Unit) {
+        onDispose {
+            chatViewModel.stopListeningToMessages()
+        }
+    }
+
+    // Обработка ошибок
+    LaunchedEffect(operationError) {
+        operationError?.let { error ->
+            snackbarHostState.showSnackbar(
+                message = error,
+                withDismissAction = true
+            )
+            chatViewModel.clearError()
+        }
     }
 
     MyBackHandler(
@@ -106,7 +129,6 @@ fun ChatScreen(
         onDisableTopMenu = chatViewModel::resetStateTopMenu,
         onDisableEditMode = chatViewModel::resetEditMode
     )
-
 
     Scaffold(
         containerColor = PrimaryBackground,
@@ -117,7 +139,7 @@ fun ChatScreen(
                 usersViewModel = usersViewModel,
                 onBack = { navController.popBackStack() },
                 onCloseMenu = {
-                    chatViewModel.updateStateTopMenuMessage(false)
+                    chatViewModel.stateTopMenuMessage(false)
                     chatViewModel.clearSelectedMessages()
                 },
                 onDeleteMessage = { messageList ->
@@ -125,11 +147,13 @@ fun ChatScreen(
                 },
                 onEditMessage = { newMessage, currentMessage ->
                     chatViewModel.initEditMessageState(true, newMessage, currentMessage)
-                    chatViewModel.updateStateTopMenuMessage(false)
+                    chatViewModel.stateTopMenuMessage(false)
                 },
                 onCopyMessage = { messageList ->
                     val copiedMessage = chatViewModel.copySelectedMessage(context, messageList)
-                    toastState.showToast("Copy: $copiedMessage")
+                    if (copiedMessage.isNotEmpty()) {
+                        toastState.showToast("Скопировано: ${copiedMessage.take(30)}...")
+                    }
                 }
             )
         },
@@ -142,12 +166,14 @@ fun ChatScreen(
                     chatViewModel.handleSendMessage(
                         currentChatId = chatId,
                         currentUserId = currentUserId,
-                        otherUserId = otherUser.userId,
                         sendState = state
                     )
                 },
                 onCancelEdit = chatViewModel::resetEditMode
             )
+        },
+        snackbarHost = {
+            SnackbarHost(hostState = snackbarHostState)
         }
     ) { paddingValues ->
         MessageList(
@@ -165,21 +191,25 @@ fun ChatScreen(
 }
 
 @Composable
-fun MyBackHandler(
+private fun MyBackHandler(
     topMenuState: State<TopMenuState>,
     chatInputFieldState: State<ChatInputFieldState>,
     onDisableTopMenu: () -> Unit,
     onDisableEditMode: () -> Unit,
 ) {
-    BackHandler(enabled = topMenuState.value.isOpenTopMenu || chatInputFieldState.value.isEditingMessage) {
-        if (topMenuState.value.isOpenTopMenu) onDisableTopMenu()
-        else if (chatInputFieldState.value.isEditingMessage) onDisableEditMode()
+    val isMenuOpen = topMenuState.value.isOpenTopMenu
+    val isEditing = chatInputFieldState.value.isEditingMessage
+
+    BackHandler(enabled = isMenuOpen || isEditing) {
+        when {
+            isMenuOpen -> onDisableTopMenu()
+            isEditing -> onDisableEditMode()
+        }
     }
 }
 
-
 @Composable
-fun MessageList(
+private fun MessageList(
     chatViewModel: ChatViewModel,
     currentUser: User,
     currentUserId: String,
@@ -189,8 +219,7 @@ fun MessageList(
     listState: LazyListState,
     topMenuState: State<TopMenuState>
 ) {
-
-    val chatItems = chatViewModel.chatItems.collectAsState()
+    val chatItems by chatViewModel.chatItems.collectAsState()
     val unreadMessagesCount by chatViewModel.unreadMessagesCount.collectAsState()
     val scope = rememberCoroutineScope()
 
@@ -205,40 +234,26 @@ fun MessageList(
             reverseLayout = true,
             verticalArrangement = Arrangement.Bottom
         ) {
-            itemsIndexed(chatItems.value, key = { index, item ->
-                when (item) {
-                    is ChatItem.MessageItem -> item.message.messageId
-                    is ChatItem.DateSeparatorItem -> "$index-${item.date}"
+            itemsIndexed(
+                items = chatItems,
+                key = { index, item ->
+                    when (item) {
+                        is ChatItem.MessageItem -> item.message.messageId
+                        is ChatItem.DateSeparatorItem -> "$index-${item.date}"
+                    }
                 }
-            }) { index, item ->
+            ) { index, item ->
                 when (item) {
                     is ChatItem.MessageItem -> {
-                        val isCurrentUser = item.message.userId == currentUserId
-                        MessageItem(
-                            modifier = Modifier
-                                .animateContentSize()
-                                .onGloballyPositioned { layoutCoordinates ->
-                                    if (!isCurrentUser && item.message.status != MessageStatus.READ) {
-                                        val viewportBounds = listState.layoutInfo.viewportEndOffset
-                                        if (layoutCoordinates.positionInParent().y < viewportBounds) {
-                                            chatViewModel.markMessageAsRead(
-                                                chatId,
-                                                item.message.messageId,
-                                                currentUserId
-                                            )
-                                            chatViewModel.deleteUnreadMessageToScroll(item.message)
-                                        }
-                                    }
-                                },
-                            message = item.message,
-                            isCurrentUser = isCurrentUser,
+                        MessageItemWrapper(
+                            item = item,
+                            currentUserId = currentUserId,
                             currentUser = currentUser,
                             otherUser = otherUser,
-                            isEditing = topMenuState.value.listSelectedMessages.contains(item.message),
-                            status = item.message.status,
-                            onOpenTopMenu = { currentMessage ->
-                                chatViewModel.toggleMessageSelection(currentMessage)
-                            }
+                            chatId = chatId,
+                            listState = listState,
+                            topMenuState = topMenuState,
+                            chatViewModel = chatViewModel
                         )
                     }
                     is ChatItem.DateSeparatorItem -> {
@@ -247,24 +262,66 @@ fun MessageList(
                 }
             }
         }
+
         ScrollToEndList(
-            chatItems = chatItems.value,
+            chatItems = chatItems,
             listState = listState
         )
+
         FAB(
             modifier = Modifier.align(Alignment.BottomEnd),
             scope = scope,
             listState = listState,
             unreadMessagesCount = unreadMessagesCount,
-            onScrollToBottom = { chatViewModel.resetUnreadMessagesCount() }
+            onScrollToBottom = chatViewModel::resetUnreadMessagesCount
         )
     }
 }
 
+@Composable
+private fun MessageItemWrapper(
+    item: ChatItem.MessageItem,
+    currentUserId: String,
+    currentUser: User,
+    otherUser: User,
+    chatId: String,
+    listState: LazyListState,
+    topMenuState: State<TopMenuState>,
+    chatViewModel: ChatViewModel
+) {
+    val isCurrentUser = item.message.userId == currentUserId
+    val isSelected = topMenuState.value.listSelectedMessages.contains(item.message)
+
+    MessageItem(
+        modifier = Modifier
+            .animateContentSize()
+            .onGloballyPositioned { layoutCoordinates ->
+                // Помечаем сообщение как прочитанное когда оно попадает в область видимости
+                if (!isCurrentUser && item.message.status != MessageStatus.READ) {
+                    val viewportBounds = listState.layoutInfo.viewportEndOffset
+                    val messagePosition = layoutCoordinates.positionInParent().y
+
+                    if (messagePosition < viewportBounds) {
+                        chatViewModel.markMessageAsRead(chatId, item.message.messageId)
+                        chatViewModel.deleteUnreadMessageToScroll(item.message)
+                    }
+                }
+            },
+        message = item.message,
+        isCurrentUser = isCurrentUser,
+        currentUser = currentUser,
+        otherUser = otherUser,
+        isEditing = isSelected,
+        status = item.message.status,
+        onOpenTopMenu = { currentMessage ->
+            chatViewModel.toggleMessageSelection(currentMessage)
+        }
+    )
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FAB(
+private fun FAB(
     modifier: Modifier = Modifier,
     scope: CoroutineScope,
     listState: LazyListState,
@@ -272,8 +329,11 @@ fun FAB(
     onScrollToBottom: () -> Unit
 ) {
     val isVisibleFab by remember {
-        derivedStateOf { listState.firstVisibleItemIndex > 2 }
+        derivedStateOf {
+            listState.firstVisibleItemIndex > 2
+        }
     }
+
     AnimatedVisibility(
         modifier = modifier,
         visible = isVisibleFab,
@@ -297,54 +357,69 @@ fun FAB(
             ) {
                 Icon(
                     imageVector = Icons.Default.KeyboardArrowDown,
-                    contentDescription = null,
+                    contentDescription = "Прокрутить вниз",
                     tint = ChatText
                 )
             }
 
-            if (unreadMessagesCount > 0) {
-                val animatedUnreadCount by animateIntAsState(
-                    targetValue = unreadMessagesCount,
-                    animationSpec = tween(durationMillis = 50, easing = FastOutSlowInEasing)
-                )
+            UnreadBadge(
+                modifier = Modifier.align(Alignment.TopCenter),
+                unreadCount = unreadMessagesCount
+            )
+        }
+    }
+}
 
-                Badge(
-                    modifier = Modifier
-                        .align(Alignment.TopCenter)
-                        .offset(x = (-10).dp, y = (-8).dp),
-                    containerColor = PrimaryPurple
-                ) {
-                    AnimatedContent(
-                        targetState = animatedUnreadCount,
-                        transitionSpec = {
-                            if (targetState > initialState) {
-                                slideInVertically { height -> height } + fadeIn() togetherWith
-                                        slideOutVertically { height -> -height } + fadeOut()
-                            } else {
-                                slideInVertically { height -> -height } + fadeIn() togetherWith
-                                        slideOutVertically { height -> height } + fadeOut()
-                            }
-                        }
-                    ) { targetCount ->
-                        Text(
-                            text = targetCount.toString(),
-                            color = Color.White,
-                            style = MyCustomTypography.Bold_12
-                        )
-                    }
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun UnreadBadge(
+    modifier: Modifier = Modifier,
+    unreadCount: Int
+) {
+    if (unreadCount <= 0) return
+
+    val animatedUnreadCount by animateIntAsState(
+        targetValue = unreadCount,
+        animationSpec = tween(
+            durationMillis = 50,
+            easing = FastOutSlowInEasing
+        ),
+        label = "unread_count_animation"
+    )
+
+    Badge(
+        modifier = modifier.offset(x = (-10).dp, y = (-8).dp),
+        containerColor = PrimaryPurple
+    ) {
+        AnimatedContent(
+            targetState = animatedUnreadCount,
+            transitionSpec = {
+                if (targetState > initialState) {
+                    slideInVertically { height -> height } + fadeIn() togetherWith
+                            slideOutVertically { height -> -height } + fadeOut()
+                } else {
+                    slideInVertically { height -> -height } + fadeIn() togetherWith
+                            slideOutVertically { height -> height } + fadeOut()
                 }
-            }
+            },
+            label = "unread_badge_content"
+        ) { targetCount ->
+            Text(
+                text = targetCount.toString(),
+                color = Color.White,
+                style = MyCustomTypography.Bold_12
+            )
         }
     }
 }
 
 @Composable
-fun ScrollToEndList(
+private fun ScrollToEndList(
     chatItems: List<ChatItem>,
     listState: LazyListState,
 ) {
-
     val messageItemSize = chatItems.count { it is ChatItem.MessageItem }
+
     val isAtBottom = remember {
         derivedStateOf {
             val layoutInfo = listState.layoutInfo
@@ -359,9 +434,3 @@ fun ScrollToEndList(
         }
     }
 }
-
-
-
-
-
-
