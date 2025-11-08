@@ -10,11 +10,13 @@ import com.chatapp.chatapp.features.chat_rooms.domain.models.ChatRooms
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
@@ -30,36 +32,79 @@ class ChatRoomsViewModel @Inject constructor(
     private val _chatRooms = MutableStateFlow<List<ChatRooms>>(emptyList())
     val chatRooms = _chatRooms.asStateFlow()
 
+    private val _currentUserId = MutableStateFlow<String?>(null)
+    private var chatListenerJob: Job? = null
+
     private val _chatIds = MutableStateFlow<List<String>>(emptyList())
     private var isListening = false
 
+
+//    @OptIn(ExperimentalCoroutinesApi::class)
+//    suspend fun loadAndListenToChats(currentUserId: String) {
+//        return withContext(Dispatchers.IO) {
+//            if (_chatRooms.value.isNotEmpty() && !isListening) return@withContext
+//
+//            if (_chatRooms.value.isEmpty()) {
+//                chatRoomsRepository.getUserChatRooms(currentUserId)
+//                    .catch { e -> Log.e("ChatViewModel", "Ошибка загрузки чатов: ${e.message}", e) }
+//                    .collect { chatRooms ->
+//                        val sortedChatRooms = chatRooms.sortedByDescending { it.lastMessage.timestamp }
+//                        _chatRooms.value = sortedChatRooms
+//                        _chatIds.value = sortedChatRooms.map { it.chatId }
+//                    }
+//            }
+//
+//            if (!isListening) {
+//                _chatIds
+//                    .filter { it.isNotEmpty() }
+//                    .flatMapLatest { chatIds ->
+//                        chatRoomsRepository.lastMessagesListner(chatIds,currentUserId)
+//                            .map { chatMessagesMap -> processChatMessages(chatMessagesMap) }
+//                    }
+//                    .catch { e -> Log.e("ChatViewModel", "Ошибка в слушателе сообщений: ${e.message}", e) }
+//                    .launchIn(viewModelScope)
+//                isListening = true
+//            }
+//        }
+//    }
+
     @OptIn(ExperimentalCoroutinesApi::class)
-    suspend fun loadAndListenToChats(userId: String) {
-        return withContext(Dispatchers.IO) {
-            if (_chatRooms.value.isNotEmpty() && !isListening) return@withContext
+    suspend fun loadAndListenToChats(currentUserId: String) {
+        withContext(Dispatchers.IO) {
+
+            if (_currentUserId.value != currentUserId) {
+                cancelAllChatListeners()
+                _currentUserId.value = currentUserId
+                _chatRooms.value = emptyList()
+                _chatIds.value = emptyList()
+            }
 
             if (_chatRooms.value.isEmpty()) {
-                chatRoomsRepository.getUserChatRooms(userId)
+                chatRoomsRepository.getUserChatRooms(currentUserId)
                     .catch { e -> Log.e("ChatViewModel", "Ошибка загрузки чатов: ${e.message}", e) }
                     .collect { chatRooms ->
-                        val sortedChatRooms = chatRooms.sortedByDescending { it.lastMessage.timestamp }
-                        _chatRooms.value = sortedChatRooms
-                        _chatIds.value = sortedChatRooms.map { it.chatId }
+                        val sorted = chatRooms.sortedByDescending { it.lastMessage.timestamp }
+                        _chatRooms.value = sorted
+                        _chatIds.value = sorted.map { it.chatId }
                     }
             }
-
-            if (!isListening) {
-                _chatIds
-                    .filter { it.isNotEmpty() }
-                    .flatMapLatest { chatIds ->
-                        chatRoomsRepository.lastMessagesListner(chatIds)
-                            .map { chatMessagesMap -> processChatMessages(chatMessagesMap) }
-                    }
-                    .catch { e -> Log.e("ChatViewModel", "Ошибка в слушателе сообщений: ${e.message}", e) }
-                    .launchIn(viewModelScope)
-                isListening = true
-            }
+            startChatListeners(currentUserId)
         }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private fun startChatListeners(currentUserId: String) {
+        chatListenerJob?.cancel()
+
+        chatListenerJob = _chatIds
+            .filter { it.isNotEmpty() }
+            .flatMapLatest { chatIds ->
+                chatRoomsRepository.lastMessagesListner(chatIds, currentUserId)
+                    .map { processChatMessages(it) }
+            }
+            .catch { e -> Log.e("ChatViewModel", "Ошибка в слушателе: ${e.message}", e) }
+            .flowOn(Dispatchers.IO)
+            .launchIn(viewModelScope)
     }
 
 
@@ -84,5 +129,10 @@ class ChatRoomsViewModel @Inject constructor(
         _chatRooms.value = emptyList()
     }
 
+    private fun cancelAllChatListeners() {
+        chatListenerJob?.cancel()
+        chatListenerJob = null
+        isListening = false
+    }
 
 }

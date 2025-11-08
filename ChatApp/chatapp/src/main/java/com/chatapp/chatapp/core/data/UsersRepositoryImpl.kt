@@ -30,8 +30,7 @@ class UsersRepositoryImpl @Inject constructor(
     private val context: Context
 ) : UsersRepository {
 
-    private val currentUserId: String = firebaseAuth.currentUser?.uid
-        ?: throw IllegalStateException("User not logged in")
+    private val currentUserId: String = firebaseAuth.currentUser?.uid ?: ""
 
     override suspend fun getCurrentUser(): Flow<User> {
         return flow {

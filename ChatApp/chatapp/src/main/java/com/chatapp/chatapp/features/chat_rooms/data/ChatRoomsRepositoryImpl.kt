@@ -10,6 +10,7 @@ import com.chatapp.chatapp.features.chat_rooms.domain.models.ChatRooms
 import com.chatapp.chatapp.util.extension.toMessage
 import com.chatapp.chatapp.util.extension.toUser
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.Query
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
@@ -33,32 +34,72 @@ class ChatRoomsRepositoryImpl @Inject constructor(
 
     val chatCollection = firebaseFirestore.collection("chats")
 
-    override suspend fun lastMessagesListner(chatIds: List<String>): Flow<Map<String, ChatRoomsMessagesInfo>> {
-        return callbackFlow {
-            val currentMessages = mutableMapOf<String, ChatRoomsMessagesInfo>().withDefault {
-                ChatRoomsMessagesInfo(Message(), 0)
-            }
-            val listeners = chatIds.map { chatId ->
-                chatCollection.document(chatId)
-                    .collection("messages")
-                    .orderBy("timestamp", Query.Direction.DESCENDING)
-                    .limit(20)
-                    .addSnapshotListener { snapshot, e ->
-                        if (e != null || snapshot == null) return@addSnapshotListener
-                        val messages = snapshot.documents.map { it.toMessage() }
-                        val lastMessage = messages.maxByOrNull { it.timestamp } ?: Message()
-                        val unreadMessageCount = messages.count { it.status == MessageStatus.DELIVERED }
+//    override suspend fun lastMessagesListner(chatIds: List<String>): Flow<Map<String, ChatRoomsMessagesInfo>> {
+//        return callbackFlow {
+//            val currentMessages = mutableMapOf<String, ChatRoomsMessagesInfo>().withDefault {
+//                ChatRoomsMessagesInfo(Message(), 0)
+//            }
+//            val listeners = chatIds.map { chatId ->
+//                chatCollection.document(chatId)
+//                    .collection("messages")
+//                    .orderBy("timestamp", Query.Direction.DESCENDING)
+//                    .limit(20)
+//                    .addSnapshotListener { snapshot, e ->
+//                        if (e != null || snapshot == null) return@addSnapshotListener
+//                        val messages = snapshot.documents.map { it.toMessage() }
+//                        val lastMessage = messages.maxByOrNull { it.timestamp } ?: Message()
+//                        val unreadMessageCount = messages.count { it.status == MessageStatus.DELIVERED }
+//
+//                        currentMessages[chatId] = ChatRoomsMessagesInfo(
+//                            lastMessage = lastMessage,
+//                            unreadMessageCount = unreadMessageCount
+//                        )
+//                        trySend(currentMessages.toMap())
+//                    }
+//            }
+//            awaitClose { listeners.forEach { it.remove() } }
+//        }.flowOn(Dispatchers.IO)
+//    }
 
-                        currentMessages[chatId] = ChatRoomsMessagesInfo(
-                            lastMessage = lastMessage,
-                            unreadMessageCount = unreadMessageCount
-                        )
-                        trySend(currentMessages.toMap())
-                    }
-            }
-            awaitClose { listeners.forEach { it.remove() } }
-        }.flowOn(Dispatchers.IO)
-    }
+    override suspend fun lastMessagesListner(
+        chatIds: List<String>,
+        currentUserId: String
+    ): Flow<Map<String, ChatRoomsMessagesInfo>> = callbackFlow {
+
+        val resultMap = mutableMapOf<String, ChatRoomsMessagesInfo>().apply {
+            chatIds.forEach { put(it, ChatRoomsMessagesInfo()) }
+        }
+
+        val listeners = mutableListOf<ListenerRegistration>()
+
+        chatIds.forEach { chatId ->
+            // 1. Слушатель последнего сообщения
+            val msgListener = chatCollection.document(chatId)
+                .collection("messages")
+                .orderBy("timestamp", Query.Direction.DESCENDING)
+                .limit(1)
+                .addSnapshotListener { snapshot, _ ->
+                    val lastMessage = snapshot?.documents?.firstOrNull()?.toMessage() ?: Message()
+                    resultMap[chatId] = (resultMap[chatId] ?: ChatRoomsMessagesInfo()).copy(lastMessage = lastMessage)
+                    trySend(resultMap.toMap())
+                }
+            listeners.add(msgListener)
+
+            // 2. Слушатель unreadCounters
+            val unreadListener = chatCollection.document(chatId)
+                .addSnapshotListener { snapshot, _ ->
+                    val unreadCounters = snapshot?.get("unreadCounters") as? Map<String, Long> ?: emptyMap()
+                    val unreadCount = unreadCounters[currentUserId]?.toInt() ?: 0
+                    resultMap[chatId] = (resultMap[chatId] ?: ChatRoomsMessagesInfo()).copy(unreadMessageCount = unreadCount)
+                    trySend(resultMap.toMap())
+                }
+            listeners.add(unreadListener)
+        }
+        awaitClose {
+            listeners.forEach { it.remove() }
+        }
+    }.flowOn(Dispatchers.IO)
+
 
     override suspend fun getAllChatRoomsId(currentUserId: String): Flow<List<String>> {
         return flow {
@@ -110,6 +151,9 @@ class ChatRoomsRepositoryImpl @Inject constructor(
             )
         }.flowOn(Dispatchers.IO)
     }
+
+
+
 
     private suspend fun buildChatRoomState(chatId: String, currentUserId: String): ChatRooms? {
         return try {

@@ -31,10 +31,11 @@ class UsersViewModel @Inject constructor(
     val currentUserId = _currentUserId.asStateFlow()
 
     init {
-        _currentUserId.value = auth.currentUser?.uid
+//        _currentUserId.value = auth.currentUser?.uid
 
         auth.addAuthStateListener { firebaseAuth ->
             _currentUserId.value = firebaseAuth.currentUser?.uid
+            Log.d("addAuthStateListener",_currentUserId.value.toString())
         }
     }
 

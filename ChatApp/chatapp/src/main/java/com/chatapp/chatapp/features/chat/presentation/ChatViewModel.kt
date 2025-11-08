@@ -9,7 +9,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chatapp.chatapp.features.chat.domain.MessageRepository
 import com.chatapp.chatapp.features.chat.domain.Message
-import com.chatapp.chatapp.features.chat.domain.MessageStatus
 import com.chatapp.chatapp.features.auth.domain.User
 import com.chatapp.chatapp.features.chat.presentation.details.ChatItem
 import com.chatapp.chatapp.features.chat.presentation.details.inputField.ChatInputFieldState
@@ -22,9 +21,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -63,7 +59,7 @@ class ChatViewModel @Inject constructor(
     fun clearSelectedMessages() {
         _topMenuState.update { it.copy(listSelectedMessages = emptyList(), countSelectedMessage = 0) }
     }
-    fun stateTopMenuMessage(value: Boolean) {
+    fun updateStateTopMenuMessage(value: Boolean) {
         _topMenuState.update { it.copy(isOpenTopMenu = value) }
     }
 
@@ -122,6 +118,7 @@ class ChatViewModel @Inject constructor(
     fun handleSendMessage(
         currentChatId: String,
         currentUserId: String,
+        otherUserId: String,
         sendState: SendState
     ) {
         when (sendState) {
@@ -140,6 +137,7 @@ class ChatViewModel @Inject constructor(
                     sendMessage(
                         chatId = currentChatId,
                         currentUserId = currentUserId,
+                        otherUserId = otherUserId,
                         message = chatInputFieldState.value.defaultInputMessage
                     )
                     resetDefaultInputMessage()
@@ -150,9 +148,9 @@ class ChatViewModel @Inject constructor(
     fun resetDefaultInputMessage() {
         _chatInputFieldState.value = _chatInputFieldState.value.copy(defaultInputMessage = "")
     }
-    private fun sendMessage(chatId: String, currentUserId: String, message: String) {
+    private fun sendMessage(chatId: String, currentUserId: String, otherUserId: String, message: String) {
         viewModelScope.launch {
-            messageRepository.sendMessage(chatId, currentUserId, message)
+            messageRepository.sendMessage(chatId, currentUserId, otherUserId, message)
         }
     }
     private fun onSaveEditMessage(chatId: String, messageId: String, newMessageText: String) {
@@ -166,9 +164,9 @@ class ChatViewModel @Inject constructor(
             resetStateTopMenu()
         }
     }
-    fun markMessageAsRead(chatId: String, messageId: String) {
+    fun markMessageAsRead(chatId: String, messageId: String,currentUserId: String) {
         viewModelScope.launch {
-            messageRepository.markMessageAsRead(chatId, messageId)
+            messageRepository.markMessageAsRead(chatId, messageId, currentUserId)
         }
     }
 
@@ -178,8 +176,10 @@ class ChatViewModel @Inject constructor(
      * Отслеживание колличества непрочитанных сообщений, вне зоне просмотра этих сообщений
      */
     val unreadMessages = mutableListOf<Message>()
+
     private val _unreadMessagesCount = MutableStateFlow(0)
     val unreadMessagesCount = _unreadMessagesCount.asStateFlow()
+
     fun resetUnreadMessagesCount() {
         unreadMessages.clear()
         _unreadMessagesCount.value = unreadMessages.size

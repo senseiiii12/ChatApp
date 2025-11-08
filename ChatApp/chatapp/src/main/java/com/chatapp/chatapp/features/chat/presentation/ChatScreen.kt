@@ -5,7 +5,6 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -98,6 +97,7 @@ fun ChatScreen(
 
     LaunchedEffect(Unit) {
         chatViewModel.listenForMessagesInChat(chatId, listState)
+        chatViewModel
     }
 
     MyBackHandler(
@@ -117,7 +117,7 @@ fun ChatScreen(
                 usersViewModel = usersViewModel,
                 onBack = { navController.popBackStack() },
                 onCloseMenu = {
-                    chatViewModel.stateTopMenuMessage(false)
+                    chatViewModel.updateStateTopMenuMessage(false)
                     chatViewModel.clearSelectedMessages()
                 },
                 onDeleteMessage = { messageList ->
@@ -125,7 +125,7 @@ fun ChatScreen(
                 },
                 onEditMessage = { newMessage, currentMessage ->
                     chatViewModel.initEditMessageState(true, newMessage, currentMessage)
-                    chatViewModel.stateTopMenuMessage(false)
+                    chatViewModel.updateStateTopMenuMessage(false)
                 },
                 onCopyMessage = { messageList ->
                     val copiedMessage = chatViewModel.copySelectedMessage(context, messageList)
@@ -142,6 +142,7 @@ fun ChatScreen(
                     chatViewModel.handleSendMessage(
                         currentChatId = chatId,
                         currentUserId = currentUserId,
+                        otherUserId = otherUser.userId,
                         sendState = state
                     )
                 },
@@ -222,7 +223,8 @@ fun MessageList(
                                         if (layoutCoordinates.positionInParent().y < viewportBounds) {
                                             chatViewModel.markMessageAsRead(
                                                 chatId,
-                                                item.message.messageId
+                                                item.message.messageId,
+                                                currentUserId
                                             )
                                             chatViewModel.deleteUnreadMessageToScroll(item.message)
                                         }

@@ -2,6 +2,7 @@ package com.chatapp.chatapp.features.chat_rooms.presentation
 
 import android.app.Activity
 import android.net.Uri
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -72,6 +73,7 @@ fun ChatRoomsScreen(
         stateChatRooms.value.map {
             usersViewModel.listenForOtherUserStatus(it.otherUser.userId)
         }
+        Log.d("updatedChatRooms","${currentUserId.value}__${stateChatRooms.value}")
     }
 
 
