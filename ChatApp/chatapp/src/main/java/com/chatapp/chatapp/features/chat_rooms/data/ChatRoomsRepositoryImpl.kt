@@ -5,7 +5,6 @@ import com.chatapp.chatapp.features.auth.domain.User
 import com.chatapp.chatapp.features.chat.domain.Message
 import com.chatapp.chatapp.features.chat.domain.MessageStatus
 import com.chatapp.chatapp.features.chat_rooms.domain.ChatRoomsRepository
-import com.chatapp.chatapp.features.chat_rooms.domain.models.ChatRoomsMessagesInfo
 import com.chatapp.chatapp.features.chat_rooms.domain.models.ChatRooms
 import com.chatapp.chatapp.util.extension.toMessage
 import com.chatapp.chatapp.util.extension.toUser
@@ -17,153 +16,324 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.emitAll
-import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.merge
-import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
 class ChatRoomsRepositoryImpl @Inject constructor(
-    private val firebaseFirestore: FirebaseFirestore,
+    private val firestore: FirebaseFirestore,
 ) : ChatRoomsRepository {
 
-    val chatCollection = firebaseFirestore.collection("chats")
+    private val chatCollection = firestore.collection(COLLECTION_CHATS)
+    private val usersCollection = firestore.collection(COLLECTION_USERS)
 
-    override suspend fun lastMessagesListner(
-        chatIds: List<String>,
-        currentUserId: String
-    ): Flow<Map<String, ChatRoomsMessagesInfo>> = callbackFlow {
+    companion object {
+        private const val TAG = "ChatRoomsRepository"
+        private const val COLLECTION_CHATS = "chats"
+        private const val COLLECTION_USERS = "users"
+        private const val COLLECTION_MESSAGES = "messages"
+        private const val FIELD_PARTICIPANTS = "participants"
+        private const val FIELD_TIMESTAMP = "timestamp"
+        private const val FIELD_STATUS = "status"
+        private const val FIELD_USER_ID = "userId"
+        private const val LAST_MESSAGE_LIMIT = 1L
+    }
 
-        val resultMap = mutableMapOf<String, ChatRoomsMessagesInfo>().apply {
-            chatIds.forEach { put(it, ChatRoomsMessagesInfo()) }
+    /**
+     * Получить все чаты пользователя с полной информацией в реальном времени
+     * Включает: данные собеседника, последнее сообщение, количество непрочитанных
+     */
+    override suspend fun getUserChatRooms(userId: String): Flow<List<ChatRooms>> = callbackFlow {
+        if (userId.isBlank()) {
+            Log.e(TAG, "User ID is empty")
+            trySend(emptyList())
+            close()
+            return@callbackFlow
         }
 
         val listeners = mutableListOf<ListenerRegistration>()
+        val chatRoomsMap = mutableMapOf<String, ChatRooms>()
 
-        chatIds.forEach { chatId ->
-            // 1. Слушатель последнего сообщения
-            val msgListener = chatCollection.document(chatId)
-                .collection("messages")
-                .orderBy("timestamp", Query.Direction.DESCENDING)
-                .limit(1)
-                .addSnapshotListener { snapshot, _ ->
-                    val lastMessage = snapshot?.documents?.firstOrNull()?.toMessage() ?: Message()
-                    resultMap[chatId] = (resultMap[chatId] ?: ChatRoomsMessagesInfo()).copy(lastMessage = lastMessage)
-                    trySend(resultMap.toMap())
-                }
-            listeners.add(msgListener)
+        try {
+            // 1. Получаем все чаты пользователя
+            val chatIds = getChatIds(userId)
 
-            // 2. Слушатель unreadCounters
-            val unreadListener = chatCollection.document(chatId)
-                .addSnapshotListener { snapshot, _ ->
-                    val unreadCounters = snapshot?.get("unreadCounters") as? Map<String, Long> ?: emptyMap()
-                    val unreadCount = unreadCounters[currentUserId]?.toInt() ?: 0
-                    resultMap[chatId] = (resultMap[chatId] ?: ChatRoomsMessagesInfo()).copy(unreadMessageCount = unreadCount)
-                    trySend(resultMap.toMap())
+            if (chatIds.isEmpty()) {
+                trySend(emptyList())
+                close()
+                return@callbackFlow
+            }
+
+            // 2. Для каждого чата создаем слушатели
+            chatIds.forEach { chatId ->
+                // Создаем начальную структуру чата
+                val initialChatRoom = buildInitialChatRoom(chatId, userId)
+
+                if (initialChatRoom != null) {
+                    chatRoomsMap[chatId] = initialChatRoom
+
+                    // Слушатель последнего сообщения
+                    val lastMessageListener = createLastMessageListener(
+                        chatId = chatId,
+                        onUpdate = { lastMessage ->
+                            chatRoomsMap[chatId] = chatRoomsMap[chatId]?.copy(
+                                lastMessage = lastMessage
+                            ) ?: return@createLastMessageListener
+                            trySend(chatRoomsMap.values.toList())
+                        }
+                    )
+                    listeners.add(lastMessageListener)
+
+                    // Слушатель непрочитанных сообщений
+                    val unreadListener = createUnreadMessagesListener(
+                        chatId = chatId,
+                        currentUserId = userId,
+                        onUpdate = { unreadCount ->
+                            chatRoomsMap[chatId] = chatRoomsMap[chatId]?.copy(
+                                unreadMessageCount = unreadCount
+                            ) ?: return@createUnreadMessagesListener
+                            trySend(chatRoomsMap.values.toList())
+                        }
+                    )
+                    listeners.add(unreadListener)
+
+                    // Слушатель статуса онлайн собеседника
+                    val otherUserId = initialChatRoom.otherUser.userId
+                    val onlineListener = createUserOnlineListener(
+                        chatId = chatId,
+                        otherUserId = otherUserId,
+                        onUpdate = { isOnline, updatedUser ->
+                            chatRoomsMap[chatId] = chatRoomsMap[chatId]?.copy(
+                                isOnline = isOnline,
+                                otherUser = updatedUser
+                            ) ?: return@createUserOnlineListener
+                            trySend(chatRoomsMap.values.toList())
+                        }
+                    )
+                    listeners.add(onlineListener)
                 }
-            listeners.add(unreadListener)
+            }
+
+            // Отправляем начальное состояние
+            trySend(chatRoomsMap.values.toList())
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error setting up chat rooms listeners", e)
+            close(e)
         }
+
         awaitClose {
+            Log.d(TAG, "Cleaning up ${listeners.size} listeners")
             listeners.forEach { it.remove() }
+            listeners.clear()
+            chatRoomsMap.clear()
         }
+    }.catch { e ->
+        Log.e(TAG, "Flow error in getUserChatRooms", e)
+        emit(emptyList())
     }.flowOn(Dispatchers.IO)
 
-
-    override suspend fun getAllChatRoomsId(currentUserId: String): Flow<List<String>> {
-        return flow {
-            try {
-                val result = firebaseFirestore.collection("chats")
-                    .whereArrayContains("participants", currentUserId)
-                    .get()
-                    .await()
-                val chatIds = result.map { it.id }
-                emit(chatIds)
-            } catch (e: Exception) {
-                emit(emptyList())
-                Log.d("getChatRoomsId", e.message.toString())
-            }
-        }
-    }
-
-    override suspend fun getUserChatRooms(userId: String): Flow<List<ChatRooms>> {
-        return flow {
-            val chatIdsFlow: Flow<List<String>> = flow {
-                val chatsSnapshot = firebaseFirestore.collection("chats")
-                    .whereArrayContains("participants", userId)
-                    .get()
-                    .await()
-                val chatIds = chatsSnapshot.documents.map { it.id }
-                emit(chatIds)
-            }
-
-            emitAll(
-                chatIdsFlow.flatMapLatest { chatIds: List<String> ->
-                    if (chatIds.isEmpty()) {
-                        flowOf(emptyList<ChatRooms>())
-                    } else {
-                        flow {
-                            val chatRooms: List<ChatRooms> = chatIds.map { chatId ->
-                                flow<ChatRooms?> {
-                                    emit(buildChatRoomState(chatId, userId))
-                                }.catch { e ->
-                                    Log.e("ChatDebug", "Ошибка для чата $chatId: ${e.message}", e)
-                                    emit(null)
-                                }
-                            }.merge()
-                                .filterNotNull()
-                                .toList()
-                            emit(chatRooms)
-                        }
-                    }
-                }
-            )
-        }.flowOn(Dispatchers.IO)
-    }
-
-
-
-
-    private suspend fun buildChatRoomState(chatId: String, currentUserId: String): ChatRooms? {
+    /**
+     * Получить ID всех чатов пользователя
+     */
+    private suspend fun getChatIds(userId: String): List<String> {
         return try {
-            val chatDoc = firebaseFirestore.collection("chats")
-                .document(chatId)
+            val chatsSnapshot = chatCollection
+                .whereArrayContains(FIELD_PARTICIPANTS, userId)
                 .get()
                 .await()
 
-            if (!chatDoc.exists()) return null
-            val participants = chatDoc.get("participants") as? List<String> ?: emptyList()
-            val otherUserId = participants.firstOrNull { it != currentUserId } ?: return null
-            val otherUser = fetchUserData(otherUserId) ?: return null
+            chatsSnapshot.documents.mapNotNull { it.id }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error getting chat IDs for user: $userId", e)
+            emptyList()
+        }
+    }
 
+    /**
+     * Построить начальную структуру чата с базовой информацией
+     */
+    private suspend fun buildInitialChatRoom(
+        chatId: String,
+        currentUserId: String
+    ): ChatRooms? {
+        return try {
+            // 1. Получаем документ чата
+            val chatDoc = chatCollection.document(chatId).get().await()
+
+            if (!chatDoc.exists()) {
+                Log.w(TAG, "Chat document doesn't exist: $chatId")
+                return null
+            }
+
+            // 2. Получаем участников
+            val participants = chatDoc.get(FIELD_PARTICIPANTS) as? List<String>
+                ?: run {
+                    Log.w(TAG, "No participants found for chat: $chatId")
+                    return null
+                }
+
+            // 3. Находим собеседника
+            val otherUserId = participants.firstOrNull { it != currentUserId }
+                ?: run {
+                    Log.w(TAG, "No other user found in chat: $chatId")
+                    return null
+                }
+
+            // 4. Получаем данные собеседника
+            val otherUser = fetchUserData(otherUserId)
+                ?: run {
+                    Log.w(TAG, "User data not found for: $otherUserId")
+                    return null
+                }
+
+            // 5. Получаем последнее сообщение (синхронно, один раз)
+            val lastMessage = fetchLastMessage(chatId)
+
+            // 6. Получаем количество непрочитанных (синхронно, один раз)
+            val unreadCount = fetchUnreadCount(chatId, currentUserId)
+
+            // 7. Создаем объект чата со всеми данными
             ChatRooms(
                 chatId = chatId,
                 otherUser = otherUser,
                 isOnline = otherUser.online,
-                lastMessage = Message(),
-                unreadMessageCount = 0
+                lastMessage = lastMessage,
+                unreadMessageCount = unreadCount
             )
         } catch (e: Exception) {
-            Log.e("ChatDebug", "Ошибка в buildChatRoomState для $chatId: ${e.message}", e)
+            Log.e(TAG, "Error in buildInitialChatRoom for $chatId", e)
             null
         }
     }
 
-    private suspend fun fetchUserData(userId: String): User? {
+    /**
+     * Получить последнее сообщение в чате (одноразовый запрос)
+     */
+    private suspend fun fetchLastMessage(chatId: String): Message {
         return try {
-            val userDoc = firebaseFirestore.collection("users")
-                .document(userId)
+            val snapshot = chatCollection.document(chatId)
+                .collection(COLLECTION_MESSAGES)
+                .orderBy(FIELD_TIMESTAMP, Query.Direction.DESCENDING)
+                .limit(LAST_MESSAGE_LIMIT)
                 .get()
                 .await()
-            if (userDoc.exists()) userDoc.toUser() else null
+
+            snapshot.documents.firstOrNull()?.toMessage() ?: Message()
         } catch (e: Exception) {
-            Log.e("ChatDebug", "Ошибка загрузки пользователя $userId: ${e.message}", e)
-            null
+            Log.e(TAG, "Error fetching last message for chat: $chatId", e)
+            Message()
         }
     }
 
+    /**
+     * Получить количество непрочитанных сообщений (одноразовый запрос)
+     */
+    private suspend fun fetchUnreadCount(chatId: String, currentUserId: String): Int {
+        return try {
+            val snapshot = chatCollection.document(chatId)
+                .collection(COLLECTION_MESSAGES)
+                .whereEqualTo(FIELD_STATUS, MessageStatus.DELIVERED.name)
+                .get()
+                .await()
+
+            // Считаем только сообщения от других пользователей
+            snapshot.documents.count { document ->
+                val messageUserId = document.getString(FIELD_USER_ID)
+                messageUserId != null && messageUserId != currentUserId
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error fetching unread count for chat: $chatId", e)
+            0
+        }
+    }
+
+    /**
+     * Создать слушатель последнего сообщения
+     */
+    private fun createLastMessageListener(
+        chatId: String,
+        onUpdate: (Message) -> Unit
+    ): ListenerRegistration {
+        return chatCollection.document(chatId)
+            .collection(COLLECTION_MESSAGES)
+            .orderBy(FIELD_TIMESTAMP, Query.Direction.DESCENDING)
+            .limit(LAST_MESSAGE_LIMIT)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    Log.e(TAG, "Error listening to last message for chat: $chatId", error)
+                    return@addSnapshotListener
+                }
+
+                val lastMessage = snapshot?.documents?.firstOrNull()?.toMessage() ?: Message()
+                onUpdate(lastMessage)
+            }
+    }
+
+    /**
+     * Создать слушатель непрочитанных сообщений
+     */
+    private fun createUnreadMessagesListener(
+        chatId: String,
+        currentUserId: String,
+        onUpdate: (Int) -> Unit
+    ): ListenerRegistration {
+        return chatCollection.document(chatId)
+            .collection(COLLECTION_MESSAGES)
+            .whereEqualTo(FIELD_STATUS, MessageStatus.DELIVERED.name)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    Log.e(TAG, "Error listening to unread messages for chat: $chatId", error)
+                    return@addSnapshotListener
+                }
+
+                val unreadCount = snapshot?.documents?.count { document ->
+                    val messageUserId = document.getString(FIELD_USER_ID)
+                    messageUserId != null && messageUserId != currentUserId
+                } ?: 0
+                Log.d(TAG, "Unread count for chat $chatId by user $currentUserId: $unreadCount")
+                onUpdate(unreadCount)
+            }
+    }
+
+    /**
+     * Создать слушатель статуса онлайн пользователя
+     */
+    private fun createUserOnlineListener(
+        chatId: String,
+        otherUserId: String,
+        onUpdate: (Boolean, User) -> Unit
+    ): ListenerRegistration {
+        return usersCollection.document(otherUserId)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    Log.e(TAG, "Error listening to user status: $otherUserId", error)
+                    return@addSnapshotListener
+                }
+
+                val user = snapshot?.toUser()
+                if (user != null) {
+                    onUpdate(user.online, user)
+                }
+            }
+    }
+
+    /**
+     * Получить данные пользователя по ID
+     */
+    private suspend fun fetchUserData(userId: String): User? {
+        return try {
+            val userDoc = usersCollection.document(userId).get().await()
+
+            if (!userDoc.exists()) {
+                Log.w(TAG, "User document doesn't exist: $userId")
+                return null
+            }
+
+            userDoc.toUser()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error fetching user data: $userId", e)
+            null
+        }
+    }
 }

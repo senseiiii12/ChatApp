@@ -21,8 +21,8 @@ class UsersViewModel @Inject constructor(
     private val auth: FirebaseAuth
 ) : ViewModel() {
 
-    private val _currentUser = mutableStateOf(User())
-    val currentUser = _currentUser
+    private val _currentUser = MutableStateFlow(User())
+    val currentUser = _currentUser.asStateFlow()
 
     private val _userStatuses = MutableStateFlow<Map<String, Pair<Boolean, Date>>>(emptyMap())
     val userStatuses = _userStatuses.asStateFlow()
@@ -31,8 +31,6 @@ class UsersViewModel @Inject constructor(
     val currentUserId = _currentUserId.asStateFlow()
 
     init {
-//        _currentUserId.value = auth.currentUser?.uid
-
         auth.addAuthStateListener { firebaseAuth ->
             _currentUserId.value = firebaseAuth.currentUser?.uid
             Log.d("addAuthStateListener",_currentUserId.value.toString())

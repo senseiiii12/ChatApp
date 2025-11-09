@@ -2,10 +2,10 @@ package com.chatapp.chatapp.features.chat_rooms.presentation
 
 import android.app.Activity
 import android.net.Uri
-import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,23 +14,32 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Create
-import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.chatapp.chatapp.core.presentation.UsersViewModel
+import com.chatapp.chatapp.features.auth.domain.User
+import com.chatapp.chatapp.features.chat_rooms.domain.models.ChatRooms
 import com.chatapp.chatapp.features.chat_rooms.presentation.details.ChatRoomsList
 import com.chatapp.chatapp.features.chat_rooms.presentation.details.TopBarChatsRoom
 import com.chatapp.chatapp.features.navigation.Route
@@ -46,52 +55,79 @@ import com.snackbar.snackswipe.SnackSwipeBox
 import com.snackbar.snackswipe.SnackSwipeController
 import com.snackbar.snackswipe.showSnackSwipe
 
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatRoomsScreen(
     navController: NavController,
-    usersViewModel: UsersViewModel
+    usersViewModel: UsersViewModel,
+    chatRoomsViewModel: ChatRoomsViewModel = hiltViewModel()
 ) {
     val systemUiController = rememberSystemUiController()
     systemUiController.setSystemBarsColor(SecondaryBackground)
-    val chatRoomsViewModel: ChatRoomsViewModel = hiltViewModel()
 
-    val stateChatRooms = chatRoomsViewModel.chatRooms.collectAsState()
-    val currentUser = usersViewModel.currentUser.value
-    val currentUserId = usersViewModel.currentUserId.collectAsState()
-
+    val chatRooms by chatRoomsViewModel.chatRooms.collectAsState()
+    val isLoading by chatRoomsViewModel.isLoading.collectAsState()
+    val error by chatRoomsViewModel.error.collectAsState()
+    val currentUser by usersViewModel.currentUser.collectAsState()
+    val currentUserId by usersViewModel.currentUserId.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     BackHandler(enabled = true) {
         (navController.context as? Activity)?.finish()
     }
+
     LaunchedEffect(Unit) {
         usersViewModel.getCurrentUser()
     }
-    LaunchedEffect(Unit) {
-        chatRoomsViewModel.loadAndListenToChats(currentUserId.value.toString())
-        stateChatRooms.value.map {
-            usersViewModel.listenForOtherUserStatus(it.otherUser.userId)
+
+    LaunchedEffect(currentUserId) {
+        currentUserId?.let { userId ->
+            if (userId.isNotBlank()) {
+                chatRoomsViewModel.loadAndListenToChats(userId)
+            }
         }
-        Log.d("updatedChatRooms","${currentUserId.value}__${stateChatRooms.value}")
     }
 
+//    LaunchedEffect(chatRooms) {
+//        chatRooms.forEach { chatRoom ->
+//            usersViewModel.listenForOtherUserStatus(chatRoom.otherUser.userId)
+//        }
+//    }
 
-    SnackSwipeBox { snackbarController ->
+    LaunchedEffect(error) {
+        error?.let { errorMessage ->
+            snackbarHostState.showSnackbar(
+                message = errorMessage,
+                withDismissAction = true
+            )
+            chatRoomsViewModel.clearError()
+        }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            chatRoomsViewModel.stopListening()
+        }
+    }
+
+    SnackSwipeBox { snackSwipeController ->
         Scaffold(
+            containerColor = PrimaryBackground,
             topBar = {
                 TopBarChatsRoom(
-                    onSearchButtonClick = { navController.navigate(Route.SearchUsers.route) },
-                    onMenuButtonClick = {}
+                    onSearchButtonClick = {
+                        navController.navigate(Route.SearchUsers.route)
+                    },
+                    onMenuButtonClick = {  }
                 )
             },
             floatingActionButton = {
                 FloatingActionButton(
                     containerColor = PrimaryPurple,
                     onClick = {
-                        MySnackBar(
-                            snackbarController = snackbarController,
-                            onCustomAction = {
+                        showCustomSnackbar(
+                            snackbarController = snackSwipeController,
+                            onNavigateToRequests = {
                                 navController.navigate(Route.FriendsRequests.route)
                             }
                         )
@@ -99,10 +135,13 @@ fun ChatRoomsScreen(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Create,
-                        contentDescription = null,
+                        contentDescription = "Создать чат",
                         tint = Color.White
                     )
                 }
+            },
+            snackbarHost = {
+                SnackbarHost(hostState = snackbarHostState)
             }
         ) { paddingValues ->
             Column(
@@ -112,35 +151,125 @@ fun ChatRoomsScreen(
                     .padding(paddingValues)
             ) {
                 NetworkConnectionIndicator()
-                ChatRoomsList(
-                    stateChatRooms = stateChatRooms.value,
+
+                ChatRoomsContent(
+                    chatRooms = chatRooms,
+                    isLoading = isLoading,
+                    currentUser = currentUser,
+                    currentUserId = currentUserId,
                     usersViewModel = usersViewModel,
-                    onUserClick = { user ->
-                        val otherUserJson = Gson().toJson(user)
-                        val currentUserJson = Gson().toJson(currentUser)
-                        navController.navigate(
-                            "chat/${Uri.encode(otherUserJson)}/${
-                                Uri.encode(currentUserJson)
-                            }"
-                        )
-                    }
+                    chatRoomsViewModel = chatRoomsViewModel,
+                    navController = navController
                 )
-                Button(onClick = {
-                    chatRoomsViewModel.clearChatRooms()
-                    usersViewModel.logout()
-                    navigateToMainEntrance(navController)
-                }) {
-                    Text(text = currentUserId.value.toString())
-                }
             }
         }
     }
 }
 
+@Composable
+private fun ChatRoomsContent(
+    chatRooms: List<ChatRooms>,
+    isLoading: Boolean,
+    currentUser: User?,
+    currentUserId: String?,
+    usersViewModel: UsersViewModel,
+    chatRoomsViewModel: ChatRoomsViewModel,
+    navController: NavController
+) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        when {
+            isLoading && chatRooms.isEmpty() -> {
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center),
+                    color = PrimaryPurple
+                )
+            }
+            chatRooms.isEmpty() && !isLoading -> {
+                EmptyChatsState(
+                    modifier = Modifier.align(Alignment.Center),
+                    onNavigateToSearch = {
+                        navController.navigate(Route.SearchUsers.route)
+                    }
+                )
+            }
+            else -> {
+                ChatRoomsList(
+                    stateChatRooms = chatRooms,
+                    usersViewModel = usersViewModel,
+                    onUserClick = { user ->
+                        currentUser?.let { current ->
+                            navigateToChat(
+                                navController = navController,
+                                otherUser = user,
+                                currentUser = current
+                            )
+                        }
+                    }
+                )
+            }
+        }
 
-fun MySnackBar(
+        // Debug кнопка
+        if (currentUserId != null) {
+            DebugLogoutButton(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(16.dp),
+                currentUserId = currentUserId,
+                onLogout = {
+                    chatRoomsViewModel.clearChatRooms()
+                    usersViewModel.logout()
+                    navigateToMainEntrance(navController)
+                }
+            )
+        }
+    }
+}
+
+@Composable
+private fun EmptyChatsState(
+    modifier: Modifier = Modifier,
+    onNavigateToSearch: () -> Unit
+) {
+    Column(
+        modifier = modifier.padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = "У вас пока нет чатов",
+            style = MyCustomTypography.Bold_14,
+            color = Color.White.copy(alpha = 0.7f),
+            textAlign = TextAlign.Center
+        )
+        Text(
+            modifier = Modifier
+                .padding(top = 8.dp)
+                .clickable { onNavigateToSearch() },
+            text = "Найти пользователей",
+            style = MyCustomTypography.SemiBold_14,
+            color = PrimaryPurple,
+            textAlign = TextAlign.Center
+        )
+    }
+}
+
+@Composable
+private fun DebugLogoutButton(
+    modifier: Modifier = Modifier,
+    currentUserId: String,
+    onLogout: () -> Unit
+) {
+    androidx.compose.material3.Button(
+        modifier = modifier,
+        onClick = onLogout
+    ) {
+        Text(text = "Выйти ($currentUserId)")
+    }
+}
+
+private fun showCustomSnackbar(
     snackbarController: SnackSwipeController,
-    onCustomAction: () -> Unit
+    onNavigateToRequests: () -> Unit
 ) {
     snackbarController.showSnackSwipe(
         icon = {
@@ -152,26 +281,29 @@ fun MySnackBar(
         },
         messageText = {
             Text(
-                text = "Привет, это кастомный Snackbar3333333333",
+                text = "У вас есть новые запросы в друзья",
                 style = MyCustomTypography.SemiBold_12,
-                color = Color.White.copy(alpha = 0.5f),
+                color = Color.White.copy(alpha = 0.8f),
                 overflow = TextOverflow.Ellipsis,
-                maxLines = 1,
+                maxLines = 2,
             )
         },
         customAction = {
             Text(
-                modifier = Modifier.clickable { onCustomAction() },
-                text = "Send",
+                modifier = Modifier
+                    .clickable {
+                        onNavigateToRequests()
+                        snackbarController.close()
+                    }
+                    .padding(8.dp),
+                text = "Открыть",
                 style = MyCustomTypography.Bold_14,
-                color = Color.White
+                color = PrimaryPurple
             )
         },
         dismissAction = {
             IconButton(
-                onClick = {
-                    snackbarController.close()
-                }
+                onClick = { snackbarController.close() }
             ) {
                 Icon(
                     Icons.Default.Close,
@@ -182,18 +314,27 @@ fun MySnackBar(
         },
         backgroundColor = Color.Black,
         durationMillis = 5000,
-        innerPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp),
+        innerPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
         outerPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
-
     )
 }
 
-fun navigateToMainEntrance(navController: NavController) {
+private fun navigateToChat(
+    navController: NavController,
+    otherUser: User,
+    currentUser: User
+) {
+    val otherUserJson = Gson().toJson(otherUser)
+    val currentUserJson = Gson().toJson(currentUser)
+    navController.navigate(
+        "chat/${Uri.encode(otherUserJson)}/${Uri.encode(currentUserJson)}"
+    )
+}
+
+private fun navigateToMainEntrance(navController: NavController) {
     navController.navigate(Route.MainEntrance.route) {
         popUpTo(navController.graph.id) {
             inclusive = true
         }
     }
 }
-
-

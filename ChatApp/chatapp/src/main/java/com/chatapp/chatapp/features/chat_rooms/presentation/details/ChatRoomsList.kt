@@ -23,7 +23,7 @@ fun ChatRoomsList(
     usersViewModel: UsersViewModel,
 ) {
 
-    val currentUserId = usersViewModel.currentUser.value.userId
+    val currentUserId by usersViewModel.currentUser.collectAsState()
     val isOnline by usersViewModel.userStatuses.collectAsState()
 
     Column {
@@ -31,9 +31,8 @@ fun ChatRoomsList(
             items(stateChatRooms, key = { chatRoom -> chatRoom.chatId }) { chatRoom ->
                 ChatRoomItem(
                     modifier = Modifier.animateItem(),
-                    currentUserId = currentUserId,
+                    currentUserId = currentUserId.userId,
                     chatRoomState = chatRoom,
-                    isOnline = isOnline[chatRoom.otherUser.userId]?.first ?: false,
                     onClickChatRoom = { onUserClick(chatRoom.otherUser) }
                 )
                 Divider(

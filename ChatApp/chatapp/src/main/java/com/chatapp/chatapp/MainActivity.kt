@@ -62,11 +62,6 @@ class MainActivity : ComponentActivity() {
             LaunchedEffect(currentUserId) {
                 Log.d("currentUserIdLaunchedEffect", "LaunchedEffect - ${currentUserId.value}")
             }
-//            val usersViewModel: UsersViewModel = hiltViewModel()
-//            LaunchedEffect(usersViewModel.currentUser.value) {
-//                currentUserId = FirebaseAuth.getInstance().currentUser?.uid
-//                Log.d("curerntUserLaunchedEffect", currentUserId ?: "no id")
-//            }
 
             ChatAppTheme {
                 Surface(
