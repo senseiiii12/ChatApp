@@ -21,23 +21,46 @@ class SignInViewModel @Inject constructor(
     val signInState: StateFlow<SignInState> = _signInState.asStateFlow()
 
 
-    fun loginUser(email: String, password: String, onSuccessLogin: () -> Unit) =
+    fun loginUser(email: String, password: String) {
         viewModelScope.launch {
             repository.loginUser(email, password).collect { result ->
                 when (result) {
-                    is Resource.Success -> {
-                        _signInState.update { it.copy(isSuccess = "Sign in Success", isLoading = false, isError = null) }
-                        onSuccessLogin()
-                    }
                     is Resource.Loading -> {
-                        _signInState.update { it.copy(isLoading = true) }
+                        _signInState.update {
+                            it.copy(isLoading = true, errorMessage = null)
+                        }
                     }
+
+                    is Resource.Success -> {
+                        _signInState.update {
+                            it.copy(
+                                isLoading = false,
+                                isSuccess = true,
+                                errorMessage = null
+                            )
+                        }
+                    }
+
                     is Resource.Error -> {
-                        _signInState.update { it.copy(isError = "Incorrect Data", isLoading = false) }
+                        _signInState.update {
+                            it.copy(
+                                isLoading = false,
+                                isSuccess = false,
+                                errorMessage = result.message ?: "Неизвестная ошибка"
+                            )
+                        }
                     }
                 }
             }
         }
+    }
+    fun clearSignInError() {
+        _signInState.update { it.copy(errorMessage = null) }
+    }
+
+    fun resetSignInState() {
+        _signInState.value = SignInState()
+    }
 
     fun getCurrentUserUID(): String? {
         return repository.getCurrentUserUID()

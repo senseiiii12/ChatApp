@@ -41,7 +41,8 @@ fun ButtonEnter(
     text: String,
     textColor: Color = Color.White,
     borderColor: Color = Color.Transparent,
-    OnClick:() -> Unit
+    OnClick:() -> Unit,
+    enabled: Boolean = true
 ) {
 
     Button(
@@ -55,7 +56,7 @@ fun ButtonEnter(
             disabledContainerColor = SecondaryBackground
         ),
         onClick = OnClick,
-        enabled = !isLoading
+        enabled = enabled
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),

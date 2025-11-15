@@ -30,17 +30,38 @@ class UsersRepositoryImpl @Inject constructor(
     private val context: Context
 ) : UsersRepository {
 
-    private val currentUserId: String = firebaseAuth.currentUser?.uid ?: ""
+    private fun getCurrentUserId(): String? {
+        return firebaseAuth.currentUser?.uid
+    }
 
     override suspend fun getCurrentUser(): Flow<User> {
         return flow {
-            val result = currentUserId?.let {
-                firebaseFirestore
-                    .collection("users")
-                    .document(it)
-                    .get().await()
+            val userId = getCurrentUserId()
+
+            if (userId.isNullOrBlank()) {
+                Log.e("UsersRepository", "getCurrentUser: userId is null or empty")
+                emit(User())
+                return@flow
             }
-            result?.toUser()?.let { emit(it) }
+
+            try {
+                val snapshot = firebaseFirestore
+                    .collection("users")
+                    .document(userId)
+                    .get()
+                    .await()
+
+                if (snapshot.exists()) {
+                    val user = snapshot.toUser()
+                    emit(user)
+                } else {
+                    Log.w("UsersRepository", "User document does not exist for userId: $userId")
+                    emit(User())
+                }
+            } catch (e: Exception) {
+                Log.e("UsersRepository", "Error getting current user", e)
+                emit(User())
+            }
         }
     }
 
@@ -61,8 +82,8 @@ class UsersRepositoryImpl @Inject constructor(
     }
 
    override suspend fun searchUsers(query: String): Flow<List<User>> = flow {
-       Log.d("searchUsers", currentUserId.toString())
         try {
+            val userId = getCurrentUserId()
             val snapshot = firebaseFirestore.collection("users")
                 .orderBy("name")
                 .startAt(query)
@@ -72,7 +93,7 @@ class UsersRepositoryImpl @Inject constructor(
 
             val usersList = snapshot.documents
                 .map { it.toUser() }
-                .filter { it.userId != currentUserId }
+                .filter { it.userId != userId }
 
             emit(usersList)
         } catch (e: Exception) {

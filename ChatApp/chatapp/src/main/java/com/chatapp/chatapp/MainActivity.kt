@@ -56,12 +56,6 @@ class MainActivity : ComponentActivity() {
         setContent {
             val navController = rememberNavController()
             val startDestination = splashViewModel.checkUser()
-            val currentUserId = usersViewModel.currentUserId.collectAsState()
-
-
-            LaunchedEffect(currentUserId) {
-                Log.d("currentUserIdLaunchedEffect", "LaunchedEffect - ${currentUserId.value}")
-            }
 
             ChatAppTheme {
                 Surface(
@@ -97,14 +91,12 @@ class MainActivity : ComponentActivity() {
                         }
                     ) {
                         composable(route = Route.MainEntrance.route) {
-                            Log.d("currentUserIdonCreate", "MainEntrance - ${currentUserId.value}")
                             MainEntrance(
                                 navController = navController,
                                 usersViewModel = usersViewModel
                             )
                         }
                         composable(route = Route.HomePage.route) {
-                            Log.d("currentUserIdonCreate", "ChatRoomsScreen - ${currentUserId.value}")
                             ChatRoomsScreen(
                                 navController = navController,
                                 usersViewModel = usersViewModel

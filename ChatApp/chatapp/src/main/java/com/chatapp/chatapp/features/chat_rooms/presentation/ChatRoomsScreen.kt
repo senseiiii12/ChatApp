@@ -76,15 +76,15 @@ fun ChatRoomsScreen(
         (navController.context as? Activity)?.finish()
     }
 
-    LaunchedEffect(Unit) {
-        usersViewModel.getCurrentUser()
+    LaunchedEffect(currentUserId) {
+        currentUserId?.let {
+            usersViewModel.getCurrentUser()
+        }
     }
 
     LaunchedEffect(currentUserId) {
         currentUserId?.let { userId ->
-            if (userId.isNotBlank()) {
-                chatRoomsViewModel.loadAndListenToChats(userId)
-            }
+            chatRoomsViewModel.loadAndListenToChats(userId)
         }
     }
 

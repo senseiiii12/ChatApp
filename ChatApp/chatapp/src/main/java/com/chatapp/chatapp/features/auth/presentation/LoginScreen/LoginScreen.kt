@@ -1,5 +1,6 @@
 package com.chatapp.chatapp.features.auth.presentation.LoginScreen
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -14,6 +15,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -28,13 +32,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.Font
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -62,10 +63,12 @@ fun LoginScreen(
     validateViewModel: ValidateViewModel = viewModel(),
     usersViewModel: UsersViewModel
 ) {
-    val scope = rememberCoroutineScope()
+    val signInState by signInViewModel.signInState.collectAsState()
+    val validationState = validateViewModel.validationLoginState.collectAsState()
+    val currentUserId by usersViewModel.currentUserId.collectAsState()
+
     var isShownDialog by rememberSaveable { mutableStateOf(false) }
-    val stateLoginValidate = validateViewModel.validationLoginState.collectAsState()
-    val stateLogin = signInViewModel.signInState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -75,133 +78,163 @@ fun LoginScreen(
         validateViewModel.validateEmailLogin(email)
     }
 
-    Row(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(PrimaryBackground)
-    ) {
-        Spacer(modifier = Modifier.width(20.dp))
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .weight(0.8f, false),
-            verticalArrangement = Arrangement.Bottom,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Spacer(modifier = Modifier.weight(0.1f))
-            Text(
-                text = "Login to ChatApp",
-                style = MyCustomTypography.SemiBold_24,
-                color = Color.White
-            )
-            Spacer(modifier = Modifier.height(40.dp))
-            ButtonContinueWith(
-                text = "Continue with Google",
-                icon = R.drawable.icons8_google
-            )
-            Spacer(modifier = Modifier.height(20.dp))
-            ButtonContinueWith(
-                text = "Continue with Apple",
-                icon = R.drawable.ri_apple_fill
-            )
-            Spacer(modifier = Modifier.height(20.dp))
-            SpacerOr()
-            Spacer(modifier = Modifier.height(20.dp))
-            key("Email") {
-                EditField(
-                    placeholder = "Email",
-                    iconStart = Icons.Default.Email,
-                    visualTransformation = VisualTransformation.None,
-                    keyboardType = KeyboardType.Email,
-                    onValueChange = { email = it },
-                    value = email
-                )
+    LaunchedEffect(signInState.isSuccess) {
+        if (signInState.isSuccess) {
+            currentUserId?.let { userId ->
+                usersViewModel.updateUserOnlineStatus(userId, true)
+                navigateToHomeScreen(navController)
+            } ?: run {
+                Log.e("LoginScreen", "Login successful but userId is null")
             }
-            ErrorMessage(state = stateLoginValidate) { it.errorEmailLogin }
-            Spacer(modifier = Modifier.height(20.dp))
-            key("Password") {
-                EditField(
-                    placeholder = "Password",
-                    iconStart = Icons.Default.Lock,
-                    visualTransformation = PasswordVisualTransformation(),
-                    keyboardType = KeyboardType.Password,
-                    onValueChange = { password = it },
-                    value = password
-                )
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(top = 5.dp),
-                horizontalArrangement = Arrangement.End
-            ) {
-                Text(
-                    modifier = Modifier
-                        .clickable {
-                            isShownDialog = !isShownDialog
-                    },
-                    text = "Forgot Password?",
-                    style = MyCustomTypography.Medium_14,
-                    color = PrimaryPurple
-                )
-            }
-            Spacer(modifier = Modifier.height(20.dp))
-            val onSignInClick = remember {
-                {
-                    if (stateLoginValidate.value.errorEmailLogin.isEmpty()) {
-                        scope.launch {
-                            signInViewModel.loginUser(email, password) {
-                                signInViewModel.getCurrentUserUID()?.let {
-                                    usersViewModel.updateUserOnlineStatus(it, true)
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            ButtonEnter(
-                text = "Sign in",
-                OnClick = onSignInClick
-            )
-            Spacer(modifier = Modifier.height(40.dp))
-            Text(
-                text = "Don’t have account ?",
-                style = MyCustomTypography.Medium_14,
-                color = Color.White
-            )
-            Spacer(modifier = Modifier.height(10.dp))
-            ButtonEnter(
-                text = "Sign up",
-                background = Surface_1,
-                textColor = PrimaryPurple,
-                borderColor = PrimaryPurple,
-                OnClick = OnClickShowRegister
-            )
-            Spacer(modifier = Modifier.weight(0.1f))
         }
-        Spacer(modifier = Modifier.width(20.dp))
     }
 
+    // Показываем ошибки входа
+    LaunchedEffect(signInState.errorMessage) {
+        signInState.errorMessage?.let { message ->
+            snackbarHostState.showSnackbar(message)
+            signInViewModel.clearSignInError()
+        }
+    }
+
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        containerColor = PrimaryBackground
+    ) { padding ->
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(PrimaryBackground)
+                .padding(padding)
+        ) {
+            Spacer(modifier = Modifier.width(20.dp))
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .weight(0.8f, false),
+                verticalArrangement = Arrangement.Bottom,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Spacer(modifier = Modifier.weight(0.1f))
+
+                Text(
+                    text = "Login to ChatApp",
+                    style = MyCustomTypography.SemiBold_24,
+                    color = Color.White
+                )
+
+                Spacer(modifier = Modifier.height(40.dp))
+
+                ButtonContinueWith(
+                    text = "Continue with Google",
+                    icon = R.drawable.icons8_google
+                )
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                ButtonContinueWith(
+                    text = "Continue with Apple",
+                    icon = R.drawable.ri_apple_fill
+                )
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                SpacerOr()
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                key("Email") {
+                    EditField(
+                        placeholder = "Email",
+                        iconStart = Icons.Default.Email,
+                        visualTransformation = VisualTransformation.None,
+                        keyboardType = KeyboardType.Email,
+                        onValueChange = { email = it },
+                        value = email,
+                    )
+                }
+
+                ErrorMessage(state = validationState) { it.errorEmailLogin }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                key("Password") {
+                    EditField(
+                        placeholder = "Password",
+                        iconStart = Icons.Default.Lock,
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardType = KeyboardType.Password,
+                        onValueChange = { password = it },
+                        value = password,
+                    )
+                }
+//                ErrorMessage(state = validationState) { it.errorPasswordLogin }
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 5.dp),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    Text(
+                        modifier = Modifier.clickable {
+                            isShownDialog = !isShownDialog
+                        },
+                        text = "Forgot Password?",
+                        style = MyCustomTypography.Medium_14,
+                        color = PrimaryPurple
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                ButtonEnter(
+                    text = if (signInState.isLoading) "Loading..." else "Sign in",
+                    OnClick = {
+                        if (validationState.value.errorEmailLogin.isEmpty() &&
+                            email.isNotBlank() &&
+                            password.isNotBlank()) {
+                            signInViewModel.loginUser(email, password)
+                        }
+                    },
+                    enabled = !signInState.isLoading &&
+                            validationState.value.errorEmailLogin.isEmpty() &&
+                            email.isNotBlank() &&
+                            password.isNotBlank()
+                )
+
+                Spacer(modifier = Modifier.height(40.dp))
+
+                Text(
+                    text = "Don't have account ?",
+                    style = MyCustomTypography.Medium_14,
+                    color = Color.White
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                ButtonEnter(
+                    text = "Sign up",
+                    background = Surface_1,
+                    textColor = PrimaryPurple,
+                    borderColor = PrimaryPurple,
+                    OnClick = OnClickShowRegister,
+                    enabled = !signInState.isLoading
+                )
+
+                Spacer(modifier = Modifier.weight(0.1f))
+            }
+
+            Spacer(modifier = Modifier.width(20.dp))
+        }
+    }
+
+    // Диалог сброса пароля
     if (isShownDialog) {
         DialogForgotPassword(
             onDismiss = { isShownDialog = !isShownDialog }
         )
-    }
-
-
-    LaunchedEffect(key1 = stateLogin.value.isSuccess) {
-        scope.launch {
-            if (stateLogin.value.isSuccess?.isNotEmpty() == true) {
-                val success = stateLogin.value.isSuccess
-                navigateToHomeScreen(navController)
-            }
-        }
-    }
-    LaunchedEffect(key1 = stateLogin.value.isError) {
-        scope.launch {
-            if (stateLogin.value.isError?.isNotEmpty() == true) {
-                val error = stateLogin.value.isError
-
-            }
-        }
     }
 }
 
