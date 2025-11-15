@@ -8,7 +8,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chatapp.chatapp.features.auth.domain.AuthRepository
-import com.chatapp.chatapp.core.domain.UsersRepository
+import com.chatapp.chatapp.features.auth.presentation.Validator.ValidateStateLogin
 import com.chatapp.chatapp.util.Resource
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.storage.FirebaseStorage
@@ -17,8 +17,10 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.io.ByteArrayOutputStream
@@ -30,8 +32,8 @@ class SignUpViewModel @Inject constructor(
     private val authRepository: AuthRepository,
 ) : ViewModel() {
 
-    val _signUpState = Channel<SignUpState>()
-    val singUpState = _signUpState.receiveAsFlow()
+    private val _signUpState = MutableStateFlow(SignUpState())
+    val singUpState = _signUpState.asStateFlow()
 
     private val _showBottomSheet = MutableStateFlow(false)
     val showBottomSheet: StateFlow<Boolean> = _showBottomSheet
@@ -53,7 +55,7 @@ class SignUpViewModel @Inject constructor(
         password: String
     ) {
         viewModelScope.launch {
-            _signUpState.send(SignUpState(isLoading = true))
+            _signUpState.update { it.copy(isLoading = true)  }
 
             try {
                 val avatarDeferred = async {
@@ -87,34 +89,23 @@ class SignUpViewModel @Inject constructor(
 
                         authRepository.saveUserToDatabase(user)
 
-                        _signUpState.send(
-                            SignUpState(
-                                isSuccess = "Success Registration",
-                                isLoading = false
-                            )
-                        )
+                        _signUpState.update {
+                            it.copy(isSuccess = true, isLoading = false)
+                        }
                     }
 
                     is Resource.Error -> {
-                        _signUpState.send(
-                            SignUpState(
-                                isError = result.message ?: "Unknown error",
-                                isLoading = false
-                            )
-                        )
+                        _signUpState.update {
+                            it.copy(errorMessage = result.message ?: "Unknown error", isLoading = false)
+                        }
                     }
 
                     else -> Unit
                 }
-
             } catch (e: Exception) {
-                Log.e("SignUp", "Ошибка регистрации", e)
-                _signUpState.send(
-                    SignUpState(
-                        isError = e.message ?: "Ошибка регистрации",
-                        isLoading = false
-                    )
-                )
+                _signUpState.update {
+                    it.copy(errorMessage = e.message ?: "Ошибка регистрации", isLoading = false)
+                }
             }
         }
     }

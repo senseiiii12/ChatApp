@@ -39,7 +39,6 @@ fun MainEntrance(
     val viewModelImageAvatar: ImageAvatarViewModel = viewModel()
     val showBottomSheet by viewModelSignUp.showBottomSheet.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
-
     var isSuccessRegistration by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -57,7 +56,7 @@ fun MainEntrance(
                 .padding(top = paddingValues.calculateTopPadding())
         ) {
             LoginScreen(
-                OnClickShowRegister = { viewModelSignUp.showSheet() },
+                onClickShowRegister = { viewModelSignUp.showSheet() },
                 navController = navController,
                 usersViewModel = usersViewModel
             )

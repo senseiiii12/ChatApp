@@ -26,7 +26,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -53,12 +52,11 @@ import com.chatapp.chatapp.ui.theme.PrimaryBackground
 import com.chatapp.chatapp.ui.theme.PrimaryPurple
 import com.chatapp.chatapp.ui.theme.Surface_1
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(
     navController: NavController,
-    OnClickShowRegister: () -> Unit,
+    onClickShowRegister: () -> Unit,
     signInViewModel: SignInViewModel = hiltViewModel(),
     validateViewModel: ValidateViewModel = viewModel(),
     usersViewModel: UsersViewModel
@@ -89,7 +87,6 @@ fun LoginScreen(
         }
     }
 
-    // Показываем ошибки входа
     LaunchedEffect(signInState.errorMessage) {
         signInState.errorMessage?.let { message ->
             snackbarHostState.showSnackbar(message)
@@ -144,32 +141,26 @@ fun LoginScreen(
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                key("Email") {
-                    EditField(
-                        placeholder = "Email",
-                        iconStart = Icons.Default.Email,
-                        visualTransformation = VisualTransformation.None,
-                        keyboardType = KeyboardType.Email,
-                        onValueChange = { email = it },
-                        value = email,
-                    )
-                }
+                EditField(
+                    value = email,
+                    onValueChange = { email = it },
+                    placeholder = "Email",
+                    iconStart = Icons.Default.Email,
+                    keyboardType = KeyboardType.Email,
+                )
 
                 ErrorMessage(state = validationState) { it.errorEmailLogin }
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                key("Password") {
-                    EditField(
-                        placeholder = "Password",
-                        iconStart = Icons.Default.Lock,
-                        visualTransformation = PasswordVisualTransformation(),
-                        keyboardType = KeyboardType.Password,
-                        onValueChange = { password = it },
-                        value = password,
-                    )
-                }
-//                ErrorMessage(state = validationState) { it.errorPasswordLogin }
+                EditField(
+                    value = password,
+                    onValueChange = { password = it },
+                    placeholder = "Password",
+                    iconStart = Icons.Default.Lock,
+                    keyboardType = KeyboardType.Password,
+                    isPasswordField = true
+                )
 
                 Row(
                     modifier = Modifier
@@ -190,11 +181,13 @@ fun LoginScreen(
                 Spacer(modifier = Modifier.height(20.dp))
 
                 ButtonEnter(
-                    text = if (signInState.isLoading) "Loading..." else "Sign in",
+                    text = "Sign in",
+                    isLoading = signInState.isLoading,
                     OnClick = {
                         if (validationState.value.errorEmailLogin.isEmpty() &&
                             email.isNotBlank() &&
-                            password.isNotBlank()) {
+                            password.isNotBlank()
+                        ) {
                             signInViewModel.loginUser(email, password)
                         }
                     },
@@ -216,11 +209,11 @@ fun LoginScreen(
 
                 ButtonEnter(
                     text = "Sign up",
+                    enabled = !signInState.isLoading,
                     background = Surface_1,
                     textColor = PrimaryPurple,
                     borderColor = PrimaryPurple,
-                    OnClick = OnClickShowRegister,
-                    enabled = !signInState.isLoading
+                    OnClick = onClickShowRegister
                 )
 
                 Spacer(modifier = Modifier.weight(0.1f))

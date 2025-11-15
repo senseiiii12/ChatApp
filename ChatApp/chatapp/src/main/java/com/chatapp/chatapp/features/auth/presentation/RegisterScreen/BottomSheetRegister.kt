@@ -64,14 +64,10 @@ fun BottomSheetRegister(
 ) {
     val validateViewModel: ValidateViewModel = viewModel()
     val viewModelImageAvatar: ImageAvatarViewModel = viewModel()
+
     val imageUri by viewModelImageAvatar.imageUri.collectAsState()
-    val state = viewModel.singUpState.collectAsState(
-        SignUpState(
-            isLoading = false,
-            isSuccess = "",
-            isError = ""
-        )
-    )
+    val state by viewModel.singUpState.collectAsState()
+    val stateRegisterValidate = validateViewModel.validationRegisterState.collectAsState()
 
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -79,9 +75,6 @@ fun BottomSheetRegister(
 
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
-
-    val stateRegisterValidate = validateViewModel.validationRegisterState.collectAsState()
-
 
     Column(
         modifier = Modifier
@@ -156,7 +149,7 @@ fun BottomSheetRegister(
         Spacer(modifier = Modifier.height(40.dp))
         ButtonEnter(
             text = "SignUp",
-            isLoading = state.value.isLoading,
+            isLoading = state.isLoading,
             OnClick = {
                 if (stateRegisterValidate.value.errorEmailRegister.isEmpty() &&
                     stateRegisterValidate.value.errorPasswordRegister.isEmpty() &&
@@ -172,13 +165,13 @@ fun BottomSheetRegister(
 
 
 
-    LaunchedEffect(state.value.isSuccess) {
-        if (state.value.isSuccess.isNotEmpty() == true) {
+    LaunchedEffect(state.isSuccess) {
+        if (state.isSuccess) {
             onSuccesRegistration(true)
             scope.launch {
                 bottomSheetState.hide()
                 snackbarHostState.showSnackbar(
-                    message = state.value.isSuccess,
+                    message = "Sign Up success",
                     actionLabel = "Dismiss",
                     duration = SnackbarDuration.Short
                 )
@@ -189,12 +182,12 @@ fun BottomSheetRegister(
             }
         }
     }
-    LaunchedEffect(key1 = state.value.isError) {
+    LaunchedEffect(key1 = state.errorMessage) {
         scope.launch {
-            if (state.value.isError.isNotEmpty() == true) {
+            if (state.errorMessage.isNotEmpty() == true) {
                 onSuccesRegistration(false)
                 snackbarHostState.showSnackbar(
-                    message = state.value.isError,
+                    message = state.errorMessage,
                     actionLabel = "Dismiss",
                     duration = SnackbarDuration.Short
                 )

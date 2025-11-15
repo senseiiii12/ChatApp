@@ -8,41 +8,52 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.State
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.Font
-import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.chatapp.chatapp.R
 import com.chatapp.chatapp.ui.theme.ChatAppTheme
-import com.chatapp.chatapp.ui.theme.ChatText
 import com.chatapp.chatapp.ui.theme.DarkGray_2
 import com.chatapp.chatapp.ui.theme.MyCustomTypography
 import com.chatapp.chatapp.ui.theme.Outline_1
 
-
 @Composable
 fun EditField(
+    value: String,
+    onValueChange: (String) -> Unit,
     placeholder: String,
     iconStart: ImageVector,
     keyboardType: KeyboardType,
-    visualTransformation: VisualTransformation,
-    onValueChange:(String) -> Unit,
-    value: String,
+    visualTransformation: VisualTransformation = VisualTransformation.None,
+    isPasswordField: Boolean = false
 ) {
+    var passwordVisible by remember { mutableStateOf(false) }
+
+    val visualTransformation = if (isPasswordField && !passwordVisible)
+        PasswordVisualTransformation() else visualTransformation
+
+    val trailingIconState = if (passwordVisible)
+        painterResource(R.drawable.ic_visibility)
+    else
+        painterResource(R.drawable.ic_visibility_off)
 
     TextField(
         modifier = Modifier
@@ -61,7 +72,10 @@ fun EditField(
             focusedContainerColor = Color.Transparent,
             unfocusedContainerColor = Color.Transparent
         ),
-        textStyle = MyCustomTypography.Medium_14.copy(color = Color.White, letterSpacing = 0.5.sp),
+        textStyle = MyCustomTypography.Medium_14.copy(
+            color = Color.White,
+            letterSpacing = 0.5.sp
+        ),
         placeholder = {
             Text(
                 text = placeholder,
@@ -76,24 +90,34 @@ fun EditField(
                 tint = Color.White
             )
         },
+        trailingIcon = {
+            if (isPasswordField) {
+                IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                    Icon(
+                        painter = trailingIconState,
+                        contentDescription = null,
+                        tint = Color.White.copy(alpha = 0.7f)
+                    )
+                }
+            }
+        },
         visualTransformation = visualTransformation,
-        keyboardOptions = KeyboardOptions(
-            keyboardType = keyboardType
-        )
+        keyboardOptions = KeyboardOptions(keyboardType = keyboardType)
     )
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF000000)
+@Preview(showBackground = true)
 @Composable
 private fun EditFieldPreview() {
     ChatAppTheme {
         EditField(
+            value = "12345",
+            onValueChange = {},
             placeholder = "Username",
             iconStart = Icons.Default.Person,
             visualTransformation = VisualTransformation.None,
             keyboardType = KeyboardType.Text,
-            onValueChange = {},
-            value = ""
+            isPasswordField = true
         )
     }
 }

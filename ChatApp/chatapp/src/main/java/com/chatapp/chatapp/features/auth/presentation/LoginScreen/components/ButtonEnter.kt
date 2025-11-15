@@ -36,13 +36,13 @@ import com.chatapp.chatapp.ui.theme.SecondaryBackground
 
 @Composable
 fun ButtonEnter(
-    background: Color = PrimaryPurple,
-    isLoading: Boolean = false,
     text: String,
+    isLoading: Boolean = false,
+    enabled: Boolean = true,
+    background: Color = PrimaryPurple,
     textColor: Color = Color.White,
     borderColor: Color = Color.Transparent,
-    OnClick:() -> Unit,
-    enabled: Boolean = true
+    OnClick:() -> Unit
 ) {
 
     Button(
@@ -67,7 +67,7 @@ fun ButtonEnter(
                 if (isLoading){
                     CircularProgressIndicator(
                         modifier = Modifier.size(30.dp),
-                        color = PrimaryPurple,
+                        color = Color.White,
                         strokeWidth = 3.dp
                     )
                 }else{
