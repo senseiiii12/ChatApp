@@ -55,13 +55,13 @@ import kotlinx.coroutines.delay
 
 @Composable
 fun LoginScreen(
+    signInState: SignInState,
     navController: NavController,
     onClickShowRegister: () -> Unit,
-    signInViewModel: SignInViewModel = hiltViewModel(),
-    validateViewModel: ValidateViewModel = viewModel(),
-    usersViewModel: UsersViewModel
+    onSignIn: () -> Unit,
+    usersViewModel: UsersViewModel,
+    validateViewModel: ValidateViewModel = viewModel()
 ) {
-    val signInState by signInViewModel.signInState.collectAsState()
     val validationState = validateViewModel.validationLoginState.collectAsState()
     val currentUserId by usersViewModel.currentUserId.collectAsState()
 
@@ -87,12 +87,12 @@ fun LoginScreen(
         }
     }
 
-    LaunchedEffect(signInState.errorMessage) {
-        signInState.errorMessage?.let { message ->
-            snackbarHostState.showSnackbar(message)
-            signInViewModel.clearSignInError()
-        }
-    }
+//    LaunchedEffect(signInState.errorMessage) {
+//        signInState.errorMessage?.let { message ->
+//            snackbarHostState.showSnackbar(message)
+//            signInViewModel.clearSignInError()
+//        }
+//    }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -188,7 +188,7 @@ fun LoginScreen(
                             email.isNotBlank() &&
                             password.isNotBlank()
                         ) {
-                            signInViewModel.loginUser(email, password)
+                            onSignIn()
                         }
                     },
                     enabled = !signInState.isLoading &&

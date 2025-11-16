@@ -30,14 +30,17 @@ import com.chatapp.chatapp.util.CustomSnackBar
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainEntrance(
-    viewModelSignUp: SignUpViewModel = hiltViewModel(),
+    authViewModel: AuthViewModel = hiltViewModel(),
     navController: NavController,
     usersViewModel: UsersViewModel
 ) {
 
+    val signInState by authViewModel.signInState.collectAsState()
+    val signUpState by authViewModel.signUpState.collectAsState()
+    val showBottomSheet by authViewModel.showBottomSheet.collectAsState()
+
     val bottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val viewModelImageAvatar: ImageAvatarViewModel = viewModel()
-    val showBottomSheet by viewModelSignUp.showBottomSheet.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     var isSuccessRegistration by remember { mutableStateOf(false) }
 
@@ -56,7 +59,11 @@ fun MainEntrance(
                 .padding(top = paddingValues.calculateTopPadding())
         ) {
             LoginScreen(
-                onClickShowRegister = { viewModelSignUp.showSheet() },
+                signInState = signInState,
+                onClickShowRegister = { authViewModel.showSheet() },
+                onSignIn = {
+                    authViewModel.signInUser(email, password)
+                },
                 navController = navController,
                 usersViewModel = usersViewModel
             )
@@ -64,7 +71,7 @@ fun MainEntrance(
                 ModalBottomSheet(
                     sheetState = bottomSheetState,
                     onDismissRequest = {
-                        viewModelSignUp.hideSheet()
+                        authViewModel.hideSheet()
                         viewModelImageAvatar.clearImageUri()
                     },
                     containerColor = PrimaryBackground,
