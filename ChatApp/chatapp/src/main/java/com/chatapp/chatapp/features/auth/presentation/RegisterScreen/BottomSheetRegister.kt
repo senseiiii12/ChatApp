@@ -1,5 +1,7 @@
 package com.chatapp.chatapp.features.auth.presentation.RegisterScreen
 
+import android.content.Context
+import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -28,11 +30,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -41,7 +39,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.buildpc.firstcompose.EnterScreen.components.ButtonEnter
 import com.buildpc.firstcompose.EnterScreen.components.EditField
@@ -57,22 +54,20 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BottomSheetRegister(
-    viewModel: SignUpViewModel = hiltViewModel(),
+    signUpState: SignUpState,
+    imageUri: Uri?,
+    imageAvatarViewModel: ImageAvatarViewModel,
+    onNameChange: (String) -> Unit,
+    onEmailChange: (String) -> Unit,
+    onPasswordChange: (String) -> Unit,
+    onSignUpClick: (Context) -> Unit,
+    onHideSheet: () -> Unit,
     bottomSheetState: SheetState,
     snackbarHostState: SnackbarHostState,
-    onSuccesRegistration: (Boolean) -> Unit
+    onSuccessRegistration: (Boolean) -> Unit,
+    validateViewModel: ValidateViewModel = viewModel()
 ) {
-    val validateViewModel: ValidateViewModel = viewModel()
-    val viewModelImageAvatar: ImageAvatarViewModel = viewModel()
-
-    val imageUri by viewModelImageAvatar.imageUri.collectAsState()
-    val state by viewModel.singUpState.collectAsState()
-    val stateRegisterValidate = validateViewModel.validationRegisterState.collectAsState()
-
-    var name by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-
+    val signUpValidationState = validateViewModel.validationSignUp.collectAsState()
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
@@ -84,7 +79,7 @@ fun BottomSheetRegister(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         ImageAvatar(
-            viewModel = viewModelImageAvatar,
+            viewModel = imageAvatarViewModel,
             imageUri = imageUri
         )
         Spacer(modifier = Modifier.height(16.dp))
@@ -94,21 +89,24 @@ fun BottomSheetRegister(
             color = Color.White
         )
         Spacer(modifier = Modifier.height(16.dp))
+
         Box {
             EditField(
                 placeholder = "Name",
                 iconStart = Icons.Default.Person,
                 keyboardType = KeyboardType.Text,
                 visualTransformation = VisualTransformation.None,
-                onValueChange = { name = it },
-                value = name
+                onValueChange = onNameChange,
+                value = signUpState.name
             )
             ValidateCheck(
                 modifier = Modifier.align(Alignment.CenterEnd),
-                isSuccess = name.isNotEmpty()
+                isSuccess = signUpState.name.isNotEmpty()
             )
         }
+
         Spacer(modifier = Modifier.height(20.dp))
+
         Box {
             EditField(
                 placeholder = "Email",
@@ -116,18 +114,21 @@ fun BottomSheetRegister(
                 keyboardType = KeyboardType.Email,
                 visualTransformation = VisualTransformation.None,
                 onValueChange = {
-                    email = it
-                    validateViewModel.validateEmailRegister(email)
+                    onEmailChange(it)
+                    validateViewModel.validateEmailRegister(it)
                 },
-                value = email
+                value = signUpState.email
             )
             ValidateCheck(
                 modifier = Modifier.align(Alignment.CenterEnd),
-                isSuccess = stateRegisterValidate.value.errorEmailRegister.isEmpty() && email.isNotEmpty()
+                isSuccess = signUpValidationState.value.errorEmailRegister.isEmpty()
+                        && signUpState.email.isNotEmpty()
             )
         }
-        ErrorMessage(state = stateRegisterValidate) { it.errorEmailRegister }
+        ErrorMessage(state = signUpValidationState) { it.errorEmailRegister }
+
         Spacer(modifier = Modifier.height(20.dp))
+
         Box {
             EditField(
                 placeholder = "Password",
@@ -135,39 +136,37 @@ fun BottomSheetRegister(
                 keyboardType = KeyboardType.Password,
                 visualTransformation = PasswordVisualTransformation(),
                 onValueChange = {
-                    password = it
-                    validateViewModel.validatePasswordRegister(password)
+                    onPasswordChange(it)
+                    validateViewModel.validatePasswordRegister(it)
                 },
-                value = password
+                value = signUpState.password
             )
             ValidateCheck(
                 modifier = Modifier.align(Alignment.CenterEnd),
-                isSuccess = stateRegisterValidate.value.errorPasswordRegister.isEmpty() && password.isNotEmpty()
+                isSuccess = signUpValidationState.value.errorPasswordRegister.isEmpty()
+                        && signUpState.password.isNotEmpty()
             )
         }
-        ErrorMessage(state = stateRegisterValidate) { it.errorPasswordRegister }
+        ErrorMessage(state = signUpValidationState) { it.errorPasswordRegister }
+
         Spacer(modifier = Modifier.height(40.dp))
+
         ButtonEnter(
             text = "SignUp",
-            isLoading = state.isLoading,
+            isLoading = signUpState.isLoading,
+            enabled = signUpValidationState.value.validationSuccess && signUpState.allFieldsNotEmpty,
             OnClick = {
-                if (stateRegisterValidate.value.errorEmailRegister.isEmpty() &&
-                    stateRegisterValidate.value.errorPasswordRegister.isEmpty() &&
-                    name.isNotEmpty()
-                ) {
-                    viewModel.signUp(context,imageUri,name,email,password)
+                if (signUpValidationState.value.validationSuccess && signUpState.allFieldsNotEmpty) {
+                    onSignUpClick(context)
                 }
             },
         )
         Spacer(modifier = Modifier.height(50.dp))
     }
 
-
-
-
-    LaunchedEffect(state.isSuccess) {
-        if (state.isSuccess) {
-            onSuccesRegistration(true)
+    LaunchedEffect(signUpState.isSuccess) {
+        if (signUpState.isSuccess) {
+            onSuccessRegistration(true)
             scope.launch {
                 bottomSheetState.hide()
                 snackbarHostState.showSnackbar(
@@ -177,17 +176,18 @@ fun BottomSheetRegister(
                 )
             }.invokeOnCompletion {
                 if (!bottomSheetState.isVisible) {
-                    viewModel.hideSheet()
+                    onHideSheet()
                 }
             }
         }
     }
-    LaunchedEffect(key1 = state.errorMessage) {
+
+    LaunchedEffect(key1 = signUpState.errorMessage) {
         scope.launch {
-            if (state.errorMessage.isNotEmpty() == true) {
-                onSuccesRegistration(false)
+            if (signUpState.errorMessage.isNotEmpty()) {
+                onSuccessRegistration(false)
                 snackbarHostState.showSnackbar(
-                    message = state.errorMessage,
+                    message = signUpState.errorMessage,
                     actionLabel = "Dismiss",
                     duration = SnackbarDuration.Short
                 )

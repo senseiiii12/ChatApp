@@ -30,75 +30,41 @@ class AuthViewModel @Inject constructor(
     private val repository: AuthRepository
 ) : ViewModel() {
 
-    // Состояние для логина
     private val _signInState = MutableStateFlow(SignInState())
     val signInState: StateFlow<SignInState> = _signInState.asStateFlow()
 
-    // Состояние для регистрации
     private val _signUpState = MutableStateFlow(SignUpState())
     val signUpState: StateFlow<SignUpState> = _signUpState.asStateFlow()
 
-    // Состояние для восстановления пароля
     private val _forgotPasswordState = MutableStateFlow(ForgotPasswordState())
     val forgotPasswordState: StateFlow<ForgotPasswordState> = _forgotPasswordState.asStateFlow()
 
-    // Для управления bottom sheet регистрации
-    private val _showBottomSheet = MutableStateFlow(false)
-    val showBottomSheet: StateFlow<Boolean> = _showBottomSheet
+    private val _showSignUpBottomSheet = MutableStateFlow(false)
+    val showSignUpBottomSheet: StateFlow<Boolean> = _showSignUpBottomSheet
 
 
-    fun updateSignInEmail(email: String){
+    fun updateSignInEmail(email: String) {
         _signInState.update { it.copy(email = email) }
     }
-    fun updateSignInPassword(password: String){
+
+    fun updateSignInPassword(password: String) {
         _signInState.update { it.copy(password = password) }
     }
 
-    fun updateSignUpName(name: String){
+    fun updateSignUpName(name: String) {
         _signUpState.update { it.copy(name = name) }
     }
-    fun updateSignUpEmail(email: String){
+
+    fun updateSignUpEmail(email: String) {
         _signUpState.update { it.copy(email = email) }
     }
-    fun updateSignUpPassword(password: String){
+
+    fun updateSignUpPassword(password: String) {
         _signUpState.update { it.copy(password = password) }
     }
 
-
-    // === МЕТОДЫ ДЛЯ ЛОГИНА ===
-
-    fun signInUser(email: String, password: String) {
-        viewModelScope.launch {
-            repository.loginUser(email, password).collect { result ->
-                when (result) {
-                    is Resource.Loading -> {
-                        _signInState.update {
-                            it.copy(isLoading = true, errorMessage = null)
-                        }
-                    }
-
-                    is Resource.Success -> {
-                        _signInState.update {
-                            it.copy(
-                                isLoading = false,
-                                isSuccess = true,
-                                errorMessage = null
-                            )
-                        }
-                    }
-
-                    is Resource.Error -> {
-                        _signInState.update {
-                            it.copy(
-                                isLoading = false,
-                                isSuccess = false,
-                                errorMessage = result.message ?: "Неизвестная ошибка"
-                            )
-                        }
-                    }
-                }
-            }
-        }
+    fun updateForgotPasswordEmail(email: String) {
+        _forgotPasswordState.update { it.copy(email = email) }
     }
 
     fun clearSignInError() {
@@ -108,16 +74,56 @@ class AuthViewModel @Inject constructor(
     fun resetSignInState() {
         _signInState.value = SignInState()
     }
+    fun resetSignUpState() {
+        _signUpState.value = SignUpState()
+    }
 
-    // === МЕТОДЫ ДЛЯ РЕГИСТРАЦИИ ===
+    fun resetForgotPasswordState() {
+        _forgotPasswordState.value = ForgotPasswordState()
+    }
 
-    fun signUpUser(
-        context: Context,
-        imageUri: Uri?,
-        name: String,
-        email: String,
-        password: String
-    ) {
+    fun showSignUpBottomSheet() {
+        _showSignUpBottomSheet.value = true
+    }
+
+    fun hideSignUpBottomSheet() {
+        _showSignUpBottomSheet.value = false
+    }
+
+
+    fun signInUser() {
+        val email = _signInState.value.email
+        val password = _signInState.value.password
+
+        viewModelScope.launch {
+            repository.loginUser(email, password).collect { result ->
+                when (result) {
+                    is Resource.Loading -> {
+                        _signInState.update {
+                            it.copy(isLoading = true, errorMessage = null)
+                        }
+                    }
+                    is Resource.Success -> {
+                        _signInState.update {
+                            it.copy(isLoading = false, isSuccess = true, errorMessage = null)
+                        }
+                    }
+                    is Resource.Error -> {
+                        _signInState.update {
+                            it.copy(isLoading = false, isSuccess = false, errorMessage = result.message ?: "Неизвестная ошибка"
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    fun signUpUser(context: Context, imageUri: Uri?) {
+        val name = _signUpState.value.name
+        val email = _signUpState.value.email
+        val password = _signUpState.value.password
+
         viewModelScope.launch {
             _signUpState.update { it.copy(isLoading = true) }
 
@@ -180,13 +186,9 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    fun resetSignUpState() {
-        _signUpState.value = SignUpState()
-    }
+    fun forgotPassword() {
+        val email = _forgotPasswordState.value.email
 
-    // === МЕТОДЫ ДЛЯ ВОССТАНОВЛЕНИЯ ПАРОЛЯ ===
-
-    fun forgotPassword(email: String) {
         viewModelScope.launch {
             _forgotPasswordState.update {
                 it.copy(isLoading = true, errorMessage = null)
@@ -213,27 +215,6 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    fun resetForgotPasswordState() {
-        _forgotPasswordState.value = ForgotPasswordState()
-    }
-
-    // === УПРАВЛЕНИЕ BOTTOM SHEET ===
-
-    fun showSheet() {
-        _showBottomSheet.value = true
-    }
-
-    fun hideSheet() {
-        _showBottomSheet.value = false
-    }
-
-    // === ОБЩИЕ МЕТОДЫ ===
-
-    fun getCurrentUserUID(): String? {
-        return repository.getCurrentUserUID()
-    }
-
-    // === ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ===
 
     private fun compressAndResizeImage(
         context: Context,

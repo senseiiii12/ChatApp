@@ -8,4 +8,6 @@ data class SignUpState(
     val isLoading: Boolean = false,
     val isSuccess: Boolean = false,
     val errorMessage: String = ""
-)
+){
+    val allFieldsNotEmpty: Boolean = name.isNotEmpty() && email.isNotEmpty() && password.isNotEmpty()
+}

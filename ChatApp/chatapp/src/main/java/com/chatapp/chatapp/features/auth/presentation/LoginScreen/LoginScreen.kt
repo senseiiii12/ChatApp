@@ -23,7 +23,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -32,10 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.buildpc.firstcompose.EnterScreen.components.ButtonContinueWith
@@ -47,6 +43,8 @@ import com.chatapp.chatapp.features.auth.presentation.Validator.ErrorMessage
 import com.chatapp.chatapp.features.auth.presentation.Validator.ValidateViewModel
 import com.chatapp.chatapp.features.navigation.Route
 import com.chatapp.chatapp.core.presentation.UsersViewModel
+import com.chatapp.chatapp.features.auth.presentation.ForgotPasswordState
+import com.chatapp.chatapp.features.navigation.navigateToMainFlow
 import com.chatapp.chatapp.ui.theme.MyCustomTypography
 import com.chatapp.chatapp.ui.theme.PrimaryBackground
 import com.chatapp.chatapp.ui.theme.PrimaryPurple
@@ -56,43 +54,44 @@ import kotlinx.coroutines.delay
 @Composable
 fun LoginScreen(
     signInState: SignInState,
+    forgotPasswordState: ForgotPasswordState,
+    onEmailChange: (String) -> Unit,
+    onPasswordChange: (String) -> Unit,
+    onSignInClick: () -> Unit,
+    onShowRegister: () -> Unit,
+    onForgotPasswordEmailChange: (String) -> Unit,
+    onSendPasswordReset: () -> Unit,
+    onClearSignInError: () -> Unit,
     navController: NavController,
-    onClickShowRegister: () -> Unit,
-    onSignIn: () -> Unit,
     usersViewModel: UsersViewModel,
     validateViewModel: ValidateViewModel = viewModel()
 ) {
-    val validationState = validateViewModel.validationLoginState.collectAsState()
+    val signInValidationState = validateViewModel.validationSingIn.collectAsState()
     val currentUserId by usersViewModel.currentUserId.collectAsState()
 
     var isShownDialog by rememberSaveable { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
 
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-
-    LaunchedEffect(email) {
+    LaunchedEffect(signInState.email) {
         delay(300)
-        validateViewModel.validateEmailLogin(email)
+        validateViewModel.validateEmailLogin(signInState.email)
     }
 
     LaunchedEffect(signInState.isSuccess) {
         if (signInState.isSuccess) {
             currentUserId?.let { userId ->
                 usersViewModel.updateUserOnlineStatus(userId, true)
-                navigateToHomeScreen(navController)
-            } ?: run {
-                Log.e("LoginScreen", "Login successful but userId is null")
+                navController.navigateToMainFlow()
             }
         }
     }
 
-//    LaunchedEffect(signInState.errorMessage) {
-//        signInState.errorMessage?.let { message ->
-//            snackbarHostState.showSnackbar(message)
-//            signInViewModel.clearSignInError()
-//        }
-//    }
+    LaunchedEffect(signInState.errorMessage) {
+        signInState.errorMessage?.let { message ->
+            snackbarHostState.showSnackbar(message)
+            onClearSignInError()
+        }
+    }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -142,20 +141,20 @@ fun LoginScreen(
                 Spacer(modifier = Modifier.height(20.dp))
 
                 EditField(
-                    value = email,
-                    onValueChange = { email = it },
+                    value = signInState.email,
+                    onValueChange = onEmailChange,
                     placeholder = "Email",
                     iconStart = Icons.Default.Email,
                     keyboardType = KeyboardType.Email,
                 )
 
-                ErrorMessage(state = validationState) { it.errorEmailLogin }
+                ErrorMessage(state = signInValidationState) { it.errorEmailLogin }
 
                 Spacer(modifier = Modifier.height(20.dp))
 
                 EditField(
-                    value = password,
-                    onValueChange = { password = it },
+                    value = signInState.password,
+                    onValueChange = onPasswordChange,
                     placeholder = "Password",
                     iconStart = Icons.Default.Lock,
                     keyboardType = KeyboardType.Password,
@@ -184,17 +183,17 @@ fun LoginScreen(
                     text = "Sign in",
                     isLoading = signInState.isLoading,
                     OnClick = {
-                        if (validationState.value.errorEmailLogin.isEmpty() &&
-                            email.isNotBlank() &&
-                            password.isNotBlank()
+                        if (signInValidationState.value.errorEmailLogin.isEmpty() &&
+                            signInState.email.isNotBlank() &&
+                            signInState.password.isNotBlank()
                         ) {
-                            onSignIn()
+                            onSignInClick()
                         }
                     },
                     enabled = !signInState.isLoading &&
-                            validationState.value.errorEmailLogin.isEmpty() &&
-                            email.isNotBlank() &&
-                            password.isNotBlank()
+                            signInValidationState.value.errorEmailLogin.isEmpty() &&
+                            signInState.email.isNotBlank() &&
+                            signInState.password.isNotBlank()
                 )
 
                 Spacer(modifier = Modifier.height(40.dp))
@@ -213,7 +212,7 @@ fun LoginScreen(
                     background = Surface_1,
                     textColor = PrimaryPurple,
                     borderColor = PrimaryPurple,
-                    OnClick = onClickShowRegister
+                    OnClick = onShowRegister
                 )
 
                 Spacer(modifier = Modifier.weight(0.1f))
@@ -223,10 +222,12 @@ fun LoginScreen(
         }
     }
 
-    // Диалог сброса пароля
     if (isShownDialog) {
         DialogForgotPassword(
-            onDismiss = { isShownDialog = !isShownDialog }
+            forgotPasswordState = forgotPasswordState,
+            onEmailChange = onForgotPasswordEmailChange,
+            onSendPasswordReset = onSendPasswordReset,
+            onDismiss = { isShownDialog = false }
         )
     }
 }

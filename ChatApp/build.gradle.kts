@@ -8,24 +8,28 @@ plugins {
     alias(libs.plugins.androidApplication) apply false
     alias(libs.plugins.jetbrainsKotlinAndroid) apply false
     id ("com.google.gms.google-services") version "4.4.2" apply false
-    id("com.google.dagger.hilt.android") version "2.48" apply false
+//    id("com.google.dagger.hilt.android") version "2.48" apply false
     id("com.google.firebase.crashlytics") version "3.0.3" apply false
+    alias(libs.plugins.kotlin.serialization) apply false
+    alias(libs.plugins.kotlin.compose) apply false
+    alias(libs.plugins.ksp) apply false
+    alias(libs.plugins.hilt) apply false
 }
 subprojects {
-    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-        kotlinOptions {
-            if (project.findProperty("composeCompilerReports") == "true") {
-                kotlinOptions.freeCompilerArgs = kotlinOptions.freeCompilerArgs + listOf(
-                    "-P",
-                    "plugin:androidx.compose.compiler.plugins.kotlin:reportsDestination=" +
-                            project.buildDir.absolutePath + "/compose_reports"
-                )
-                kotlinOptions.freeCompilerArgs = kotlinOptions.freeCompilerArgs + listOf(
-                    "-P",
-                    "plugin:androidx.compose.compiler.plugins.kotlin:metricsDestination=" +
-                            project.buildDir.absolutePath + "/compose_metrics"
-                )
-            }
-        }
-    }
+//    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+//        kotlinOptions {
+//            if (project.findProperty("composeCompilerReports") == "true") {
+//                kotlinOptions.freeCompilerArgs = kotlinOptions.freeCompilerArgs + listOf(
+//                    "-P",
+//                    "plugin:androidx.compose.compiler.plugins.kotlin:reportsDestination=" +
+//                            project.buildDir.absolutePath + "/compose_reports"
+//                )
+//                kotlinOptions.freeCompilerArgs = kotlinOptions.freeCompilerArgs + listOf(
+//                    "-P",
+//                    "plugin:androidx.compose.compiler.plugins.kotlin:metricsDestination=" +
+//                            project.buildDir.absolutePath + "/compose_metrics"
+//                )
+//            }
+//        }
+//    }
 }

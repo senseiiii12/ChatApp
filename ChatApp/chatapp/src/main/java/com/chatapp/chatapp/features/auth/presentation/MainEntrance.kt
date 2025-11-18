@@ -23,7 +23,6 @@ import com.chatapp.chatapp.core.presentation.UsersViewModel
 import com.chatapp.chatapp.features.auth.presentation.LoginScreen.LoginScreen
 import com.chatapp.chatapp.features.auth.presentation.RegisterScreen.BottomSheetRegister
 import com.chatapp.chatapp.features.auth.presentation.RegisterScreen.ImageAvatar.ImageAvatarViewModel
-import com.chatapp.chatapp.features.auth.presentation.RegisterScreen.SignUpViewModel
 import com.chatapp.chatapp.ui.theme.PrimaryBackground
 import com.chatapp.chatapp.util.CustomSnackBar
 
@@ -34,13 +33,15 @@ fun MainEntrance(
     navController: NavController,
     usersViewModel: UsersViewModel
 ) {
-
     val signInState by authViewModel.signInState.collectAsState()
     val signUpState by authViewModel.signUpState.collectAsState()
-    val showBottomSheet by authViewModel.showBottomSheet.collectAsState()
+    val forgotPasswordState by authViewModel.forgotPasswordState.collectAsState()
+    val showSignUpBottomSheet by authViewModel.showSignUpBottomSheet.collectAsState()
 
-    val bottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val viewModelImageAvatar: ImageAvatarViewModel = viewModel()
+    val signUpBottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val imageAvatarViewModel: ImageAvatarViewModel = viewModel()
+    val imageUri by imageAvatarViewModel.imageUri.collectAsState()
+
     val snackbarHostState = remember { SnackbarHostState() }
     var isSuccessRegistration by remember { mutableStateOf(false) }
 
@@ -60,27 +61,42 @@ fun MainEntrance(
         ) {
             LoginScreen(
                 signInState = signInState,
-                onClickShowRegister = { authViewModel.showSheet() },
-                onSignIn = {
-                    authViewModel.signInUser(email, password)
-                },
+                forgotPasswordState = forgotPasswordState,
+                onEmailChange =  authViewModel::updateSignInEmail,
+                onPasswordChange = authViewModel::updateSignInPassword,
+                onSignInClick = { authViewModel.signInUser() },
+                onShowRegister = { authViewModel.showSignUpBottomSheet() },
+                onForgotPasswordEmailChange = authViewModel::updateForgotPasswordEmail,
+                onSendPasswordReset = { authViewModel.forgotPassword() },
+                onClearSignInError = { authViewModel.clearSignInError() },
                 navController = navController,
                 usersViewModel = usersViewModel
             )
-            if (showBottomSheet) {
+
+            if (showSignUpBottomSheet) {
                 ModalBottomSheet(
-                    sheetState = bottomSheetState,
+                    sheetState = signUpBottomSheetState,
                     onDismissRequest = {
-                        authViewModel.hideSheet()
-                        viewModelImageAvatar.clearImageUri()
+                        authViewModel.hideSignUpBottomSheet()
+                        imageAvatarViewModel.clearImageUri()
                     },
                     containerColor = PrimaryBackground,
                     scrimColor = Color.Black.copy(alpha = 0.8f)
                 ) {
                     BottomSheetRegister(
-                        bottomSheetState = bottomSheetState,
+                        signUpState = signUpState,
+                        imageUri = imageUri,
+                        imageAvatarViewModel = imageAvatarViewModel,
+                        onNameChange = authViewModel::updateSignUpName,
+                        onEmailChange = authViewModel::updateSignUpEmail,
+                        onPasswordChange = authViewModel::updateSignUpPassword,
+                        onSignUpClick = { context ->
+                            authViewModel.signUpUser(context, imageUri)
+                        },
+                        onHideSheet = { authViewModel.hideSignUpBottomSheet() },
+                        bottomSheetState = signUpBottomSheetState,
                         snackbarHostState = snackbarHostState,
-                        onSuccesRegistration = { result ->
+                        onSuccessRegistration = { result ->
                             isSuccessRegistration = result
                         }
                     )

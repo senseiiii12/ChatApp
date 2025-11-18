@@ -4,9 +4,12 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.jetbrainsKotlinAndroid)
     id("com.google.gms.google-services")
-    kotlin("kapt")
-    id ("dagger.hilt.android.plugin")
+//    id ("dagger.hilt.android.plugin")
     id("com.google.firebase.crashlytics")
+    alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.hilt)
 }
 
 android {
@@ -46,9 +49,9 @@ android {
     buildFeatures {
         compose = true
     }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.1"
-    }
+//    composeOptions {
+//        kotlinCompilerExtensionVersion = "1.5.2"
+//    }
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -78,6 +81,8 @@ dependencies {
     implementation(libs.navigation.compose)
     implementation(libs.kotlinx.serialization.json)
 
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
 
     // Compose анимации
     implementation("androidx.compose.animation:animation:1.0.5")
@@ -95,9 +100,9 @@ dependencies {
     implementation("com.google.accompanist:accompanist-systemuicontroller:0.27.0")
 
     // Dagger - Hilt (Dependency Injection)
-    implementation("com.google.dagger:hilt-android:2.48")
-    kapt("com.google.dagger:hilt-android-compiler:2.48")
-    implementation("androidx.hilt:hilt-navigation-compose:1.0.0")
+//    implementation("com.google.dagger:hilt-android:2.48")
+//    kapt("com.google.dagger:hilt-android-compiler:2.48")
+    implementation("androidx.hilt:hilt-navigation-compose:1.1.0")
 
     // Поддержка корутин
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
@@ -111,7 +116,7 @@ dependencies {
     implementation("com.github.GrenderG:Toasty:1.5.2")
 
     // Jetpack Navigation для Compose
-    implementation("androidx.navigation:navigation-compose:2.5.3")
+    implementation("androidx.navigation:navigation-compose:2.7.6")
 
     // Экран загрузки (Splash Screen API)
     implementation("androidx.core:core-splashscreen:1.0.0")
@@ -132,11 +137,5 @@ dependencies {
     implementation("com.google.firebase:firebase-analytics:21.5.0")
 
     implementation("com.github.senseiiii12:SwipeSnack:0.2.1")
-
-
-
-
-
-
 }
 
