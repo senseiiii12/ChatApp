@@ -65,28 +65,28 @@ object SpringConfig {
 fun slideInFromRight(): EnterTransition {
     return slideInHorizontally(
         initialOffsetX = { fullWidth -> fullWidth },
-        animationSpec = SpringConfig.default
+        animationSpec = spring()
     )
 }
 
 fun slideOutToLeft(): ExitTransition {
     return slideOutHorizontally(
         targetOffsetX = { fullWidth -> -fullWidth },
-        animationSpec = SpringConfig.default
+        animationSpec = spring()
     )
 }
 
 fun slideInFromLeft(): EnterTransition {
     return slideInHorizontally(
         initialOffsetX = { fullWidth -> -fullWidth },
-        animationSpec = SpringConfig.default
+        animationSpec = spring()
     )
 }
 
 fun slideOutToRight(): ExitTransition {
     return slideOutHorizontally(
         targetOffsetX = { fullWidth -> fullWidth },
-        animationSpec = SpringConfig.default
+        animationSpec = spring()
     )
 }
 

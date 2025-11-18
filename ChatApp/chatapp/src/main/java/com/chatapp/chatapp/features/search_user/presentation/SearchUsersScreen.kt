@@ -134,13 +134,13 @@ suspend fun showSnackbarOnAddFriend(
 ) {
     if (isSuccessAddFriend) {
         snackbarHostState.showSnackbar(
-            message = "Friend request sent by ${pendingUser.name.toUpperCase()}",
+            message = "Friend request sent by ${pendingUser.name}",
             actionLabel = "Dismiss",
             duration = SnackbarDuration.Short
         )
     } else {
         snackbarHostState.showSnackbar(
-            message = "Friend request has already been sent to ${pendingUser.name.toUpperCase()}",
+            message = "Friend request has already been sent to ${pendingUser.name}",
             actionLabel = "Dismiss",
             duration = SnackbarDuration.Short
         )

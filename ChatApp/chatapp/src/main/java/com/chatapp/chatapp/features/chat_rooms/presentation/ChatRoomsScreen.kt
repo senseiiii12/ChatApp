@@ -14,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Create
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -42,7 +43,11 @@ import com.chatapp.chatapp.features.auth.domain.User
 import com.chatapp.chatapp.features.chat_rooms.domain.models.ChatRooms
 import com.chatapp.chatapp.features.chat_rooms.presentation.details.ChatRoomsList
 import com.chatapp.chatapp.features.chat_rooms.presentation.details.TopBarChatsRoom
+import com.chatapp.chatapp.features.navigation.Chat
+import com.chatapp.chatapp.features.navigation.FriendsRequests
 import com.chatapp.chatapp.features.navigation.Route
+import com.chatapp.chatapp.features.navigation.SearchUsers
+import com.chatapp.chatapp.features.navigation.navigateToAuthFlow
 import com.chatapp.chatapp.ui.theme.Green100
 import com.chatapp.chatapp.ui.theme.MyCustomTypography
 import com.chatapp.chatapp.ui.theme.PrimaryBackground
@@ -116,7 +121,7 @@ fun ChatRoomsScreen(
             topBar = {
                 TopBarChatsRoom(
                     onSearchButtonClick = {
-                        navController.navigate(Route.SearchUsers.route)
+                        navController.navigate(SearchUsers)
                     },
                     onMenuButtonClick = {  }
                 )
@@ -128,7 +133,7 @@ fun ChatRoomsScreen(
                         showCustomSnackbar(
                             snackbarController = snackSwipeController,
                             onNavigateToRequests = {
-                                navController.navigate(Route.FriendsRequests.route)
+                                navController.navigate(FriendsRequests)
                             }
                         )
                     }
@@ -188,7 +193,7 @@ private fun ChatRoomsContent(
                 EmptyChatsState(
                     modifier = Modifier.align(Alignment.Center),
                     onNavigateToSearch = {
-                        navController.navigate(Route.SearchUsers.route)
+                        navController.navigate(SearchUsers)
                     }
                 )
             }
@@ -196,12 +201,12 @@ private fun ChatRoomsContent(
                 ChatRoomsList(
                     stateChatRooms = chatRooms,
                     usersViewModel = usersViewModel,
-                    onUserClick = { user ->
-                        currentUser?.let { current ->
+                    onUserClick = { otherUser ->
+                        currentUser?.let { currentUser ->
                             navigateToChat(
                                 navController = navController,
-                                otherUser = user,
-                                currentUser = current
+                                otherUser = otherUser,
+                                currentUser = currentUser
                             )
                         }
                     }
@@ -219,7 +224,7 @@ private fun ChatRoomsContent(
                 onLogout = {
                     chatRoomsViewModel.clearChatRooms()
                     usersViewModel.logout()
-                    navigateToMainEntrance(navController)
+                    navController.navigateToAuthFlow()
                 }
             )
         }
@@ -259,7 +264,7 @@ private fun DebugLogoutButton(
     currentUserId: String,
     onLogout: () -> Unit
 ) {
-    androidx.compose.material3.Button(
+    Button(
         modifier = modifier,
         onClick = onLogout
     ) {
@@ -327,14 +332,10 @@ private fun navigateToChat(
     val otherUserJson = Gson().toJson(otherUser)
     val currentUserJson = Gson().toJson(currentUser)
     navController.navigate(
-        "chat/${Uri.encode(otherUserJson)}/${Uri.encode(currentUserJson)}"
+        Chat(
+            otherUserJson = Uri.encode(otherUserJson),
+            currentUserJson = Uri.encode(currentUserJson)
+        )
     )
 }
 
-private fun navigateToMainEntrance(navController: NavController) {
-    navController.navigate(Route.MainEntrance.route) {
-        popUpTo(navController.graph.id) {
-            inclusive = true
-        }
-    }
-}

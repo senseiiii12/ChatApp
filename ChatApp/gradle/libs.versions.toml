@@ -12,10 +12,10 @@ googleServices = "4.4.2"
 firebaseAuth = "23.0.0"
 appcompat = "1.7.0"
 composeNavigation = "2.8.0-alpha08"
-serialization = "1.6.3"
+serialization = "1.9.0"
 firebaseStorage = "21.0.0"
 ksp = "2.2.20-2.0.4"
-hilt = "2.52"
+hilt = "2.57.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -47,6 +47,6 @@ hilt-compiler = { group = "com.google.dagger", name = "hilt-compiler", version.r
 androidApplication = { id = "com.android.application", version.ref = "agp" }
 jetbrainsKotlinAndroid = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
-kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+kotlin-composeCompiller = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }

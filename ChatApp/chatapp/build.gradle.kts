@@ -3,13 +3,12 @@ import org.apache.tools.ant.util.JavaEnvUtils.VERSION_1_8
 plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.jetbrainsKotlinAndroid)
-    id("com.google.gms.google-services")
-//    id ("dagger.hilt.android.plugin")
-    id("com.google.firebase.crashlytics")
     alias(libs.plugins.kotlin.serialization)
-    alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.composeCompiller)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
+    id("com.google.gms.google-services")
+    id("com.google.firebase.crashlytics")
 }
 
 android {
@@ -116,7 +115,7 @@ dependencies {
     implementation("com.github.GrenderG:Toasty:1.5.2")
 
     // Jetpack Navigation для Compose
-    implementation("androidx.navigation:navigation-compose:2.7.6")
+//    implementation("androidx.navigation:navigation-compose:2.7.6")
 
     // Экран загрузки (Splash Screen API)
     implementation("androidx.core:core-splashscreen:1.0.0")
