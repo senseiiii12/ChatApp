@@ -3,9 +3,7 @@ package com.chatapp.chatapp.core.presentation
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.chatapp.chatapp.features.navigation.AuthFlow
-import com.chatapp.chatapp.features.navigation.MainFlow
-import com.chatapp.chatapp.features.navigation.Route
+import com.chatapp.chatapp.features.navigation.RouteTypeSafe
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
@@ -21,31 +19,16 @@ class SplashViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            // Минимальная задержка для splash screen
             delay(1000)
             isLoading.value = false
         }
     }
 
-    /**
-     * Старый метод для обратной совместимости
-     */
-    fun checkUser(): String {
+    fun checkUserTypeSafe(): RouteTypeSafe.Graph {
         return if (auth.currentUser != null) {
-            Route.HomePage.route
+            RouteTypeSafe.Graph.ChatRoomsNavGraph
         } else {
-            Route.MainEntrance.route
-        }
-    }
-
-    /**
-     * Новый типобезопасный метод
-     */
-    fun checkUserTypeSafe(): Any {
-        return if (auth.currentUser != null) {
-            MainFlow
-        } else {
-            AuthFlow
+            RouteTypeSafe.Graph.AuthNavGraph
         }
     }
 }

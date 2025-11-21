@@ -316,21 +316,12 @@ class ChatViewModel @Inject constructor(
     // Генерация ChatId и ChatItem
     // ============================================
 
-    fun generateChatId(otherUserJson: String, currentUserJson: String): Triple<String, User, User> {
-        val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
-            ?: throw IllegalStateException("User not authenticated")
-
-        val userType = object : TypeToken<User>() {}.type
-        val otherUser: User = Gson().fromJson(otherUserJson, userType)
-        val currentUser: User = Gson().fromJson(currentUserJson, userType)
-
-        val chatId = if (currentUserId < otherUser.userId) {
-            "$currentUserId-${otherUser.userId}"
+    fun generateChatId(otherUserId: String, currentUserId: String): String {
+        return if (currentUserId < otherUserId) {
+            "$currentUserId-${otherUserId}"
         } else {
-            "${otherUser.userId}-$currentUserId"
+            "${otherUserId}-$currentUserId"
         }
-
-        return Triple(chatId, otherUser, currentUser)
     }
 
     fun generateChatItems(messages: List<Message>): List<ChatItem> {

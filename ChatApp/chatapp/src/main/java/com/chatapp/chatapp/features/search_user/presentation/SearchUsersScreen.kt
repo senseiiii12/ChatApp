@@ -1,6 +1,5 @@
 package com.chatapp.chatapp.features.search_user.presentation
 
-import android.net.Uri
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
@@ -29,7 +28,7 @@ import androidx.navigation.NavController
 import com.chatapp.chatapp.core.presentation.FriendRequestViewModel
 import com.chatapp.chatapp.core.presentation.UsersViewModel
 import com.chatapp.chatapp.features.auth.domain.User
-import com.chatapp.chatapp.features.navigation.Route
+import com.chatapp.chatapp.features.navigation.RouteTypeSafe
 import com.chatapp.chatapp.features.search_user.presentation.details.SearchUsersItem
 import com.chatapp.chatapp.features.search_user.presentation.details.TopBarSearchScreen
 import com.chatapp.chatapp.ui.theme.PrimaryBackground
@@ -54,7 +53,7 @@ fun SearchUsersScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
-    val currentUser = usersViewModel.currentUser.value
+    val currentUser = usersViewModel.currentUser.collectAsState()
 
     Scaffold(
         topBar = {
@@ -88,12 +87,12 @@ fun SearchUsersScreen(
                     Log.d("SearchUsers", searchUserList.toString())
                     SearchUsersItem(
                         user = searchUser.user,
-                        currentUserId = currentUser.userId,
+                        currentUserId = currentUser.value.userId,
                         haveIncomingRequest = searchUser.haveIncomingRequest,
                         haveOutgoingRequest = searchUser.haveOutgoingRequest,
                         canSendRequest = searchUser.canSendRequest,
                         onAcceptFriend = {
-                            navController.navigate(Route.FriendsRequests.route)
+                            navController.navigate(RouteTypeSafe.Screen.FriendsRequestsScreen)
                         },
                         onAddFriend = { pendingUser ->
                             friendRequestViewModel.sendFriendRequest(pendingUser.userId) { isSuccess ->
@@ -111,9 +110,10 @@ fun SearchUsersScreen(
                             val otherUserJson = Gson().toJson(user)
                             val currentUserJson = Gson().toJson(currentUser)
                             navController.navigate(
-                                "chat/${Uri.encode(otherUserJson)}/${
-                                    Uri.encode(currentUserJson)
-                                }"
+                                RouteTypeSafe.Screen.ChatScreen(
+                                    otherUserJson = otherUserJson,
+                                    currentUserJson = currentUserJson
+                                )
                             )
                         }
                     )

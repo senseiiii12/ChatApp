@@ -1,7 +1,6 @@
 package com.chatapp.chatapp.features.chat_rooms.presentation
 
 import android.app.Activity
-import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -43,11 +42,8 @@ import com.chatapp.chatapp.features.auth.domain.User
 import com.chatapp.chatapp.features.chat_rooms.domain.models.ChatRooms
 import com.chatapp.chatapp.features.chat_rooms.presentation.details.ChatRoomsList
 import com.chatapp.chatapp.features.chat_rooms.presentation.details.TopBarChatsRoom
-import com.chatapp.chatapp.features.navigation.Chat
-import com.chatapp.chatapp.features.navigation.FriendsRequests
-import com.chatapp.chatapp.features.navigation.Route
-import com.chatapp.chatapp.features.navigation.SearchUsers
-import com.chatapp.chatapp.features.navigation.navigateToAuthFlow
+import com.chatapp.chatapp.features.navigation.RouteTypeSafe
+import com.chatapp.chatapp.features.navigation.navigateToAuthNavGraph
 import com.chatapp.chatapp.ui.theme.Green100
 import com.chatapp.chatapp.ui.theme.MyCustomTypography
 import com.chatapp.chatapp.ui.theme.PrimaryBackground
@@ -121,7 +117,7 @@ fun ChatRoomsScreen(
             topBar = {
                 TopBarChatsRoom(
                     onSearchButtonClick = {
-                        navController.navigate(SearchUsers)
+                        navController.navigate(RouteTypeSafe.Screen.SearchUserScreen)
                     },
                     onMenuButtonClick = {  }
                 )
@@ -133,7 +129,7 @@ fun ChatRoomsScreen(
                         showCustomSnackbar(
                             snackbarController = snackSwipeController,
                             onNavigateToRequests = {
-                                navController.navigate(FriendsRequests)
+                                navController.navigate(RouteTypeSafe.Screen.FriendsRequestsScreen)
                             }
                         )
                     }
@@ -193,7 +189,7 @@ private fun ChatRoomsContent(
                 EmptyChatsState(
                     modifier = Modifier.align(Alignment.Center),
                     onNavigateToSearch = {
-                        navController.navigate(SearchUsers)
+                        navController.navigate(RouteTypeSafe.Screen.SearchUserScreen)
                     }
                 )
             }
@@ -224,7 +220,7 @@ private fun ChatRoomsContent(
                 onLogout = {
                     chatRoomsViewModel.clearChatRooms()
                     usersViewModel.logout()
-                    navController.navigateToAuthFlow()
+                    navController.navigateToAuthNavGraph()
                 }
             )
         }
@@ -329,12 +325,11 @@ private fun navigateToChat(
     otherUser: User,
     currentUser: User
 ) {
-    val otherUserJson = Gson().toJson(otherUser)
-    val currentUserJson = Gson().toJson(currentUser)
+    val gson = Gson()
     navController.navigate(
-        Chat(
-            otherUserJson = Uri.encode(otherUserJson),
-            currentUserJson = Uri.encode(currentUserJson)
+        RouteTypeSafe.Screen.ChatScreen(
+            otherUserJson = gson.toJson(otherUser),
+            currentUserJson = gson.toJson(currentUser)
         )
     )
 }

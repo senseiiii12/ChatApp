@@ -1,21 +1,17 @@
 package com.chatapp.chatapp.features.navigation
 
 import androidx.navigation.NavController
+import com.chatapp.chatapp.features.navigation.RouteTypeSafe.Graph.AuthNavGraph
+import com.chatapp.chatapp.features.navigation.RouteTypeSafe.Graph.ChatRoomsNavGraph
 
-/**
- * Навигация на главный поток (после успешной авторизации)
- */
-fun NavController.navigateToMainFlow() {
-    navigate(MainFlow) {
-        popUpTo(AuthFlow) { inclusive = true }
+fun NavController.navigateToChatRoomsNavGraph() {
+    navigate(ChatRoomsNavGraph) {
+        popUpTo(AuthNavGraph) { inclusive = true }
     }
 }
 
-/**
- * Навигация на поток авторизации (при выходе)
- */
-fun NavController.navigateToAuthFlow() {
-    navigate(AuthFlow) {
+fun NavController.navigateToAuthNavGraph() {
+    navigate(AuthNavGraph) {
         popUpTo(0) { inclusive = true }
     }
 }

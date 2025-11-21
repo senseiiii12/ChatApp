@@ -5,11 +5,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
@@ -20,8 +15,8 @@ import androidx.navigation.compose.rememberNavController
 import com.chatapp.chatapp.core.presentation.SplashViewModel
 import com.chatapp.chatapp.core.presentation.UsersViewModel
 import com.chatapp.chatapp.features.navigation.NavigationTransitions
-import com.chatapp.chatapp.features.navigation.authFlow
-import com.chatapp.chatapp.features.navigation.mainFlow
+import com.chatapp.chatapp.features.navigation.authNavGraph
+import com.chatapp.chatapp.features.navigation.chatRoomsNavGraph
 import com.chatapp.chatapp.ui.theme.ChatAppTheme
 import com.chatapp.chatapp.ui.theme.PrimaryBackground
 import dagger.hilt.android.AndroidEntryPoint
@@ -48,9 +43,7 @@ class MainActivity : ComponentActivity() {
 
             ChatAppTheme {
                 Surface(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(PrimaryBackground),
+                    modifier = Modifier.fillMaxSize().background(PrimaryBackground),
                 ) {
                     NavHost(
                         modifier = Modifier.background(PrimaryBackground),
@@ -61,12 +54,12 @@ class MainActivity : ComponentActivity() {
                         popEnterTransition = { NavigationTransitions.slideHorizontal.popEnter },
                         popExitTransition = { NavigationTransitions.slideHorizontal.popExit }
                     ) {
-                        authFlow(
+                        authNavGraph(
                             navController = navController,
                             usersViewModel = usersViewModel
                         )
 
-                        mainFlow(
+                        chatRoomsNavGraph(
                             navController = navController,
                             usersViewModel = usersViewModel
                         )

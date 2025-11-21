@@ -3,29 +3,29 @@ package com.chatapp.chatapp.features.navigation
 
 import kotlinx.serialization.Serializable
 
-// Главные Flow (графы навигации)
-@Serializable object AuthFlow
-@Serializable object MainFlow
+sealed interface RouteTypeSafe {
+    sealed interface Graph : RouteTypeSafe {
+        @Serializable
+        data object AuthNavGraph : Graph
+        @Serializable
+        data object ChatRoomsNavGraph : Graph
+    }
 
-// Auth Flow Routes
-@Serializable object MainEntrance
-
-// Main Flow Routes
-@Serializable object HomePage
-@Serializable object FriendsRequests
-@Serializable object MyFriends
-@Serializable object SearchUsers
-
-// Chat Route с параметрами
-@Serializable data class Chat(
-    val otherUserJson: String,
-    val currentUserJson: String
-)
-
-sealed class Route(val route: String) {
-    object MainEntrance: Route(route = "mainEntrance")
-    object HomePage: Route(route = "homePage")
-    object SearchUsers: Route(route = "searchUsers")
-    object FriendsRequests: Route(route = "friendsRequests")
-    object MyFriends: Route(route = "myFriends")
+    sealed interface Screen : RouteTypeSafe {
+        @Serializable
+        object AuthScreen : Screen
+        @Serializable
+        object ChatRoomsScreen : Screen
+        @Serializable
+        object FriendsRequestsScreen : Screen
+        @Serializable
+        object MyFriendsScreen : Screen
+        @Serializable
+        object SearchUserScreen : Screen
+        @Serializable
+        data class ChatScreen(
+            val otherUserJson: String,
+            val currentUserJson: String
+        ) : Screen
+    }
 }

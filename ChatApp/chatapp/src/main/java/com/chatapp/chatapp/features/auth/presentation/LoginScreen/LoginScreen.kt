@@ -1,6 +1,5 @@
 package com.chatapp.chatapp.features.auth.presentation.LoginScreen
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -39,12 +38,11 @@ import com.buildpc.firstcompose.EnterScreen.components.ButtonEnter
 import com.buildpc.firstcompose.EnterScreen.components.EditField
 import com.buildpc.firstcompose.EnterScreen.components.SpacerOr
 import com.chatapp.chatapp.R
-import com.chatapp.chatapp.features.auth.presentation.Validator.ErrorMessage
-import com.chatapp.chatapp.features.auth.presentation.Validator.ValidateViewModel
-import com.chatapp.chatapp.features.navigation.Route
 import com.chatapp.chatapp.core.presentation.UsersViewModel
 import com.chatapp.chatapp.features.auth.presentation.ForgotPasswordState
-import com.chatapp.chatapp.features.navigation.navigateToMainFlow
+import com.chatapp.chatapp.features.auth.presentation.Validator.ErrorMessage
+import com.chatapp.chatapp.features.auth.presentation.Validator.ValidateViewModel
+import com.chatapp.chatapp.features.navigation.navigateToChatRoomsNavGraph
 import com.chatapp.chatapp.ui.theme.MyCustomTypography
 import com.chatapp.chatapp.ui.theme.PrimaryBackground
 import com.chatapp.chatapp.ui.theme.PrimaryPurple
@@ -81,7 +79,7 @@ fun LoginScreen(
         if (signInState.isSuccess) {
             currentUserId?.let { userId ->
                 usersViewModel.updateUserOnlineStatus(userId, true)
-                navController.navigateToMainFlow()
+                navController.navigateToChatRoomsNavGraph()
             }
         }
     }
@@ -229,15 +227,6 @@ fun LoginScreen(
             onSendPasswordReset = onSendPasswordReset,
             onDismiss = { isShownDialog = false }
         )
-    }
-}
-
-fun navigateToHomeScreen(navController: NavController) {
-    navController.navigate(Route.HomePage.route) {
-        popUpTo(navController.graph.startDestinationId) {
-            inclusive = true
-        }
-        launchSingleTop = true
     }
 }
 
