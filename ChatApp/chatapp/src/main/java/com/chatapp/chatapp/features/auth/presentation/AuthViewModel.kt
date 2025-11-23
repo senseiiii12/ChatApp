@@ -1,19 +1,17 @@
 package com.chatapp.chatapp.features.auth.presentation
 
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chatapp.chatapp.features.auth.domain.AuthRepository
 import com.chatapp.chatapp.features.auth.presentation.LoginScreen.SignInState
 import com.chatapp.chatapp.features.auth.presentation.RegisterScreen.SignUpState
+import com.chatapp.chatapp.util.ImageUtils
 import com.chatapp.chatapp.util.Resource
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.storage.FirebaseStorage
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,7 +19,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-import java.io.ByteArrayOutputStream
 import java.util.UUID
 import javax.inject.Inject
 
@@ -125,50 +122,34 @@ class AuthViewModel @Inject constructor(
         val password = _signUpState.value.password
 
         viewModelScope.launch {
-            _signUpState.update { it.copy(isLoading = true) }
+            _signUpState.update { it.copy(isLoading = true, errorMessage = "") }
 
             try {
-                val avatarDeferred = async {
-                    imageUri?.let {
-                        val compressedImage = compressAndResizeImage(context, it)
-                        val storageRef = FirebaseStorage.getInstance().reference
-                            .child("images/${UUID.randomUUID()}.webp")
+                val registerResult = repository.registerUser(email, password)
+                    .first { it !is Resource.Loading }
 
-                        storageRef.putBytes(compressedImage).await()
-                        storageRef.downloadUrl.await().toString()
-                    }
-                }
-
-                val registerDeferred = async {
-                    repository.registerUser(email, password).first { it !is Resource.Loading }
-                }
-
-                val avatarUrl = avatarDeferred.await()
-                when (val result = registerDeferred.await()) {
+                when (registerResult) {
                     is Resource.Success -> {
-                        val user = mapOf(
-                            "userId" to repository.getCurrentUserUID(),
-                            "avatar" to avatarUrl,
-                            "name" to name,
-                            "email" to email,
-                            "password" to password,
-                            "online" to false,
-                            "lastSeen" to FieldValue.serverTimestamp(),
-                            "friends" to emptyList<String>()
-                        )
+                        val userId = repository.getCurrentUserUID()
 
-                        repository.saveUserToDatabase(user)
+                        val basicUser = createBasicUserData(userId, name, email)
+                        repository.saveUserToDatabase(basicUser)
 
-                        _signUpState.update {
-                            it.copy(isSuccess = true, isLoading = false)
+                        _signUpState.update { it.copy(isSuccess = true, isLoading = false) }
+
+                        imageUri?.let { uri ->
+                            launch {
+                                uploadAvatarInStorage(context, uri, userId)
+                            }
                         }
                     }
 
                     is Resource.Error -> {
                         _signUpState.update {
                             it.copy(
-                                errorMessage = result.message ?: "Unknown error",
-                                isLoading = false
+                                errorMessage = registerResult.message ?: "Ошибка регистрации",
+                                isLoading = false,
+                                isSuccess = false
                             )
                         }
                     }
@@ -179,7 +160,8 @@ class AuthViewModel @Inject constructor(
                 _signUpState.update {
                     it.copy(
                         errorMessage = e.message ?: "Ошибка регистрации",
-                        isLoading = false
+                        isLoading = false,
+                        isSuccess = false
                     )
                 }
             }
@@ -193,41 +175,52 @@ class AuthViewModel @Inject constructor(
             _forgotPasswordState.update {
                 it.copy(isLoading = true, errorMessage = null)
             }
-
             try {
                 repository.forgotPassword(email)
                 _forgotPasswordState.update {
-                    it.copy(
-                        isLoading = false,
-                        isSuccess = true,
-                        errorMessage = null
-                    )
+                    it.copy(isLoading = false, isSuccess = true, errorMessage = null)
                 }
             } catch (e: Exception) {
                 _forgotPasswordState.update {
-                    it.copy(
-                        isLoading = false,
-                        isSuccess = false,
-                        errorMessage = e.message ?: "Ошибка отправки письма"
-                    )
+                    it.copy(isLoading = false, isSuccess = false, errorMessage = e.message ?: "Ошибка отправки письма")
                 }
             }
         }
     }
 
 
-    private fun compressAndResizeImage(
+    // ============ Private Helper Methods ============
+
+    private fun createBasicUserData(
+        userId: String,
+        name: String,
+        email: String
+    ): Map<String, Any?> = mapOf(
+        "userId" to userId,
+        "avatar" to null,
+        "name" to name,
+        "email" to email,
+        "online" to false,
+        "lastSeen" to FieldValue.serverTimestamp(),
+        "friends" to emptyList<String>()
+    )
+
+    private suspend fun uploadAvatarInStorage(
         context: Context,
         imageUri: Uri,
-        quality: Int = 70,
-        maxWidth: Int = 800,
-        maxHeight: Int = 800
-    ): ByteArray {
-        val inputStream = context.contentResolver.openInputStream(imageUri)
-        val originalBitmap = BitmapFactory.decodeStream(inputStream)
-        val resizedBitmap = Bitmap.createScaledBitmap(originalBitmap, maxWidth, maxHeight, true)
-        val outputStream = ByteArrayOutputStream()
-        resizedBitmap.compress(Bitmap.CompressFormat.WEBP, quality, outputStream)
-        return outputStream.toByteArray()
+        userId: String
+    ) {
+        try {
+            val compressedImage = ImageUtils.compressAndResizeImage(context, imageUri)
+            val storageRef = FirebaseStorage.getInstance().reference
+                .child("avatars/$userId/${UUID.randomUUID()}.webp")
+
+            storageRef.putBytes(compressedImage).await()
+            val avatarUrl = storageRef.downloadUrl.await().toString()
+
+            repository.updateUserAvatar(userId, avatarUrl)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 }

@@ -27,8 +27,8 @@ class AuthRepositoryImpl @Inject constructor(
         return firebaseAuth.currentUser
     }
 
-    override fun getCurrentUserUID(): String? {
-        return firebaseAuth.currentUser?.uid
+    override fun getCurrentUserUID(): String {
+        return firebaseAuth.currentUser?.uid ?: ""
     }
 
     override fun loginUser(email: String, password: String): Flow<Resource<AuthResult>> {
@@ -74,6 +74,13 @@ class AuthRepositoryImpl @Inject constructor(
             }
     }
 
+    override suspend fun updateUserAvatar(userId: String, avatarUrl: String) {
+        firebaseFirestore.collection("users")
+            .document(userId)
+            .update("avatar", avatarUrl)
+            .await()
+    }
+
     override fun signOut() {
         firebaseAuth.signOut()
     }
@@ -103,11 +110,6 @@ class AuthRepositoryImpl @Inject constructor(
                     "INVALID_LOGIN_CREDENTIALS" -> "Неверный email или пароль"
                     "ERROR_INVALID_CREDENTIAL" -> "Неверные учетные данные"
 
-                    // ===== ОШИБКИ EMAIL =====
-                    "ERROR_INVALID_EMAIL" -> "Некорректный формат email"
-                    "ERROR_MISSING_EMAIL" -> "Укажите email"
-                    "ERROR_INVALID_RECIPIENT_EMAIL" -> "Некорректный email получателя"
-
                     // ===== ОШИБКИ ВХОДА =====
                     "ERROR_WRONG_PASSWORD" -> "Неверный пароль"
                     "ERROR_USER_NOT_FOUND" -> "Пользователь с таким email не найден"
@@ -116,35 +118,6 @@ class AuthRepositoryImpl @Inject constructor(
                     // ===== ОШИБКИ РЕГИСТРАЦИИ =====
                     "ERROR_EMAIL_ALREADY_IN_USE" -> "Пользователь с таким email уже существует"
                     "ERROR_WEAK_PASSWORD" -> "Пароль слишком слабый. Используйте минимум 6 символов"
-
-                    // ===== СЕТЕВЫЕ ОШИБКИ =====
-                    "ERROR_NETWORK_REQUEST_FAILED" -> "Проблемы с подключением к интернету. Проверьте соединение"
-
-                    // ===== ОГРАНИЧЕНИЯ =====
-                    "ERROR_TOO_MANY_REQUESTS" -> "Слишком много попыток. Попробуйте позже"
-                    "TOO_MANY_ATTEMPTS_TRY_LATER" -> "Слишком много попыток. Попробуйте позже"
-                    "ERROR_OPERATION_NOT_ALLOWED" -> "Этот метод входа не активирован в настройках Firebase"
-
-                    // ===== ОШИБКИ ТОКЕНОВ/СЕССИЙ =====
-                    "ERROR_INVALID_USER_TOKEN" -> "Сессия истекла. Войдите заново"
-                    "ERROR_USER_TOKEN_EXPIRED" -> "Сессия истекла. Войдите заново"
-                    "ERROR_REQUIRES_RECENT_LOGIN" -> "Необходимо войти заново для выполнения этого действия"
-                    "ERROR_INVALID_CUSTOM_TOKEN" -> "Неверный токен аутентификации"
-                    "ERROR_CUSTOM_TOKEN_MISMATCH" -> "Токен не соответствует проекту Firebase"
-
-                    // ===== КОНФЛИКТЫ АККАУНТОВ =====
-                    "ERROR_ACCOUNT_EXISTS_WITH_DIFFERENT_CREDENTIAL" ->
-                        "Аккаунт с этим email уже существует. Используйте другой метод входа"
-                    "ERROR_CREDENTIAL_ALREADY_IN_USE" ->
-                        "Эти учетные данные уже используются другим аккаунтом"
-
-                    // ===== ДОПОЛНИТЕЛЬНЫЕ ОШИБКИ =====
-                    "ERROR_MISSING_PASSWORD" -> "Укажите пароль"
-                    "ERROR_MISSING_PHONE_NUMBER" -> "Укажите номер телефона"
-                    "ERROR_INVALID_PHONE_NUMBER" -> "Некорректный номер телефона"
-                    "ERROR_MISSING_VERIFICATION_CODE" -> "Укажите код подтверждения"
-                    "ERROR_INVALID_VERIFICATION_CODE" -> "Неверный код подтверждения"
-                    "ERROR_SESSION_EXPIRED" -> "Сессия истекла. Попробуйте снова"
 
                     else -> {
                         "Ошибка авторизации: ${exception.message ?: "Неизвестная ошибка"}"
@@ -179,11 +152,8 @@ class AuthRepositoryImpl @Inject constructor(
      */
     private fun extractErrorCodeFromMessage(message: String?): String? {
         if (message == null) return null
-
-        // Ищем паттерн [ ERROR_CODE ]
         val regex = "\\[\\s*([A-Z_]+)\\s*\\]".toRegex()
         val matchResult = regex.find(message)
-
         return matchResult?.groupValues?.getOrNull(1)?.also {
             Log.d(TAG, "Extracted error code from message: '$it'")
         }
