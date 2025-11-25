@@ -93,7 +93,7 @@ class AuthViewModel @Inject constructor(
         val password = _signInState.value.password
 
         viewModelScope.launch {
-            repository.loginUser(email, password).collect { result ->
+            repository.signInUser(email, password).collect { result ->
                 when (result) {
                     is Resource.Loading -> {
                         _signInState.update {
@@ -125,13 +125,12 @@ class AuthViewModel @Inject constructor(
             _signUpState.update { it.copy(isLoading = true, errorMessage = "") }
 
             try {
-                val registerResult = repository.registerUser(email, password)
+                val registerResult = repository.signUpUser(email, password)
                     .first { it !is Resource.Loading }
 
                 when (registerResult) {
                     is Resource.Success -> {
                         val userId = repository.getCurrentUserUID()
-
                         val basicUser = createBasicUserData(userId, name, email)
                         repository.saveUserToDatabase(basicUser)
 

@@ -3,15 +3,15 @@ package com.chatapp.chatapp.features.navigation
 
 import kotlinx.serialization.Serializable
 
-sealed interface RouteTypeSafe {
-    sealed interface Graph : RouteTypeSafe {
+sealed interface Route {
+    sealed interface Graph : Route {
         @Serializable
         data object AuthNavGraph : Graph
         @Serializable
         data object ChatRoomsNavGraph : Graph
     }
 
-    sealed interface Screen : RouteTypeSafe {
+    sealed interface Screen : Route {
         @Serializable
         object AuthScreen : Screen
         @Serializable

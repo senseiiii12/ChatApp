@@ -2,6 +2,8 @@ package com.chatapp.chatapp.features.auth.presentation.RegisterScreen
 
 import android.content.Context
 import android.net.Uri
+import android.util.Log
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -23,13 +25,16 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,6 +53,8 @@ import com.chatapp.chatapp.features.auth.presentation.Validator.ErrorMessage
 import com.chatapp.chatapp.features.auth.presentation.Validator.ValidateViewModel
 import com.chatapp.chatapp.ui.theme.MyCustomTypography
 import com.chatapp.chatapp.ui.theme.Success
+import com.chatapp.chatapp.util.CustomSnackBar
+import es.dmoral.toasty.Toasty
 import kotlinx.coroutines.launch
 
 
@@ -164,6 +171,9 @@ fun BottomSheetRegister(
         Spacer(modifier = Modifier.height(50.dp))
     }
 
+
+
+
     LaunchedEffect(signUpState.isSuccess) {
         if (signUpState.isSuccess) {
             onSuccessRegistration(true)
@@ -183,15 +193,8 @@ fun BottomSheetRegister(
     }
 
     LaunchedEffect(key1 = signUpState.errorMessage) {
-        scope.launch {
-            if (signUpState.errorMessage.isNotEmpty()) {
-                onSuccessRegistration(false)
-                snackbarHostState.showSnackbar(
-                    message = signUpState.errorMessage,
-                    actionLabel = "Dismiss",
-                    duration = SnackbarDuration.Short
-                )
-            }
+        if (signUpState.errorMessage.isNotEmpty()) {
+            Toast.makeText(context,signUpState.errorMessage, Toast.LENGTH_SHORT).show()
         }
     }
 }

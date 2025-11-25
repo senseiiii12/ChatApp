@@ -3,6 +3,7 @@ package com.chatapp.chatapp.features.auth.data
 import android.util.Log
 import com.chatapp.chatapp.features.auth.domain.AuthRepository
 import com.chatapp.chatapp.util.Resource
+import com.google.firebase.FirebaseException
 import com.google.firebase.auth.AuthResult
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthException
@@ -31,14 +32,39 @@ class AuthRepositoryImpl @Inject constructor(
         return firebaseAuth.currentUser?.uid ?: ""
     }
 
-    override fun loginUser(email: String, password: String): Flow<Resource<AuthResult>> {
+    override fun signInUser(email: String, password: String): Flow<Resource<AuthResult>> {
         return flow {
             emit(Resource.Loading())
             val result = firebaseAuth.signInWithEmailAndPassword(email, password).await()
             emit(Resource.Success(result))
         }.catch { exception ->
-            // Детальное логирование для отладки
             Log.e(TAG, "=== LOGIN ERROR ===")
+            Log.e(TAG, "Exception class: ${exception.javaClass.simpleName}")
+
+            if (exception is FirebaseAuthException) {
+                Log.e(TAG, "⚠️ ERROR CODE: ${exception.errorCode}")
+                Log.e(TAG, "Error message: ${exception.message}")
+            }
+            else if (exception is FirebaseException){
+                Log.e(TAG, "⚠️ ERROR CODE: ${exception.cause}")
+                Log.e(TAG, "Error message: ${exception.message}")
+            }
+            else {
+                Log.e(TAG, "Non-Firebase exception: ${exception.message}")
+            }
+            Log.e(TAG, "==================")
+
+            emit(Resource.Error(handleAuthException(exception)))
+        }
+    }
+
+    override fun signUpUser(email: String, password: String): Flow<Resource<AuthResult>> {
+        return flow {
+            emit(Resource.Loading())
+            val result = firebaseAuth.createUserWithEmailAndPassword(email, password).await()
+            emit(Resource.Success(result))
+        }.catch { exception ->
+            Log.e(TAG, "=== REgister ERROR ===")
             Log.e(TAG, "Exception class: ${exception.javaClass.simpleName}")
 
             if (exception is FirebaseAuthException) {
@@ -48,23 +74,12 @@ class AuthRepositoryImpl @Inject constructor(
                 Log.e(TAG, "Non-Firebase exception: ${exception.message}")
             }
             Log.e(TAG, "==================")
-
-            emit(Resource.Error(handleAuthException(exception)))
-        }
-    }
-
-    override fun registerUser(email: String, password: String): Flow<Resource<AuthResult>> {
-        return flow {
-            emit(Resource.Loading())
-            val result = firebaseAuth.createUserWithEmailAndPassword(email, password).await()
-            emit(Resource.Success(result))
-        }.catch { exception ->
             emit(Resource.Error(handleAuthException(exception)))
         }
     }
 
     override fun saveUserToDatabase(user: Map<String, Any?>) {
-        val currentUserId = getCurrentUserUID() ?: ""
+        val currentUserId = getCurrentUserUID()
         firebaseFirestore.collection("users").document(currentUserId).set(user)
             .addOnSuccessListener {
                 firebaseAuth.signOut()
@@ -97,54 +112,16 @@ class AuthRepositoryImpl @Inject constructor(
 
 
     private fun handleAuthException(exception: Throwable): String {
-        // Извлекаем код ошибки из сообщения если это FirebaseException
         val errorCode = when (exception) {
             is FirebaseAuthException -> exception.errorCode
             else -> extractErrorCodeFromMessage(exception.message)
         }
 
-        return when (exception) {
-            is FirebaseAuthException -> {
-                val errorMessage = when (errorCode) {
-
-                    "INVALID_LOGIN_CREDENTIALS" -> "Неверный email или пароль"
-                    "ERROR_INVALID_CREDENTIAL" -> "Неверные учетные данные"
-
-                    // ===== ОШИБКИ ВХОДА =====
-                    "ERROR_WRONG_PASSWORD" -> "Неверный пароль"
-                    "ERROR_USER_NOT_FOUND" -> "Пользователь с таким email не найден"
-                    "ERROR_USER_DISABLED" -> "Этот аккаунт был отключен администратором"
-
-                    // ===== ОШИБКИ РЕГИСТРАЦИИ =====
-                    "ERROR_EMAIL_ALREADY_IN_USE" -> "Пользователь с таким email уже существует"
-                    "ERROR_WEAK_PASSWORD" -> "Пароль слишком слабый. Используйте минимум 6 символов"
-
-                    else -> {
-                        "Ошибка авторизации: ${exception.message ?: "Неизвестная ошибка"}"
-                    }
-                }
-                errorMessage
-            }
-            else -> {
-                val errorMessage = extractErrorCodeFromMessage(exception.message)
-
-                if (errorMessage != null) {
-                    Log.d(TAG, "Extracted error code from message: $errorMessage")
-                    when (errorMessage) {
-                        "INVALID_LOGIN_CREDENTIALS" -> "Неверный email или пароль"
-                        "EMAIL_NOT_FOUND" -> "Пользователь с таким email не найден"
-                        "INVALID_PASSWORD" -> "Неверный пароль"
-                        "EMAIL_EXISTS" -> "Пользователь с таким email уже существует"
-                        "WEAK_PASSWORD" -> "Пароль слишком слабый. Используйте минимум 6 символов"
-                        "TOO_MANY_ATTEMPTS_TRY_LATER" -> "Слишком много попыток. Попробуйте позже"
-                        else -> "Ошибка авторизации: $errorMessage"
-                    }
-                } else {
-                    Log.e(TAG, "Non-Firebase exception in handleAuthException", exception)
-                    exception.message ?: "Произошла неизвестная ошибка"
-                }
-            }
-        }
+        return when (errorCode) {
+            "INVALID_LOGIN_CREDENTIALS" -> "Неверный email или пароль"
+            "ERROR_EMAIL_ALREADY_IN_USE" -> "Пользователь уже существует"
+            else -> {}
+        }.toString()
     }
 
     /**

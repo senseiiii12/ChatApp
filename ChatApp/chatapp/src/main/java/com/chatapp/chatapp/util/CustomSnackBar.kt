@@ -6,7 +6,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarData
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -14,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.toFontFamily
 import androidx.compose.ui.unit.dp
@@ -27,43 +30,28 @@ import com.chatapp.chatapp.ui.theme.Outline_1
 
 @Composable
 fun CustomSnackBar(
+    modifier: Modifier = Modifier,
     snackbarHostState: SnackbarHostState,
+    action: @Composable ((SnackbarData) -> Unit)? = null,
+    dismissAction: @Composable ((SnackbarData) -> Unit)? = null,
+    content: @Composable (SnackbarData) -> Unit,
+    alignment: Alignment = Alignment.TopCenter,
     containerColor: Color = DarkGray_2,
-    isSuccess: Boolean
+    shape: Shape = RoundedCornerShape(18.dp),
 ) {
     Box(
         modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.TopCenter
+        contentAlignment = alignment
     ) {
         SnackbarHost(hostState = snackbarHostState) { data ->
             Snackbar(
-                modifier = Modifier.padding(10.dp),
-                shape = RoundedCornerShape(18.dp),
+                modifier = modifier.padding(10.dp),
+                shape = shape,
                 containerColor = containerColor,
-                contentColor = if (isSuccess) Online else Error,
-                actionContentColor = DarkGray_1,
-                action = {
-                    Button(
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.Transparent
-                        ),
-                        onClick = { data.dismiss() }
-                    ) {
-                        Text(
-                            text = data.visuals.actionLabel!!,
-                            fontSize = 12.sp,
-                            fontFamily = Font(R.font.gilroy_medium).toFontFamily(),
-                            color = Outline_1
-                        )
-                    }
-                }
-            ) {
-                Text(
-                    text = data.visuals.message,
-                    fontSize = 14.sp,
-                    fontFamily = Font(R.font.gilroy_medium).toFontFamily(),
-                )
-            }
+                action = action?.let { { it(data) } },
+                dismissAction = dismissAction?.let { { it(data) } },
+                content = { content(data) }
+            )
         }
     }
 }

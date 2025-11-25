@@ -23,7 +23,7 @@ class SignInViewModel @Inject constructor(
 
     fun loginUser(email: String, password: String) {
         viewModelScope.launch {
-            repository.loginUser(email, password).collect { result ->
+            repository.signInUser(email, password).collect { result ->
                 when (result) {
                     is Resource.Loading -> {
                         _signInState.update {

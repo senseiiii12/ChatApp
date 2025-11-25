@@ -74,8 +74,6 @@ fun ChatAppTheme(
         }
     }
 
-
-
     MaterialTheme(
         colorScheme = colorScheme,
         typography = AppTypography,

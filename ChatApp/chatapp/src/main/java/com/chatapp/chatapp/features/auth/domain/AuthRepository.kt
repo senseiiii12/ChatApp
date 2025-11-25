@@ -9,8 +9,8 @@ interface AuthRepository {
 
     fun getCurrentUser(): FirebaseUser?
     fun getCurrentUserUID(): String
-    fun loginUser(email: String, password: String): Flow<Resource<AuthResult>>
-    fun registerUser(email: String, password: String): Flow<Resource<AuthResult>>
+    fun signInUser(email: String, password: String): Flow<Resource<AuthResult>>
+    fun signUpUser(email: String, password: String): Flow<Resource<AuthResult>>
     fun saveUserToDatabase(user: Map<String, Any?>)
     fun signOut()
     suspend fun updateUserAvatar(userId: String, avatarUrl: String)

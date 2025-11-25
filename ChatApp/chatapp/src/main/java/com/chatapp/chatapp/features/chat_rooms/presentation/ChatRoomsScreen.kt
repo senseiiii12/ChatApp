@@ -42,7 +42,7 @@ import com.chatapp.chatapp.features.auth.domain.User
 import com.chatapp.chatapp.features.chat_rooms.domain.models.ChatRooms
 import com.chatapp.chatapp.features.chat_rooms.presentation.details.ChatRoomsList
 import com.chatapp.chatapp.features.chat_rooms.presentation.details.TopBarChatsRoom
-import com.chatapp.chatapp.features.navigation.RouteTypeSafe
+import com.chatapp.chatapp.features.navigation.Route
 import com.chatapp.chatapp.features.navigation.navigateToAuthNavGraph
 import com.chatapp.chatapp.ui.theme.Green100
 import com.chatapp.chatapp.ui.theme.MyCustomTypography
@@ -117,7 +117,7 @@ fun ChatRoomsScreen(
             topBar = {
                 TopBarChatsRoom(
                     onSearchButtonClick = {
-                        navController.navigate(RouteTypeSafe.Screen.SearchUserScreen)
+                        navController.navigate(Route.Screen.SearchUserScreen)
                     },
                     onMenuButtonClick = {  }
                 )
@@ -129,7 +129,7 @@ fun ChatRoomsScreen(
                         showCustomSnackbar(
                             snackbarController = snackSwipeController,
                             onNavigateToRequests = {
-                                navController.navigate(RouteTypeSafe.Screen.FriendsRequestsScreen)
+                                navController.navigate(Route.Screen.FriendsRequestsScreen)
                             }
                         )
                     }
@@ -189,7 +189,7 @@ private fun ChatRoomsContent(
                 EmptyChatsState(
                     modifier = Modifier.align(Alignment.Center),
                     onNavigateToSearch = {
-                        navController.navigate(RouteTypeSafe.Screen.SearchUserScreen)
+                        navController.navigate(Route.Screen.SearchUserScreen)
                     }
                 )
             }
@@ -327,7 +327,7 @@ private fun navigateToChat(
 ) {
     val gson = Gson()
     navController.navigate(
-        RouteTypeSafe.Screen.ChatScreen(
+        Route.Screen.ChatScreen(
             otherUserJson = gson.toJson(otherUser),
             currentUserJson = gson.toJson(currentUser)
         )

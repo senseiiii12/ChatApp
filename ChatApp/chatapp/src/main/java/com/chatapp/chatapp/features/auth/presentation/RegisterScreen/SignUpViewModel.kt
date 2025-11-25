@@ -66,7 +66,7 @@ class SignUpViewModel @Inject constructor(
                 }
 
                 val registerDeferred = async {
-                    authRepository.registerUser(email, password).first { it !is Resource.Loading }
+                    authRepository.signUpUser(email, password).first { it !is Resource.Loading }
                 }
 
                 val avatarUrl = avatarDeferred.await()

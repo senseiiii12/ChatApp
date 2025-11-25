@@ -9,7 +9,7 @@ import androidx.navigation.compose.navigation
 import androidx.navigation.toRoute
 import com.chatapp.chatapp.core.presentation.UsersViewModel
 import com.chatapp.chatapp.features.auth.domain.User
-import com.chatapp.chatapp.features.auth.presentation.MainEntrance
+import com.chatapp.chatapp.features.auth.presentation.AuthScreen
 import com.chatapp.chatapp.features.chat.presentation.ChatScreen
 import com.chatapp.chatapp.features.chat.presentation.ChatViewModel
 import com.chatapp.chatapp.features.chat_rooms.presentation.ChatRoomsScreen
@@ -25,9 +25,9 @@ fun NavGraphBuilder.authNavGraph(
     navController: NavHostController,
     usersViewModel: UsersViewModel
 ) {
-    navigation<RouteTypeSafe.Graph.AuthNavGraph>(startDestination = RouteTypeSafe.Screen.AuthScreen) {
-        composable<RouteTypeSafe.Screen.AuthScreen> {
-            MainEntrance(
+    navigation<Route.Graph.AuthNavGraph>(startDestination = Route.Screen.AuthScreen) {
+        composable<Route.Screen.AuthScreen> {
+            AuthScreen(
                 navController = navController,
                 usersViewModel = usersViewModel
             )
@@ -42,30 +42,30 @@ fun NavGraphBuilder.chatRoomsNavGraph(
     navController: NavHostController,
     usersViewModel: UsersViewModel
 ) {
-    navigation<RouteTypeSafe.Graph.ChatRoomsNavGraph>(
-        startDestination = RouteTypeSafe.Screen.ChatRoomsScreen
+    navigation<Route.Graph.ChatRoomsNavGraph>(
+        startDestination = Route.Screen.ChatRoomsScreen
     ) {
-        composable<RouteTypeSafe.Screen.ChatRoomsScreen>{
+        composable<Route.Screen.ChatRoomsScreen>{
             ChatRoomsScreen(
                 navController = navController,
                 usersViewModel = usersViewModel
             )
         }
-        composable<RouteTypeSafe.Screen.FriendsRequestsScreen> {
+        composable<Route.Screen.FriendsRequestsScreen> {
             RequestsInFriendScreen(navController = navController)
         }
-        composable<RouteTypeSafe.Screen.MyFriendsScreen> {
+        composable<Route.Screen.MyFriendsScreen> {
             MyFriendsScreen(navController = navController)
         }
-        composable<RouteTypeSafe.Screen.SearchUserScreen> {
+        composable<Route.Screen.SearchUserScreen> {
             SearchUsersScreen(
                 navController = navController,
                 usersViewModel = usersViewModel
             )
         }
-        composable<RouteTypeSafe.Screen.ChatScreen> { backStackEntry ->
+        composable<Route.Screen.ChatScreen> { backStackEntry ->
             val gson = Gson()
-            val chatRoute = backStackEntry.toRoute<RouteTypeSafe.Screen.ChatScreen>()
+            val chatRoute = backStackEntry.toRoute<Route.Screen.ChatScreen>()
             val chatViewModel: ChatViewModel = hiltViewModel()
 
             val otherUser = gson.fromJson(chatRoute.otherUserJson, User::class.java)

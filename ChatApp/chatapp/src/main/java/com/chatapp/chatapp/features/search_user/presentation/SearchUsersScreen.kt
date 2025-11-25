@@ -28,7 +28,7 @@ import androidx.navigation.NavController
 import com.chatapp.chatapp.core.presentation.FriendRequestViewModel
 import com.chatapp.chatapp.core.presentation.UsersViewModel
 import com.chatapp.chatapp.features.auth.domain.User
-import com.chatapp.chatapp.features.navigation.RouteTypeSafe
+import com.chatapp.chatapp.features.navigation.Route
 import com.chatapp.chatapp.features.search_user.presentation.details.SearchUsersItem
 import com.chatapp.chatapp.features.search_user.presentation.details.TopBarSearchScreen
 import com.chatapp.chatapp.ui.theme.PrimaryBackground
@@ -53,7 +53,7 @@ fun SearchUsersScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
-    val currentUser = usersViewModel.currentUser.collectAsState()
+    val currentUser by usersViewModel.currentUser.collectAsState()
 
     Scaffold(
         topBar = {
@@ -67,10 +67,10 @@ fun SearchUsersScreen(
             )
         },
         snackbarHost = {
-            CustomSnackBar(
-                snackbarHostState = snackbarHostState,
-                isSuccess = resultFriendRequest
-            )
+//            CustomSnackBar(
+//                snackbarHostState = snackbarHostState,
+//                isSuccess = resultFriendRequest
+//            )
         }
     ) { paddingValues ->
         Column(
@@ -87,12 +87,12 @@ fun SearchUsersScreen(
                     Log.d("SearchUsers", searchUserList.toString())
                     SearchUsersItem(
                         user = searchUser.user,
-                        currentUserId = currentUser.value.userId,
+                        currentUserId = currentUser.userId,
                         haveIncomingRequest = searchUser.haveIncomingRequest,
                         haveOutgoingRequest = searchUser.haveOutgoingRequest,
                         canSendRequest = searchUser.canSendRequest,
                         onAcceptFriend = {
-                            navController.navigate(RouteTypeSafe.Screen.FriendsRequestsScreen)
+                            navController.navigate(Route.Screen.FriendsRequestsScreen)
                         },
                         onAddFriend = { pendingUser ->
                             friendRequestViewModel.sendFriendRequest(pendingUser.userId) { isSuccess ->
@@ -106,13 +106,12 @@ fun SearchUsersScreen(
                                 }
                             }
                         },
-                        onWriteMessage = { user ->
-                            val otherUserJson = Gson().toJson(user)
-                            val currentUserJson = Gson().toJson(currentUser)
+                        onWriteMessage = { otherUser ->
+                            val gson = Gson()
                             navController.navigate(
-                                RouteTypeSafe.Screen.ChatScreen(
-                                    otherUserJson = otherUserJson,
-                                    currentUserJson = currentUserJson
+                                Route.Screen.ChatScreen(
+                                    otherUserJson = gson.toJson(otherUser),
+                                    currentUserJson = gson.toJson(currentUser)
                                 )
                             )
                         }

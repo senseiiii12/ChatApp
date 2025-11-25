@@ -1,8 +1,8 @@
 package com.chatapp.chatapp.features.navigation
 
 import androidx.navigation.NavController
-import com.chatapp.chatapp.features.navigation.RouteTypeSafe.Graph.AuthNavGraph
-import com.chatapp.chatapp.features.navigation.RouteTypeSafe.Graph.ChatRoomsNavGraph
+import com.chatapp.chatapp.features.navigation.Route.Graph.AuthNavGraph
+import com.chatapp.chatapp.features.navigation.Route.Graph.ChatRoomsNavGraph
 
 fun NavController.navigateToChatRoomsNavGraph() {
     navigate(ChatRoomsNavGraph) {

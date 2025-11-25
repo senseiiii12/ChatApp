@@ -3,7 +3,7 @@ package com.chatapp.chatapp.core.presentation
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.chatapp.chatapp.features.navigation.RouteTypeSafe
+import com.chatapp.chatapp.features.navigation.Route
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
@@ -24,11 +24,11 @@ class SplashViewModel @Inject constructor(
         }
     }
 
-    fun checkUserTypeSafe(): RouteTypeSafe.Graph {
+    fun checkUserTypeSafe(): Route.Graph {
         return if (auth.currentUser != null) {
-            RouteTypeSafe.Graph.ChatRoomsNavGraph
+            Route.Graph.ChatRoomsNavGraph
         } else {
-            RouteTypeSafe.Graph.AuthNavGraph
+            Route.Graph.AuthNavGraph
         }
     }
 }

@@ -22,7 +22,7 @@ class FriendRequestViewModel @Inject constructor(
     private val _friendRequestsState = MutableStateFlow(RequestsInFriendScreenState())
     val friendRequestsState = _friendRequestsState.asStateFlow()
 
-    fun sendFriendRequest(toUserId: String,onResult: (Boolean) -> Unit){
+    fun sendFriendRequest(toUserId: String, onResult: (Boolean) -> Unit){
         viewModelScope.launch {
             friendRequestRepository.sendFriendRequest(toUserId){
                 onResult(it)

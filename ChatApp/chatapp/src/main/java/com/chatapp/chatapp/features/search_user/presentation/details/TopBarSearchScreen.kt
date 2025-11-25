@@ -13,7 +13,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.navigation.NavController
 import com.chatapp.chatapp.R
-import com.chatapp.chatapp.features.navigation.RouteTypeSafe
+import com.chatapp.chatapp.features.navigation.Route
 import com.chatapp.chatapp.ui.theme.SecondaryBackground
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -43,14 +43,14 @@ fun TopBarSearchScreen(
             }
         },
         actions = {
-            IconButton(onClick = { navController.navigate(RouteTypeSafe.Screen.MyFriendsScreen) }) {
+            IconButton(onClick = { navController.navigate(Route.Screen.MyFriendsScreen) }) {
                 Icon(
                     painter = painterResource(R.drawable.my_friends),
                     contentDescription = "Friend requests",
                     tint = Color.White
                 )
             }
-            IconButton(onClick = { navController.navigate(RouteTypeSafe.Screen.FriendsRequestsScreen) }) {
+            IconButton(onClick = { navController.navigate(Route.Screen.FriendsRequestsScreen) }) {
                 Icon(
                     imageVector = Icons.Default.AccountCircle,
                     contentDescription = "Friend requests",
